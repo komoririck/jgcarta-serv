@@ -1,0 +1,2 @@
+# hololive-oficial-cardgame-server
+ 
