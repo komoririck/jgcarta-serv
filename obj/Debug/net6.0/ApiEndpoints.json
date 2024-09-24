@@ -1,0 +1,98 @@
+[
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchQueue",
+    "Method": "Post",
+    "RelativePath": "ControlMatchQueue",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "_GenericPlayerCommunication",
+        "Type": "hololive_oficial_cardgame_server.GenericPlayerCommunication",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoom",
+    "Method": "Post",
+    "RelativePath": "ControlMatchRoom",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "_GenericPlayerCommunication",
+        "Type": "hololive_oficial_cardgame_server.GenericPlayerCommunication",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.CreateAccountController",
+    "Method": "Post",
+    "RelativePath": "CreateAccount",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "createAccount",
+        "Type": "hololive_oficial_cardgame_server.CreateAccount",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.GetPlayerInfoController",
+    "Method": "Post",
+    "RelativePath": "GetPlayerInfo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.GetPlayerInfo",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.LoginController",
+    "Method": "Post",
+    "RelativePath": "Login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "loginData",
+        "Type": "hololive_oficial_cardgame_server.LoginData",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.UpdatePlayerInfoController",
+    "Method": "Post",
+    "RelativePath": "UpdatePlayerInfo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "PlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.PlayerInfo",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

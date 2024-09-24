@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\hololive-oficial-cardgame-server.props" />
+</Project>
