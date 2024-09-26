@@ -19,9 +19,10 @@ public class Record
     public string AbilityText { get; set; }
     public string Illustrator { get; set; }
     public string CardNumber { get; set; }
+    public string Life { get; set; }
 }
 
-public static class FileReader
+    public static class FileReader
 {
     public static List<Record> result = new List<Record>();
 
@@ -55,7 +56,7 @@ public static class FileReader
                     DataRow row = table.Rows[i];
 
                     // Ensure there are at least 13 columns
-                    if (row.ItemArray.Length < 13)
+                    if (row.ItemArray.Length < 14)
                     {
                         Console.WriteLine($"Invalid data format in line {i + 1}");
                         continue;
@@ -76,7 +77,8 @@ public static class FileReader
                         SPOshiSkill = row[9]?.ToString() ?? "",
                         AbilityText = row[10]?.ToString() ?? "",
                         Illustrator = row[11]?.ToString() ?? "",
-                        CardNumber = row[12]?.ToString() ?? ""
+                        CardNumber = row[12]?.ToString() ?? "",
+                        Life = row[13]?.ToString() ?? ""
                     };
 
                     result.Add(record);

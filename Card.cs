@@ -53,6 +53,7 @@ public class Card
     public string abilityText { get; set; }
     [JsonIgnore]
     public string illustrator { get; set; }
+    public string life { get; set; }
 
     [JsonIgnore]
     public List<CardEffect> cardEffects { get; set; } = new List<CardEffect>();
@@ -90,6 +91,7 @@ public class Card
                 spOshiSkill = record.SPOshiSkill;
                 abilityText = record.AbilityText;
                 illustrator = record.Illustrator;
+                life = record.Life;
             }
         }
     }

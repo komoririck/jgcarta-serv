@@ -15,7 +15,7 @@ namespace hololive_oficial_cardgame_server
 
     public class DBConnection
     {
-        public bool debug = true;
+        public bool DebugVatiable = true;
 
         private string connectionString = "Server=localhost;Database=hololive-official-cardgame;User ID=root;Password=;Pooling=true;";
         private object dataTable;
@@ -338,7 +338,7 @@ namespace hololive_oficial_cardgame_server
                             idCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                             idCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
                             var dataTable = new DataTable();
-                            Debug.WriteLine(GetQueryWithParameters(idCommand));
+                            Console.WriteLine(GetQueryWithParameters(idCommand));
                             dataTable.Load(idCommand.ExecuteReader());
 
                             if(dataTable.Rows.Count > 0)
@@ -347,7 +347,7 @@ namespace hololive_oficial_cardgame_server
                                 {
                                     updateCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                     updateCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                                    Debug.WriteLine(GetQueryWithParameters(updateCommand));
+                                    Console.WriteLine(GetQueryWithParameters(updateCommand));
                                     updateCommand.ExecuteNonQuery();
                                 }
                             }
@@ -362,7 +362,7 @@ namespace hololive_oficial_cardgame_server
                             insertCommand.Parameters.AddWithValue("@type", _GenericPlayerCommunication.RequestData.description);
                             insertCommand.Parameters.AddWithValue("@code", _GenericPlayerCommunication.RequestData.requestObject);
                             //insertCommand.Parameters.AddWithValue("@uuidv7", GenerateUuidV7());
-                            Debug.WriteLine(GetQueryWithParameters(insertCommand));
+                            Console.WriteLine(GetQueryWithParameters(insertCommand));
                             insertCommand.ExecuteNonQuery();
                         }
 
@@ -443,7 +443,7 @@ namespace hololive_oficial_cardgame_server
                                 idCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                 idCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
                                 var dataTable = new DataTable();
-                                Debug.WriteLine(GetQueryWithParameters(idCommand));
+                                Console.WriteLine(GetQueryWithParameters(idCommand));
                                 dataTable.Load(idCommand.ExecuteReader());
                                 // if is active in another queue, remove from all the queues
                                 if (dataTable.Rows.Count > 0)
@@ -452,7 +452,7 @@ namespace hololive_oficial_cardgame_server
                                     {
                                         updateCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                         updateCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                                        Debug.WriteLine(GetQueryWithParameters(updateCommand));
+                                        Console.WriteLine(GetQueryWithParameters(updateCommand));
                                         updateCommand.ExecuteNonQuery();
                                     }
                                 }
@@ -504,7 +504,7 @@ namespace hololive_oficial_cardgame_server
                             selectCommand.Parameters.AddWithValue("@roomid", uuidv7);
                             var dataTable = new DataTable();
                             dataTable.Load(selectCommand.ExecuteReader());
-                            Debug.WriteLine(GetQueryWithParameters(selectCommand));
+                            Console.WriteLine(GetQueryWithParameters(selectCommand));
 
                             foreach (DataRow row in dataTable.Rows)
                             {
@@ -679,7 +679,7 @@ namespace hololive_oficial_cardgame_server
                                     Command.Parameters.AddWithValue("@roomid", dataT.Rows[0].Field<string>("RoomID"));
                                     Command.Parameters.AddWithValue("@ownerid", dataT.Rows[0].Field<int>("OwnerID"));
                                     var dataTable = new DataTable();
-                                    Debug.WriteLine(GetQueryWithParameters(Command));
+                                    Console.WriteLine(GetQueryWithParameters(Command));
                                     dataTable.Load(Command.ExecuteReader());
 
                                     // if is active in another queue, remove from all the queues
@@ -691,7 +691,7 @@ namespace hololive_oficial_cardgame_server
                                             updateCommand.Parameters.AddWithValue("@roomid", dataTable.Rows[0].Field<string>("MatchRoomID"));
                                             updateCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                             updateCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                                            Debug.WriteLine(GetQueryWithParameters(updateCommand));
+                                            Console.WriteLine(GetQueryWithParameters(updateCommand));
                                             updateCommand.ExecuteNonQuery();
                                         }
                                         transaction.Commit();
@@ -705,7 +705,7 @@ namespace hololive_oficial_cardgame_server
                                 updateCommand.Parameters.AddWithValue("@roomid", dataT.Rows[0].Field<string>("RoomID"));
                                 updateCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                 updateCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                                Debug.WriteLine(GetQueryWithParameters(updateCommand));
+                                Console.WriteLine(GetQueryWithParameters(updateCommand));
                                 updateCommand.ExecuteNonQuery();
                             }
                         }
@@ -773,7 +773,7 @@ namespace hololive_oficial_cardgame_server
                             idCommand.Parameters.AddWithValue("@playeridsql", PlayerIDSQL);
                             idCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                             idCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                            Debug.WriteLine(GetQueryWithParameters(idCommand));
+                            Console.WriteLine(GetQueryWithParameters(idCommand));
                             dataT.Load(idCommand.ExecuteReader());
                             //PrintDataTable(dataT);
 
@@ -796,7 +796,7 @@ namespace hololive_oficial_cardgame_server
                             idCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
                             idCommand.Parameters.AddWithValue("@roomid", dataT.Rows[0].Field<string>("RoomID"));
 
-                            Debug.WriteLine(GetQueryWithParameters(idCommand));
+                            Console.WriteLine(GetQueryWithParameters(idCommand));
                             dataTable.Load(idCommand.ExecuteReader());
 
                             if (dataTable.Rows.Count == 0)
@@ -813,7 +813,7 @@ namespace hololive_oficial_cardgame_server
                             updateCommand.Parameters.AddWithValue("@board", _GenericPlayerCommunication.RequestData.description);
                             updateCommand.Parameters.AddWithValue("@chair", TablePosition);
 
-                            Debug.WriteLine(GetQueryWithParameters(updateCommand));
+                            Console.WriteLine(GetQueryWithParameters(updateCommand));
                             updateCommand.ExecuteNonQuery();
                         }
 
@@ -1001,7 +1001,7 @@ namespace hololive_oficial_cardgame_server
                         {
                             selectCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                             selectCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                            Debug.WriteLine(GetQueryWithParameters(selectCommand));
+                            Console.WriteLine(GetQueryWithParameters(selectCommand));
                             dataTable.Load(selectCommand.ExecuteReader());
 
                             foreach (DataRow row in dataTable.Rows)
@@ -1026,7 +1026,7 @@ namespace hololive_oficial_cardgame_server
                         using (MySqlCommand idCommand = new MySqlCommand("SELECT * FROM `hololive-official-cardgame`.`matchroom` WHERE RoomID = @roomcode AND OwnerID != 0;", connection, transaction))
                         {
                             idCommand.Parameters.AddWithValue("@roomcode", dataTable.Rows[0].Field<string>("MatchRoomID"));
-                            Debug.WriteLine(GetQueryWithParameters(idCommand));
+                            Console.WriteLine(GetQueryWithParameters(idCommand));
                             dataT.Load(idCommand.ExecuteReader());
                         }
 
@@ -1093,8 +1093,8 @@ namespace hololive_oficial_cardgame_server
                         var dataTable = new DataTable();
                         using (MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM `hololive-official-cardgame`.`matchpool` WHERE Status = 'A' ORDER BY `RegDate` ASC LIMIT 2;", connection, transaction))
                         {
-                            if (debug)
-                                Debug.WriteLine(GetQueryWithParameters(selectCommand));
+                            if (DebugVatiable)
+                                Console.WriteLine(GetQueryWithParameters(selectCommand));
 
                             dataTable.Load(selectCommand.ExecuteReader());
 
@@ -1109,8 +1109,8 @@ namespace hololive_oficial_cardgame_server
                                 SelectUserCommand.Parameters.AddWithValue("@p1", dataTable.Rows[0].Field<int>("PlayerID"));
                                 SelectUserCommand.Parameters.AddWithValue("@p2", dataTable.Rows[1].Field<int>("PlayerID"));
 
-                                if (debug)
-                                    Debug.WriteLine(GetQueryWithParameters(SelectUserCommand));
+                                if (DebugVatiable)
+                                    Console.WriteLine(GetQueryWithParameters(SelectUserCommand));
 
                                 dataT.Load(SelectUserCommand.ExecuteReader());
                             }
@@ -1172,8 +1172,8 @@ namespace hololive_oficial_cardgame_server
 
                             updateCommand.Parameters.AddWithValue("@p1", p1);
                             updateCommand.Parameters.AddWithValue("@p2", p2);
-                            if (debug)
-                                Debug.WriteLine(GetQueryWithParameters(updateCommand));
+                            if (DebugVatiable)
+                                Console.WriteLine(GetQueryWithParameters(updateCommand));
                             updateCommand.ExecuteNonQuery();
                         }
                         transaction.Commit();
@@ -1207,8 +1207,8 @@ namespace hololive_oficial_cardgame_server
                             updateCommand.Parameters.AddWithValue("@p1", p1);
                             updateCommand.Parameters.AddWithValue("@p2", p2);
 
-                            if (debug)
-                                Debug.WriteLine(GetQueryWithParameters(updateCommand));
+                            if (DebugVatiable)
+                                Console.WriteLine(GetQueryWithParameters(updateCommand));
 
                             dataTable.Load(updateCommand.ExecuteReader());
                         }

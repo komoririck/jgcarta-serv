@@ -37,9 +37,6 @@ public class MatchRoom
     public bool playerAInicialBoardSetup = false;
     public bool playerBInicialBoardSetup = false;
 
-    public bool playerACheerStep = false;
-    public bool playerBCheerStep = false;
-
     public List<Card> playerAHand = new List<Card>();
     public List<Card> playerBHand = new List<Card>();
 
@@ -72,8 +69,6 @@ public class MatchRoom
 
     public Card playerAOshi = new Card();
     public Card playerBOshi = new Card();
-
-    List<Record> CarList = FileReader.ReadFile("CardList.xlsx");
 
     [Flags]
     public enum GAMEPHASE : byte

@@ -1,18 +1,14 @@
 ﻿using hololive_oficial_cardgame_server;
 using Microsoft.OpenApi.Extensions;
-using MySqlX.XDevAPI.Common;
-using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using System.Transactions;
 using static hololive_oficial_cardgame_server.MatchRoom;
 
 var builder = WebApplication.CreateBuilder(args);
-
+//
+//
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -45,7 +41,8 @@ var playerConnections = new ConcurrentDictionary<string, WebSocket>();
 //Players DuelRoom
 List<MatchRoom> _MatchRooms = new List<MatchRoom>();
 
-List<Record> CarList = FileReader.ReadFile("CardList.xlsx");
+List<Record> CardList = FileReader.ReadFile("CardList.xlsx");
+//List<Record> CardList = FileReader.ReadFile("CardList.csv");
 
 // Add WebSocket handling middleware before other middlewares
 app.UseWebSockets();
@@ -98,10 +95,12 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                     try {
                         playerConnections.TryRemove(playerRequest.playerID, out _);
 
-                    } catch (Exception ex) { Debug.WriteLine(ex); }
+                    } catch (Exception ex) { Console.WriteLine(ex); }
                     //process victory
                     int matchnumber = MatchRoom.FindPlayerMatchRoom(_MatchRooms, playerRequest.playerID);
-                    _MatchRooms.Remove(_MatchRooms[matchnumber]);
+                    if (_MatchRooms[matchnumber] != null)
+                        _MatchRooms.Remove(_MatchRooms[matchnumber]);
+                    Console.WriteLine("Room "+ matchnumber + " closed");
                 }
                 else
                 {
@@ -316,12 +315,12 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                     cardList = _MatchRoom.playerAHand
                                 };
                                 pReturnData = new RequestData { type = "duelUpdate", description = "InitialDraw", requestObject = JsonSerializer.Serialize(draw) };
-                                Debug.WriteLine(pReturnData.requestObject);
+                                Console.WriteLine(pReturnData.requestObject);
                                 await playerConnections[_MatchRoom.startPlayer.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
                                 draw.cardList = _MatchRoom.FillCardListWithEmptyCards(_MatchRoom.playerAHand);
                                 pReturnData = new RequestData { type = "duelUpdate", description = "InitialDraw", requestObject = JsonSerializer.Serialize(draw) };
-                                Debug.WriteLine(pReturnData.requestObject);
+                                Console.WriteLine(pReturnData.requestObject);
                                 await playerConnections[GetOtherPlayer(_MatchRoom, _MatchRoom.startPlayer).ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
                                 _MatchRoom.currentGameHigh = 2;
@@ -336,12 +335,12 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                 };
 
                                 pReturnData = new RequestData { type = "duelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw) };
-                                Debug.WriteLine(pReturnData.requestObject);
+                                Console.WriteLine(pReturnData.requestObject);
                                 await playerConnections[_MatchRoom.playerB.PlayerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
                                 draw.cardList = _MatchRoom.FillCardListWithEmptyCards(_MatchRoom.playerBHand);
                                 pReturnData = new RequestData { type = "duelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw) };
-                                Debug.WriteLine(pReturnData.requestObject);
+                                Console.WriteLine(pReturnData.requestObject);
                                 await playerConnections[_MatchRoom.playerA.PlayerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
                                 _MatchRoom.currentGameHigh = 3;
@@ -368,6 +367,8 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                             int playerA = _MatchRooms[PlayersRoomId].startPlayer;
                             int playerB = _MatchRooms[PlayersRoomId].secondPlayer;
                             pReturnData = new RequestData();
+                            Task task;
+                            DuelAction _DuelAction = new();
 
                             switch (playerRequest.requestData.type)
                             {
@@ -414,13 +415,13 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                     };
                                     pReturnData = new RequestData { type = "duelUpdate", description = "PAMulliganF", requestObject = JsonSerializer.Serialize(draw) };
                                     await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                    Debug.WriteLine(pReturnData.requestObject);
+                                    Console.WriteLine(pReturnData.requestObject);
                                     // we are changing the line here
                                     draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerAHand);
 
                                     pReturnData = new RequestData { type = "duelUpdate", description = "PAMulliganF", requestObject = JsonSerializer.Serialize(draw) };
                                     await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                    Debug.WriteLine(pReturnData.requestObject);
+                                    Console.WriteLine(pReturnData.requestObject);
 
                                     /////////////
                                     /////////////
@@ -449,13 +450,13 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
 
                                     pReturnData = new RequestData { type = "duelUpdate", description = "PBMulliganF", requestObject = JsonSerializer.Serialize(draw) };
                                     await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                    Debug.WriteLine(pReturnData.requestObject);
+                                    Console.WriteLine(pReturnData.requestObject);
 
                                     draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBHand);
 
                                     pReturnData = new RequestData { type = "duelUpdate", description = "PBMulliganF", requestObject = JsonSerializer.Serialize(draw) };
                                     await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                    Debug.WriteLine(pReturnData.requestObject);
+                                    Console.WriteLine(pReturnData.requestObject);
 
                                     draw.cardList.Clear();
 
@@ -467,11 +468,11 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
 
                                     if (int.Parse(playerRequest.playerID) == playerA)
                                     {
-                                        FirstGameBoardSetup(_duelFieldData, int.Parse(playerRequest.playerID), cMatchRoom, CarList, _duelFieldData.playerAStage, _duelFieldData.playerABackPosition);
+                                        FirstGameBoardSetup(_duelFieldData, int.Parse(playerRequest.playerID), cMatchRoom, CardList, _duelFieldData.playerAStage, _duelFieldData.playerABackPosition);
                                     }
                                     else
                                     {
-                                        FirstGameBoardSetup(_duelFieldData, int.Parse(playerRequest.playerID), cMatchRoom, CarList, _duelFieldData.playerBStage, _duelFieldData.playerBBackPosition);
+                                        FirstGameBoardSetup(_duelFieldData, int.Parse(playerRequest.playerID), cMatchRoom, CardList, _duelFieldData.playerBStage, _duelFieldData.playerBBackPosition);
                                     }
 
                                     if (!(cMatchRoom.playerAInicialBoardSetup && cMatchRoom.playerBInicialBoardSetup))
@@ -481,15 +482,17 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
 
                                     //PA
                                     int oshiLifeNumberPA = 0;
+                                    cMatchRoom.playerAOshi.GetCardInfo(cMatchRoom.playerAOshi.cardNumber);
                                     List<Card> addLifeToMatchPA = new List<Card>();
                                     int oshiLifeNumberPB = 0;
+                                    cMatchRoom.playerBOshi.GetCardInfo(cMatchRoom.playerBOshi.cardNumber);
                                     List<Card> addLifeToMatchPB = new List<Card>();
 
-                                    foreach (Record r in CarList)
+                                    foreach (Record r in CardList)
                                     {
                                         if (r.CardNumber.Equals(cMatchRoom.playerAOshi.cardNumber))
                                         {
-                                            oshiLifeNumberPA = 5;//CARDCODED NEED TO BE THE SAME AS THE CARD
+                                            oshiLifeNumberPA = int.Parse(cMatchRoom.playerAOshi.life);
                                         }
                                     }
                                     for (int n = 0; n < oshiLifeNumberPA; n++)
@@ -498,11 +501,11 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                     }
 
                                     //PB
-                                    foreach (Record r in CarList)
+                                    foreach (Record r in CardList)
                                     {
                                         if (r.CardNumber.Equals(cMatchRoom.playerBOshi.cardNumber))
                                         {
-                                            oshiLifeNumberPB = 5;  //CARDCODED NEED TO BE THE SAME AS THE CARD
+                                            oshiLifeNumberPB = int.Parse(cMatchRoom.playerBOshi.life);
                                         }
                                     }
                                     for (int n = 0; n < oshiLifeNumberPB; n++)
@@ -577,274 +580,230 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                     await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
                                     //update the room phase, so the server can take it automaticaly from here
-                                    cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
-                                    cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.DrawStep;
-                                    cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.DrawStep;
+                                    cMatchRoom.currentGamePhase = GAMEPHASE.StartMatch;
+                                    cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.StartMatch;
+                                    cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.StartMatch;
                                     cMatchRoom.currentGameHigh = 7;
                                     //devolver um synchigh com informações de quem vai comprar
-
                                     break;
 
                                 /////////////////////////////
                                 //START OF DUEL NORMAL FLOW//
                                 /////////////////////////////
                                 ///
-                                case "syncHigh":
-                                    Task task;
-                                    // CURRENT GAME HIGH NOT SYNCHED
+                                case "ResetRequest":
+                                    if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.ResetStep || cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.ResetStep)
+                                    {
+                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        break;
+                                    }
+                                    Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
+
                                     if (int.Parse(playerRequest.playerID) == playerA)
-                                        cMatchRoom.playerAGameHigh = playerRequest.requestData.sync;
+                                        cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.DrawStep;
 
                                     if (int.Parse(playerRequest.playerID) == playerB)
-                                        cMatchRoom.playerBGameHigh = playerRequest.requestData.sync;
+                                        cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.DrawStep;
 
-                                    switch (cMatchRoom.currentGamePhase)
+                                    if (cMatchRoom.currentPlayerBGamePhase != cMatchRoom.currentPlayerAGamePhase)
+                                        return;
+
+                                    RequestData _ReturnData = new RequestData { type = "GamePhase", description = "ResetStep", requestObject = "ResetStep" };
+                                    await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                    await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+
+                                    cMatchRoom.currentGameHigh++;
+                                    cMatchRoom.playerAGameHigh = cMatchRoom.currentGameHigh;
+                                    cMatchRoom.playerBGameHigh = cMatchRoom.currentGameHigh;
+
+                                    cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
+
+                                    break;
+                                case "DrawRequest":
+
+                                    if (int.Parse(playerRequest.playerID) == playerA)
+                                        cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.DrawStep;
+
+                                    if (int.Parse(playerRequest.playerID) == playerB)
+                                        cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.DrawStep;
+
+
+                                    if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.DrawStep && cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.DrawStep)
                                     {
-                                        case GAMEPHASE.ResetStep:
+                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        break;
+                                    }
+                                    Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
 
-                                            if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.ResetStep || cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.ResetStep)
+                                    if (cMatchRoom.currentPlayerTurn == playerA)
+                                        getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
+                                    else
+                                        getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 1);
+                                    
+                                    task = GamePhaseDrawAsync(playerA, playerB, cMatchRoom.playerAHand, result.EndOfMessage, cMatchRoom);
+
+                                    cMatchRoom.currentGamePhase = GAMEPHASE.CheerStep;
+                                    cMatchRoom.currentGameHigh++;
+                                    break;
+                                case "CheerRequest":
+
+                                    if (int.Parse(playerRequest.playerID) == playerA)
+                                        cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.CheerStep;
+
+                                    if (int.Parse(playerRequest.playerID) == playerB)
+                                        cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.CheerStep;
+
+                                    if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.CheerStep && cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.CheerStep)
+                                    {
+                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        break;
+                                    }
+                                    Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
+
+                                    if (cMatchRoom.currentPlayerBGamePhase != cMatchRoom.currentPlayerAGamePhase)
+                                        return;
+
+                                    if (cMatchRoom.currentPlayerTurn == playerA)
+                                        getCardFromDeck(cMatchRoom.playerACardCheer, cMatchRoom.playerAHand, 1);
+                                    else
+                                        getCardFromDeck(cMatchRoom.playerBCardCheer, cMatchRoom.playerBHand, 1);
+
+                                    GamePhaseCheerStepAsync(playerA, playerB, cMatchRoom.playerACardCheer, cMatchRoom.playerAHand, result.EndOfMessage, cMatchRoom);
+
+                                    cMatchRoom.currentGamePhase = GAMEPHASE.CheerStepChoose;
+                                    cMatchRoom.currentGameHigh++;
+                                    break;
+                                case "CheerChooseRequest":
+
+                                    if (int.Parse(playerRequest.playerID) == playerA)
+                                        cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.CheerStepChoose;
+
+                                    if (int.Parse(playerRequest.playerID) == playerB)
+                                        cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.CheerStepChoose;
+
+
+                                    if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.CheerStepChoose || cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.CheerStepChoose)
+                                    {
+                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        break;
+                                    }
+                                    Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
+
+                                    //removing cheer from player hand, in the client we remove for the oponnent at start of the main phase!
+                                    if (int.Parse(playerRequest.playerID) == cMatchRoom.currentPlayerTurn)
+                                    {
+                                        try
+                                        {
+                                            _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+                                        }
+                                        catch (Exception e) { Console.WriteLine("7 pele: " + playerRequest.playerID); }
+                                        bool hasAttached = false;
+
+                                        if (cMatchRoom.playerA.PlayerID == int.Parse(playerRequest.playerID))
+                                        {
+                                            if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.CheerStepChoose)
                                             {
-                                                Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
-                                                break;
+                                                Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
                                             }
-                                            Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
-
-
-
-
-
-                                            //DO ACTION 
-                                            cMatchRoom.currentGameHigh++;
-
-                                            cMatchRoom.playerAGameHigh = cMatchRoom.currentGameHigh;
-                                            cMatchRoom.playerBGameHigh = cMatchRoom.currentGameHigh;
-
-                                            //checking game highs
-                                            //if (cMatchRoom.currentGameHigh != cMatchRoom.playerBGameHigh || cMatchRoom.currentGameHigh != cMatchRoom.playerAGameHigh || cMatchRoom.currentGameHigh != cMatchRoom.playerBGameHigh)
-                                            //    break;
-
-                                            cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
-                                            cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.DrawStep;
-                                            cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.DrawStep;
-                                            break;
-                                        case GAMEPHASE.DrawStep:
-                                            if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.DrawStep || cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.DrawStep)
+                                            cMatchRoom.playerAHand.RemoveAt(cMatchRoom.playerAHand.Count - 1);
+                                            hasAttached = GamePhaseCheerChoosedAsync(_DuelAction, cMatchRoom, cMatchRoom.playerAStage, cMatchRoom.playerACollaboration, cMatchRoom.playerABackPosition); // we are saving attached to the list only the name of the Cheer, add other information later i needded 
+                                            cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.CheerStepChoosed;
+                                        }
+                                        if (cMatchRoom.playerB.PlayerID == int.Parse(playerRequest.playerID))
+                                        {
+                                            if (cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.CheerStepChoose)
                                             {
-                                                Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
-                                                break;
+                                                Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
                                             }
-                                            Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
+                                            cMatchRoom.playerBHand.RemoveAt(cMatchRoom.playerBHand.Count - 1);
+                                            hasAttached = GamePhaseCheerChoosedAsync(_DuelAction, cMatchRoom, cMatchRoom.playerBStage, cMatchRoom.playerBCollaboration, cMatchRoom.playerBBackPosition);
+                                            cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.CheerStepChoosed;
+                                        }
 
-                                            if (cMatchRoom.currentPlayerTurn == playerA)
-                                            {
-                                                getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
-                                                task = GamePhaseDrawAsync(playerA, playerB, cMatchRoom.playerAHand, result.EndOfMessage);
-                                            }
-                                            else
-                                            {
-                                                getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 1);
-                                                task = GamePhaseDrawAsync(playerA, playerB, cMatchRoom.playerBHand, result.EndOfMessage);
-                                            }
-
-                                            /*
-                                            if (cMatchRoom.currentGameHigh != cMatchRoom.playerBGameHigh || cMatchRoom.currentGameHigh != cMatchRoom.playerAGameHigh || cMatchRoom.currentGameHigh != cMatchRoom.playerBGameHigh)
-                                                break;
-                                            */
-
-                                            cMatchRoom.currentGamePhase = GAMEPHASE.CheerStep;
-                                            cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.CheerStep;
-                                            cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.CheerStep;
-                                            cMatchRoom.currentGameHigh++;
-                                            break;
-                                        case GAMEPHASE.CheerStep:
-                                            if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.CheerStep || cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.CheerStep)
-                                            {
-                                                Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
-                                                break;
-                                            }
-                                            Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
-
-                                            //COMPROU A CARTA E DEVOLVEU PARA O JOGADOR
-                                            if (cMatchRoom.currentPlayerTurn == playerA)
-                                            {
-                                                getCardFromDeck(cMatchRoom.playerACardCheer, cMatchRoom.playerAHand, 1);
-                                                task = GamePhaseCheerStepAsync(playerA, playerB, cMatchRoom.playerACardCheer, cMatchRoom.playerAHand, result.EndOfMessage);
-                                            }
-                                            else
-                                            {
-                                                getCardFromDeck(cMatchRoom.playerBCardCheer, cMatchRoom.playerBHand, 1);
-                                                task = GamePhaseCheerStepAsync(playerB, playerA, cMatchRoom.playerBCardCheer, cMatchRoom.playerBHand, result.EndOfMessage);
-                                            }
-
-                                            /*
-                                            if (cMatchRoom.currentGameHigh != cMatchRoom.playerBGameHigh || cMatchRoom.currentGameHigh != cMatchRoom.playerAGameHigh || cMatchRoom.currentGameHigh != cMatchRoom.playerBGameHigh )
-                                                break;
-                                            */
-                                            cMatchRoom.currentGamePhase = GAMEPHASE.CheerStepChoose;
-                                            cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.CheerStepChoose;
-                                            cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.CheerStepChoose;
-                                            cMatchRoom.currentGameHigh++;
-                                            break;
-                                        case GAMEPHASE.CheerStepChoose:
-
-
-                                            Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
-                                            RequestData ReturnData;
-                                            //RECEBE ALVO DA ENERGIA
-                                            //removing cheer from player hand, in the client we remove for the oponnent at start of the main phase!
-                                            if (int.Parse(playerRequest.playerID) == cMatchRoom.currentPlayerTurn)
-                                            {
-
-                                                DuelAction _DuelAction = new();
-                                                if (!string.IsNullOrEmpty(playerRequest.requestData.extraRequestObject))
-                                                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
-
-                                                bool hasAttached = false;
-
-                                                if (cMatchRoom.playerA.PlayerID == int.Parse(playerRequest.playerID))
-                                                {
-                                                    if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.CheerStepChoose)
-                                                    {
-                                                        Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
-                                                    }
-                                                    cMatchRoom.playerAHand.RemoveAt(cMatchRoom.playerAHand.Count - 1);
-                                                    hasAttached = GamePhaseCheerChoosedAsync(_DuelAction, cMatchRoom, cMatchRoom.playerAStage, cMatchRoom.playerACollaboration, cMatchRoom.playerABackPosition); // we are saving attached to the list only the name of the Cheer, add other information later i needded 
-                                                    cMatchRoom.playerACheerStep = true;
-                                                    cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.CheerStepChoosed;
-                                                }
-                                                else
-                                                {
-                                                    if (cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.CheerStepChoose)
-                                                    {
-                                                        Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
-                                                    }
-                                                    cMatchRoom.playerBHand.RemoveAt(cMatchRoom.playerBHand.Count - 1);
-                                                    hasAttached = GamePhaseCheerChoosedAsync(_DuelAction, cMatchRoom, cMatchRoom.playerBStage, cMatchRoom.playerBCollaboration, cMatchRoom.playerBBackPosition);
-                                                    cMatchRoom.playerBCheerStep = true;
-                                                    cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.CheerStepChoosed;
-                                                }
-
-                                                if (!hasAttached)
-                                                    break;
-
-                                            }
-                                            else 
-                                            {
-                                                if (cMatchRoom.playerA.PlayerID == int.Parse(playerRequest.playerID))
-                                                {
-                                                    if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.CheerStepChoose)
-                                                    {
-                                                        Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
-                                                    }
-                                                    cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.CheerStepChoosed;
-                                                    cMatchRoom.playerACheerStep = true;
-                                                }
-                                                else
-                                                {
-                                                    if (cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.CheerStepChoose)
-                                                    {
-                                                        Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
-                                                    }
-                                                    cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.CheerStepChoosed;
-                                                    cMatchRoom.playerBCheerStep = true;
-                                                }
-
-
-                                            }
-
-                                            if (cMatchRoom.currentPlayerAGamePhase == GAMEPHASE.CheerStepChoosed && cMatchRoom.currentPlayerBGamePhase == GAMEPHASE.CheerStepChoosed)
-                                                cMatchRoom.currentGamePhase = GAMEPHASE.CheerStepChoosed;
-
-                                            /*
-                                            if (cMatchRoom.currentGameHigh + 1 != cMatchRoom.playerBGameHigh || cMatchRoom.currentGameHigh + 1 != cMatchRoom.playerAGameHigh || cMatchRoom.currentGameHigh + 1 != cMatchRoom.playerBGameHigh)
-                                                break;
-                                            */
-                                            if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.CheerStepChoosed || cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.CheerStepChoosed)
-                                            {
-                                                Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
-                                                break;
-                                            }
-
-                                            ReturnData = new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" };
-                                                ReturnData.requestObject = JsonSerializer.Serialize(ReturnData);
-                                                await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                          
-                                                ReturnData = new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" };
-                                                await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-
-                                            cMatchRoom.currentGamePhase = GAMEPHASE.MainStep;
-                                            cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.MainStep;
-                                            cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.MainStep;
-                                            cMatchRoom.currentGameHigh++;
-                                            break;
-
-                                        case GAMEPHASE.MainStep:
-                                            if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.MainStep || cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.MainStep)
-                                            {
-                                                Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
-                                                break;
-                                            }
-                                            Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
-                                            switch (playerRequest.requestData.description) {
-                                                case "StartMain":
-                                                    cMatchRoom.playerBCheerStep = false;
-                                                    cMatchRoom.playerACheerStep = false;
-
-
-                                                    ReturnData = new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" };
-
-                                                    await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                                    await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                                    break;
-                                                case "doAction":
-                                                    //NORMAL POSSIBLE ACTIONS FOR PLAYER
-                                                    ReturnData = new RequestData { type = "GamePhase", description = "MainPhaseDoAction", requestObject = "" };
-
-                                                    await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                                    await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                                    break;
-                                                case "PerformanceStep":
-                                                    cMatchRoom.currentGamePhase = GAMEPHASE.PerformanceStep;
-                                                    break;
-                                                case "UseArt":
-                                                    cMatchRoom.currentGamePhase = GAMEPHASE.UseArt;
-                                                    break;
-                                                case "Endturn":
-                                                    
-
-                                                    int nextPlayerTurn = 0;
-
-                                                    nextPlayerTurn = (cMatchRoom.currentPlayerTurn == playerA) ? playerA : playerB;
-
-                                                    cMatchRoom.currentPlayerTurn = nextPlayerTurn;
-
-                                                    ReturnData = new RequestData { type = "GamePhase", description = "EndStep", requestObject = "" };
-                                                    await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                                    await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-
-
-
-
-                                                    cMatchRoom.currentGamePhase = GAMEPHASE.ResetStep;
-                                                    cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.ResetStep;
-                                                    cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.ResetStep;
-                                                    cMatchRoom.currentGameHigh++;
-                                                    break;
-
-                                            }
-                                            cMatchRoom.currentGameHigh++;
-                                            break;
-
-                                        case GAMEPHASE.PerformanceStep:
-                                            Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
-                                            cMatchRoom.currentGameHigh++;
-                                            break;
-
-                                        case GAMEPHASE.UseArt:
-                                            Debug.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
-                                            cMatchRoom.currentGameHigh++;
+                                        if (!hasAttached)
                                             break;
                                     }
+                                    else
+                                    {
+                                        if (cMatchRoom.playerA.PlayerID == int.Parse(playerRequest.playerID))
+                                            cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.CheerStepChoosed;
+                                        else
+                                            cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.CheerStepChoosed;
+                                    }
+
+                                    cMatchRoom.currentGameHigh++;
+                                    break;
+                                case "CheerChoosedRequest":
+                                    if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.CheerStepChoosed || cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.CheerStepChoosed)
+                                    {
+                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        break;
+                                    }
+                                    Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
+                                    /*
+                                    if (int.Parse(playerRequest.playerID) == playerA)
+                                        cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.MainStep;
+
+                                    if (int.Parse(playerRequest.playerID) == playerB)
+                                        cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.MainStep;*/
+
+                                    if (cMatchRoom.currentPlayerAGamePhase == GAMEPHASE.CheerStepChoosed && cMatchRoom.currentPlayerBGamePhase == GAMEPHASE.CheerStepChoosed)
+                                        cMatchRoom.currentGamePhase = GAMEPHASE.MainStep;
+
+                                    _ReturnData = new RequestData { type = "GamePhase", description = "", requestObject = "" };
+
+                                    if (cMatchRoom.currentPlayerTurn == playerA)
+                                        _ReturnData = new RequestData { type = "GamePhase", description = "CheerStepEnd", requestObject = JsonSerializer.Serialize(_DuelAction) };
+
+                                    if (cMatchRoom.currentPlayerTurn == playerB)
+                                        _ReturnData = new RequestData { type = "GamePhase", description = "CheerStepEnd", requestObject = JsonSerializer.Serialize(_DuelAction) };
+
+                                    await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                    await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+
+                                    cMatchRoom.currentGamePhase = GAMEPHASE.MainStep;
+                                    cMatchRoom.currentGameHigh++;
+                                    break;
+                                case "MainStartRequest":
+                                    if (cMatchRoom.currentPlayerAGamePhase != GAMEPHASE.MainStep || cMatchRoom.currentPlayerBGamePhase != GAMEPHASE.MainStep)
+                                    {
+                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        break;
+                                    }
+                                    Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName());
+
+                                    _ReturnData = new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" };
+
+                                    await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                    await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                    break;
+                                case "MainDoActionRequest":
+                                    break;
+                                case "MainPerformanceRequest":
+                                    cMatchRoom.currentGamePhase = GAMEPHASE.PerformanceStep;
+                                    break;
+                                case "MainUseArtRequest":
+                                    cMatchRoom.currentGamePhase = GAMEPHASE.UseArt;
+                                    break;
+                                case "MainEndturnRequest":
+                                    if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
+                                        break;
+
+                                    if (cMatchRoom.currentPlayerTurn == playerA)
+                                        cMatchRoom.currentPlayerTurn = cMatchRoom.secondPlayer;
+                                    else if (cMatchRoom.currentPlayerTurn == playerB)
+                                        cMatchRoom.currentPlayerTurn = cMatchRoom.firstPlayer;
+
+                                    _ReturnData = new RequestData { type = "GamePhase", description = "Endturn", requestObject = "" };
+                                    await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                    await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+
+
+                                    cMatchRoom.currentGamePhase = GAMEPHASE.ResetStep;
+                                    cMatchRoom.currentPlayerAGamePhase = GAMEPHASE.ResetStep;
+                                    cMatchRoom.currentPlayerBGamePhase = GAMEPHASE.ResetStep;
+
+                                    GamePhaseSync(playerA, playerB, cMatchRoom, result.EndOfMessage, playerRequest);
                                     break;
                                 case "cancelMatch":
                                     if (playerConnections.ContainsKey(playerA.ToString()) &&
@@ -890,7 +849,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Exception: {ex.Message}");
+            Console.WriteLine($"Exception: " + ex);
 
             int m = MatchRoom.FindPlayerMatchRoom(_MatchRooms, playerRequest.playerID);
             /*
@@ -969,28 +928,27 @@ async Task GamePhaseEndStepAsync()
 {
 }
 
-    async Task GamePhaseDrawAsync(int playerid, int oponnentid, List<Card> PlayerHand, Boolean result)
+    async Task GamePhaseDrawAsync(int playerid, int oponnentid, List<Card> PlayerHand, Boolean result, MatchRoom mr)
 {
     Draw newDraw = new Draw();
-    newDraw.playerID = playerid;
+    newDraw.playerID = mr.currentPlayerTurn;
     newDraw.zone = "Deck";
 
     RequestData ReturnData = new RequestData { type = "GamePhase", description = "DrawPhase", requestObject = "" };
 
     newDraw.cardList = new List<Card>() { PlayerHand[PlayerHand.Count - 1] };
     ReturnData.requestObject = JsonSerializer.Serialize(newDraw);
-    await playerConnections[playerid.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
+    await playerConnections[newDraw.playerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
     newDraw.cardList = new List<Card>() { new Card() };
+
     ReturnData.requestObject = JsonSerializer.Serialize(newDraw);
-    await playerConnections[oponnentid.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
-
-
+    await playerConnections[GetOtherPlayer(mr, newDraw.playerID).ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
 }
 
-async Task GamePhaseCheerStepAsync(int playerid, int oponnentid, List<Card> ExtraDeck, List<Card> PlayerHand, Boolean result) {
+async Task GamePhaseCheerStepAsync(int playerid, int oponnentid, List<Card> ExtraDeck, List<Card> PlayerHand, Boolean result, MatchRoom mr) {
 
     Draw cardCheerDraw = new Draw();
-    cardCheerDraw.playerID = playerid;
+    cardCheerDraw.playerID = mr.currentPlayerTurn;
     cardCheerDraw.zone = "CardCheer";
 
     RequestData ReturnData = new RequestData { type = "GamePhase", description = "CheerStep", requestObject = "" };
@@ -999,11 +957,11 @@ async Task GamePhaseCheerStepAsync(int playerid, int oponnentid, List<Card> Extr
     cardCheerDraw.cardList = new List<Card>() { PlayerHand[PlayerHand.Count - 1] };
     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw);
 
-    await playerConnections[playerid.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
+    await playerConnections[cardCheerDraw.playerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
     cardCheerDraw.cardList = new List<Card>() { new Card() };
 
     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw);
-    await playerConnections[oponnentid.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
+    await playerConnections[GetOtherPlayer(mr, cardCheerDraw.playerID).ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
 }
 
 bool ValidatePlayerRequest(PlayerRequest playerRequest)
@@ -1071,9 +1029,9 @@ bool ValidatePlayerRequest(PlayerRequest playerRequest)
 
         await socketB.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(opponentResponse))), WebSocketMessageType.Text, true, CancellationToken.None);
 
-        // Debugging
-        Debug.WriteLine(playerResponse.requestObject);
-        Debug.WriteLine(opponentResponse.requestObject);
+        // Consoleging
+        Console.WriteLine(playerResponse.requestObject);
+        Console.WriteLine(opponentResponse.requestObject);
 
         // Increment game high for the player
         if (isFirstPlayer)
@@ -1086,8 +1044,34 @@ bool ValidatePlayerRequest(PlayerRequest playerRequest)
         }
 
     }
-
 }
+
+async Task GamePhaseSync(int playerid, int oponnentid, MatchRoom matchroom, Boolean result , PlayerRequest r)
+{
+
+
+    if (int.Parse(r.playerID) == playerid)
+        matchroom.currentPlayerAGamePhase = GAMEPHASE.DrawStep;
+
+    if (int.Parse(r.playerID) == oponnentid)
+        matchroom.currentPlayerBGamePhase = GAMEPHASE.DrawStep;
+
+    if (matchroom.currentPlayerBGamePhase != matchroom.currentPlayerAGamePhase)
+        return;
+
+    matchroom.currentGameHigh++;
+
+    matchroom.playerAGameHigh = matchroom.currentGameHigh;
+    matchroom.playerBGameHigh = matchroom.currentGameHigh;
+
+    matchroom.currentGamePhase = GAMEPHASE.DrawStep;
+
+    RequestData ReturnData = new RequestData { type = "Sync", description = matchroom.currentGamePhase.GetDisplayName(), requestObject = "" };
+    await playerConnections[playerid.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
+    await playerConnections[oponnentid.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
+}
+
+
 static bool HaveSameObjectCounts(List<Card> playedthisturn, List<Card> hand)
 {
     // Create a copy of the hand to safely modify it
@@ -1133,7 +1117,7 @@ bool FirstGameBoardSetup(DuelFieldData _duelFieldData, int playerid, MatchRoom m
     //checking if there is card in the Stage
     if (playerStage == null)
     {
-        Debug.WriteLine("Invalid play, no card at stage: " + playerid + matchroom.currentGameHigh);
+        Console.WriteLine("Invalid play, no card at stage: " + playerid + matchroom.currentGameHigh);
         return false;
     }
 
@@ -1141,14 +1125,14 @@ bool FirstGameBoardSetup(DuelFieldData _duelFieldData, int playerid, MatchRoom m
     List<Record> cardlist = FileReader.QueryRecordsByNameAndBloom(new List<Card>() { playerStage }, "Debut");
     if (cardlist.Count == 0)
     {
-        Debug.WriteLine("Invalid play, no card suitable at stage: " + playerid + matchroom.currentGameHigh);
+        Console.WriteLine("Invalid play, no card suitable at stage: " + playerid + matchroom.currentGameHigh);
         return false;
     }
     List<Card> cardsPlayedThisTurn = new() { playerStage };
     //check if backposition is in the maximum limite
     if (playerBackStage.Count > 5)
     {
-        Debug.WriteLine("Invalid play, more cards at the back stage than what it should: " + playerid + matchroom.currentGameHigh);
+        Console.WriteLine("Invalid play, more cards at the back stage than what it should: " + playerid + matchroom.currentGameHigh);
         return false;
     }
 
@@ -1163,7 +1147,7 @@ bool FirstGameBoardSetup(DuelFieldData _duelFieldData, int playerid, MatchRoom m
         }
         if (n != playerBackStage.Count)
         {
-            Debug.WriteLine("Invalid play, there card in the backstage that shouldnt: " + playerid + matchroom.currentGameHigh);
+            Console.WriteLine("Invalid play, there card in the backstage that shouldnt: " + playerid + matchroom.currentGameHigh);
             return false;
         }
     }
@@ -1175,13 +1159,13 @@ bool FirstGameBoardSetup(DuelFieldData _duelFieldData, int playerid, MatchRoom m
     if (matchroom.firstPlayer == playerid) { 
         if (!(HaveSameObjectCounts(cardsPlayedThisTurn, matchroom.playerAHand)))
         {
-            Debug.WriteLine("Invalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
+            Console.WriteLine("Invalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
             return false;
         }
     } else {
         if (!(HaveSameObjectCounts(cardsPlayedThisTurn, matchroom.playerBHand)))
         {
-            Debug.WriteLine("Invalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
+            Console.WriteLine("Invalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
             return false;
         }
     }
