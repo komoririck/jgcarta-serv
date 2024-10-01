@@ -7,24 +7,28 @@
       "RelativeMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|c:\\users\\pc\\hololive-oficial-cardgame-server\\matchroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|solutionrelative:matchroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|c:\\users\\pc\\hololive-oficial-cardgame-server\\duelaction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|solutionrelative:duelaction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|c:\\users\\pc\\hololive-oficial-cardgame-server\\dbconnection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|solutionrelative:dbconnection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|c:\\users\\pc\\hololive-oficial-cardgame-server\\matchroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|solutionrelative:matchroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|c:\\users\\pc\\hololive-oficial-cardgame-server\\duelfielddata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|solutionrelative:duelfielddata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|c:\\users\\pc\\hololive-oficial-cardgame-server\\filereader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|solutionrelative:filereader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|c:\\users\\pc\\hololive-oficial-cardgame-server\\card.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|solutionrelative:card.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|c:\\users\\pc\\hololive-oficial-cardgame-server\\filereader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1EBF4AC1-5D85-44C3-B0EE-410285796A66}|hololive-oficial-cardgame-server.csproj|solutionrelative:filereader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -34,30 +38,17 @@
       "DocumentGroups": [
         {
           "DockedHeight": 324,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "DBConnection.cs",
-              "DocumentMoniker": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\DBConnection.cs",
-              "RelativeDocumentMoniker": "DBConnection.cs",
-              "ToolTip": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\DBConnection.cs",
-              "RelativeToolTip": "DBConnection.cs",
-              "ViewState": "AgIAAKIEAAAAAAAAAAAkwL4EAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-09-25T21:44:23.386Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "MatchRoom.cs",
               "DocumentMoniker": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\MatchRoom.cs",
               "RelativeDocumentMoniker": "MatchRoom.cs",
               "ToolTip": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\MatchRoom.cs",
               "RelativeToolTip": "MatchRoom.cs",
-              "ViewState": "AgIAAGEAAAAAAAAAAAAUwH8AAAAOAAAAAAAAAA==",
+              "ViewState": "AgIAAF8AAAAAAAAAAADwv4QAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-24T22:49:49.529Z",
               "EditorCaption": ""
@@ -70,33 +61,33 @@
               "RelativeDocumentMoniker": "Card.cs",
               "ToolTip": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\Card.cs",
               "RelativeToolTip": "Card.cs",
-              "ViewState": "AgIAAFgAAAAAAAAAAAAwwEcAAAAjAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwBQAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-24T21:45:47.628Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "FileReader.cs",
               "DocumentMoniker": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\FileReader.cs",
               "RelativeDocumentMoniker": "FileReader.cs",
               "ToolTip": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\FileReader.cs",
               "RelativeToolTip": "FileReader.cs",
-              "ViewState": "AgIAAAsAAAAAAAAAAAA9wBEAAAArAAAAAAAAAA==",
+              "ViewState": "AgIAAEMAAAAAAAAAAAAqwFsAAAB/AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-24T21:44:29.693Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "DuelFieldData.cs",
               "DocumentMoniker": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\DuelFieldData.cs",
               "RelativeDocumentMoniker": "DuelFieldData.cs",
               "ToolTip": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\DuelFieldData.cs",
               "RelativeToolTip": "DuelFieldData.cs",
-              "ViewState": "AgIAABQAAAAAAAAAAAAswAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-24T21:44:29.063Z",
               "EditorCaption": ""
@@ -109,9 +100,35 @@
               "RelativeDocumentMoniker": "Program.cs",
               "ToolTip": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\Program.cs",
               "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAHECAAAAAAAAAAAAAEcCAAA/AAAAAAAAAA==",
+              "ViewState": "AgIAAB4EAAAAAAAAAAAgwDUEAABAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-24T17:30:44.931Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DBConnection.cs",
+              "DocumentMoniker": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\DBConnection.cs",
+              "RelativeDocumentMoniker": "DBConnection.cs",
+              "ToolTip": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\DBConnection.cs",
+              "RelativeToolTip": "DBConnection.cs",
+              "ViewState": "AgIAAGwBAAAAAAAAAAAwwMMEAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-09-25T21:44:23.386Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DuelAction.cs",
+              "DocumentMoniker": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\DuelAction.cs",
+              "RelativeDocumentMoniker": "DuelAction.cs",
+              "ToolTip": "C:\\Users\\PC\\hololive-oficial-cardgame-server\\DuelAction.cs",
+              "RelativeToolTip": "DuelAction.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAQwBIAAABPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-09-27T00:28:27.063Z",
               "EditorCaption": ""
             }
           ]

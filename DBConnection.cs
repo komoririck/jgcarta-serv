@@ -66,7 +66,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         // Rollback transaction in case of error
                         transaction.Rollback();
                         return null;
@@ -132,7 +132,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -185,7 +185,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -219,7 +219,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -253,7 +253,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -313,7 +313,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -372,7 +372,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -403,7 +403,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -531,7 +531,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -643,7 +643,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -715,7 +715,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -746,7 +746,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -875,7 +875,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -906,7 +906,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -939,7 +939,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -972,7 +972,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -1060,7 +1060,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -1145,7 +1145,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -1181,7 +1181,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                     }
                     return false;
@@ -1252,7 +1252,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                     }
                     return null;
@@ -1294,7 +1294,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }

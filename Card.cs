@@ -18,6 +18,10 @@ public class Card
     public string playedFrom { get; set; } = "";
 
     public string cardPosition { get; set; } = "";
+    [JsonIgnore]
+    public bool playedThisTurn { get; set; } = true;
+    [JsonIgnore]
+    public bool suspended { get; set; } = false;
 
     [JsonIgnore]
     public string name { get; set; }
@@ -60,6 +64,8 @@ public class Card
 
     [JsonIgnore]
     public List<Card> attachedEnergy { get; set; } = new List<Card>();
+    [JsonIgnore]
+    public List<Card> bloomChild { get; set; } = new List<Card>();
 
     public void GetCardInfo(string cardNumber)
     {

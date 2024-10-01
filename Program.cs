@@ -1,9 +1,15 @@
 ﻿using hololive_oficial_cardgame_server;
 using Microsoft.OpenApi.Extensions;
+using MySqlX.XDevAPI.Common;
+using Org.BouncyCastle.Utilities.IO;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Net.WebSockets;
+using System.Security.Policy;
 using System.Text;
 using System.Text.Json;
+using ZstdSharp.Unsafe;
 using static hololive_oficial_cardgame_server.MatchRoom;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -100,7 +106,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                     int matchnumber = MatchRoom.FindPlayerMatchRoom(_MatchRooms, playerRequest.playerID);
                     if (_MatchRooms[matchnumber] != null)
                         _MatchRooms.Remove(_MatchRooms[matchnumber]);
-                    Console.WriteLine("Room "+ matchnumber + " closed");
+                    Console.WriteLine("\nRoom "+ matchnumber + " closed");
                 }
                 else
                 {
@@ -215,35 +221,40 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                     playerBBackPosition = new List<Card>(),
                                 };
 
+                                _MatchRooms.Add(_MatchRoom);
+
+                                int PlayersRoomId = FindPlayerMatchRoom(_MatchRooms, playerRequest.playerID);
+                                MatchRoom cMatchRoom = _MatchRooms[PlayersRoomId];
+                                
                                 // SUFFLE ENERGY
-                                _MatchRoom.playerACardCheer = _MatchRoom.ShuffleCards(_MatchRoom.playerACardCheer);
-                                _MatchRoom.playerBCardCheer = _MatchRoom.ShuffleCards(_MatchRoom.playerBCardCheer);
+                                cMatchRoom.playerACardCheer = cMatchRoom.ShuffleCards(cMatchRoom.playerACardCheer);
+                                cMatchRoom.playerBCardCheer = cMatchRoom.ShuffleCards(cMatchRoom.playerBCardCheer);
                                 //SUFFLE DECK
-                                _MatchRoom.playerADeck = _MatchRoom.ShuffleCards(_MatchRoom.playerADeck);
-                                _MatchRoom.playerBDeck = _MatchRoom.ShuffleCards(_MatchRoom.playerBDeck);
+                                cMatchRoom.playerADeck = cMatchRoom.ShuffleCards(cMatchRoom.playerADeck);
+                                cMatchRoom.playerBDeck = cMatchRoom.ShuffleCards(cMatchRoom.playerBDeck);
 
                                 _DuelFieldDataA = new DuelFieldData
                                 {
                                     playerAHand = new List<Card>(),
                                     playerAArquive = new List<Card>(),
-                                    playerADeck = _MatchRoom.FillCardListWithEmptyCards(decksinfo[0]),
+                                    playerADeck = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerADeck),
                                     playerAHoloPower = new List<Card>(),
                                     playerABackPosition = new List<Card>(),
-                                    playerAFavourite = decksinfo[2][0],
+                                    playerAFavourite = cMatchRoom.playerAFavourite,
                                     playerAStage = new Card(),
                                     playerACollaboration = new Card(),
-                                    playerACardCheer = _MatchRoom.FillCardListWithEmptyCards(decksinfo[1]),
+                                    playerACardCheer = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerACardCheer),
                                     playerALife = new List<Card>(),
 
                                     playerBHand = new List<Card>(),
                                     playerBArquive = new List<Card>(),
-                                    playerBDeck = _MatchRoom.FillCardListWithEmptyCards(decksinfo[3]),
+                                    playerBDeck = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBDeck),
                                     playerBHoloPower = new List<Card>(),
                                     playerBBackPosition = new List<Card>(),
                                     playerBFavourite = new Card(),
                                     playerBStage = new Card(),
                                     playerBCollaboration = new Card(),
-                                    playerBCardCheer = _MatchRoom.FillCardListWithEmptyCards(decksinfo[4]),
+                                    playerBCardCheer = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBCardCheer),
                                     playerBLife = new List<Card>(),
 
                                     currentTurn = 0,
@@ -259,24 +270,24 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                 {
                                     playerAHand = new List<Card>(),
                                     playerAArquive = new List<Card>(),
-                                    playerADeck = _MatchRoom.FillCardListWithEmptyCards(decksinfo[0]),
+                                    playerADeck = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerADeck),
                                     playerAHoloPower = new List<Card>(),
                                     playerABackPosition = new List<Card>(),
                                     playerAFavourite = new Card(),
                                     playerAStage = new Card(),
                                     playerACollaboration = new Card(),
-                                    playerACardCheer = _MatchRoom.FillCardListWithEmptyCards(decksinfo[1]),
+                                    playerACardCheer = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerACardCheer),
                                     playerALife = new List<Card>(),
 
                                     playerBHand = new List<Card>(),
                                     playerBArquive = new List<Card>(),
-                                    playerBDeck = _MatchRoom.FillCardListWithEmptyCards(decksinfo[3]),
+                                    playerBDeck = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBDeck),
                                     playerBHoloPower = new List<Card>(),
                                     playerBBackPosition = new List<Card>(),
                                     playerBFavourite = decksinfo[5][0],
                                     playerBStage = new Card(),
                                     playerBCollaboration = new Card(),
-                                    playerBCardCheer = _MatchRoom.FillCardListWithEmptyCards(decksinfo[4]),
+                                    playerBCardCheer = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBCardCheer),
                                     playerBLife = new List<Card>(),
 
                                     currentTurn = 0,
@@ -297,59 +308,58 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                 await playerConnections[pList[1].PlayerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
 
-                                _MatchRoom.currentGameHigh = 1;
+                                cMatchRoom.currentGameHigh = 1;
                                 //END OF LOADING GAME SCENE
 
 
                                 //GET PLAYERS STARTER HAND
-                                getCardFromDeck(_MatchRoom.playerADeck, _MatchRoom.playerAHand, 7);
-                                getCardFromDeck(_MatchRoom.playerBDeck, _MatchRoom.playerBHand, 7);
+                                getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 7);
+                                getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 7);
 
 
                                 //BEGIN - SEND FIRST PLAYER STARTER HAND 
                                 draw = new Draw()
                                 {
-                                    playerID = _MatchRoom.startPlayer,
+                                    playerID = cMatchRoom.startPlayer,
                                     suffle = false,
                                     zone = "Deck",
-                                    cardList = _MatchRoom.playerAHand
+                                    cardList = cMatchRoom.playerAHand
                                 };
                                 pReturnData = new RequestData { type = "duelUpdate", description = "InitialDraw", requestObject = JsonSerializer.Serialize(draw) };
                                 Console.WriteLine(pReturnData.requestObject);
-                                await playerConnections[_MatchRoom.startPlayer.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                await playerConnections[cMatchRoom.startPlayer.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
-                                draw.cardList = _MatchRoom.FillCardListWithEmptyCards(_MatchRoom.playerAHand);
+                                draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerAHand);
                                 pReturnData = new RequestData { type = "duelUpdate", description = "InitialDraw", requestObject = JsonSerializer.Serialize(draw) };
                                 Console.WriteLine(pReturnData.requestObject);
-                                await playerConnections[GetOtherPlayer(_MatchRoom, _MatchRoom.startPlayer).ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                await playerConnections[GetOtherPlayer(cMatchRoom, cMatchRoom.startPlayer).ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
-                                _MatchRoom.currentGameHigh = 2;
+                                cMatchRoom.currentGameHigh = 2;
 
                                 //P2 START HAND
                                 draw = new Draw()
                                 {
-                                    playerID = GetOtherPlayer(_MatchRoom, _MatchRoom.startPlayer),
+                                    playerID = GetOtherPlayer(cMatchRoom, cMatchRoom.startPlayer),
                                     suffle = false,
                                     zone = "Deck",
-                                    cardList = _MatchRoom.playerBHand
+                                    cardList = cMatchRoom.playerBHand
                                 };
 
                                 pReturnData = new RequestData { type = "duelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw) };
                                 Console.WriteLine(pReturnData.requestObject);
-                                await playerConnections[_MatchRoom.playerB.PlayerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                await playerConnections[cMatchRoom.playerB.PlayerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
-                                draw.cardList = _MatchRoom.FillCardListWithEmptyCards(_MatchRoom.playerBHand);
+                                draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBHand);
                                 pReturnData = new RequestData { type = "duelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw) };
                                 Console.WriteLine(pReturnData.requestObject);
-                                await playerConnections[_MatchRoom.playerA.PlayerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                await playerConnections[cMatchRoom.playerA.PlayerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
-                                _MatchRoom.currentGameHigh = 3;
+                                cMatchRoom.currentGameHigh = 3;
 
-                                _MatchRoom.playerAGameHigh = _MatchRoom.currentGameHigh;
-                                _MatchRoom.playerBGameHigh = _MatchRoom.currentGameHigh;
+                                cMatchRoom.playerAGameHigh = cMatchRoom.currentGameHigh;
+                                cMatchRoom.playerBGameHigh = cMatchRoom.currentGameHigh;
                                 //END - SEND FIRST PLAYER STARTER HAND 
 
-                                _MatchRooms.Add(_MatchRoom);
 
                                 break;
                             default://gambiarra para pendurar a websocket
@@ -482,13 +492,20 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                     //preparing data to send to players
 
                                     //PA
+                                    /*
                                     int oshiLifeNumberPA = 0;
-                                    cMatchRoom.playerAOshi.GetCardInfo(cMatchRoom.playerAOshi.cardNumber);
                                     List<Card> addLifeToMatchPA = new List<Card>();
                                     int oshiLifeNumberPB = 0;
-                                    cMatchRoom.playerBOshi.GetCardInfo(cMatchRoom.playerBOshi.cardNumber);
                                     List<Card> addLifeToMatchPB = new List<Card>();
+                                    */
 
+                                    cMatchRoom.playerAOshi.GetCardInfo(cMatchRoom.playerAOshi.cardNumber);
+                                    cMatchRoom.playerBOshi.GetCardInfo(cMatchRoom.playerBOshi.cardNumber);
+                                    getCardFromDeck(cMatchRoom.playerACardCheer, cMatchRoom.playerALife, int.Parse(cMatchRoom.playerAOshi.life));
+                                    getCardFromDeck(cMatchRoom.playerBCardCheer, cMatchRoom.playerBLife, int.Parse(cMatchRoom.playerBOshi.life));
+
+
+                                    /*
                                     foreach (Record r in CardList)
                                     {
                                         if (r.CardNumber.Equals(cMatchRoom.playerAOshi.cardNumber))
@@ -512,7 +529,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                     for (int n = 0; n < oshiLifeNumberPB; n++)
                                     {
                                         addLifeToMatchPB.Add(new Card());
-                                    }
+                                    }*/
 
                                     //place the life counter acording to the oshiiiiii
                                     _DuelFieldDataA = new DuelFieldData
@@ -526,7 +543,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                         playerAStage = cMatchRoom.playerAStage,
                                         playerACollaboration = new Card(),
                                         playerACardCheer = new List<Card>(),
-                                        playerALife = cMatchRoom.FillCardListWithEmptyCards(addLifeToMatchPA),
+                                        playerALife = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerALife),
 
                                         playerBHand = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBHand),
                                         playerBArquive = new List<Card>(),
@@ -537,7 +554,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                         playerBStage = cMatchRoom.playerBStage,
                                         playerBCollaboration = new Card(),
                                         playerBCardCheer = new List<Card>(),
-                                        playerBLife = cMatchRoom.FillCardListWithEmptyCards(addLifeToMatchPB),
+                                        playerBLife = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBLife),
                                         firstPlayer = playerA,
                                         secondPlayer = playerB
                                     };
@@ -553,7 +570,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                         playerAStage = cMatchRoom.playerAStage,
                                         playerACollaboration = new Card(),
                                         playerACardCheer = new List<Card>(),
-                                        playerALife = cMatchRoom.FillCardListWithEmptyCards(addLifeToMatchPA),
+                                        playerALife = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerALife),
 
                                         playerBHand = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBHand),
                                         playerBArquive = new List<Card>(),
@@ -564,7 +581,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                         playerBStage = cMatchRoom.playerBStage,
                                         playerBCollaboration = new Card(),
                                         playerBCardCheer = new List<Card>(),
-                                        playerBLife = cMatchRoom.FillCardListWithEmptyCards(addLifeToMatchPB),
+                                        playerBLife = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBLife),
                                         firstPlayer = playerA,
                                         secondPlayer = playerB
 
@@ -598,7 +615,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
 
                                     if (cMatchRoom.currentGamePhase != GAMEPHASE.DrawStep)
                                     {
-                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        Console.WriteLine("\ncurrent game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
                                         break;
                                     }
 
@@ -668,7 +685,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
 
                                     if (cMatchRoom.currentGamePhase != GAMEPHASE.CheerStepChoose)
                                     {
-                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        Console.WriteLine("\ncurrent game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
                                         break;
                                     }
                                    
@@ -679,7 +696,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                         {
                                             _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
                                         }
-                                        catch (Exception e) { Console.WriteLine("7 pele: " + playerRequest.playerID); }
+                                        catch (Exception e) { Console.WriteLine("\n7 pele: " + playerRequest.playerID); }
                                         bool hasAttached = false;
 
                                         if (cMatchRoom.playerA.PlayerID == int.Parse(playerRequest.playerID))
@@ -709,13 +726,13 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
 
                                     if (cMatchRoom.currentGamePhase != GAMEPHASE.CheerStepChoosed)
                                     {
-                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        Console.WriteLine("\ncurrent game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
                                         break;
                                     }
 
 
                                     _ReturnData = new RequestData { type = "GamePhase", description = "CheerStepEnd", requestObject = JsonSerializer.Serialize(_DuelAction) };
-                                    Console.WriteLine("Envio " + playerRequest.playerID + JsonSerializer.Serialize(_ReturnData));
+                                    Console.WriteLine("\nEnvio " + playerRequest.playerID + JsonSerializer.Serialize(_ReturnData));
 
                                         await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
                                         await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
@@ -729,17 +746,355 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
                                         break;
                                     if (cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
                                     {
-                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        Console.WriteLine("\ncurrent game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
                                         break;
                                     }
 
                                     _ReturnData = new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" };
-                                    Console.WriteLine("Envio " + playerRequest.playerID + JsonSerializer.Serialize(_ReturnData));
+                                    Console.WriteLine("\nEnvio " + playerRequest.playerID + JsonSerializer.Serialize(_ReturnData));
 
                                     await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
                                     await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
                                     break;
                                 case "MainDoActionRequest":
+                                    
+                                    if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
+                                        break;
+                                    
+                                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+                                    _DuelAction.usedCard.GetCardInfo(_DuelAction.usedCard.cardNumber);
+                                    _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
+
+                                    int handPos = -1;
+                                    ////////////////////////////
+                                    //NOTHING BETTER THAN A SALAD 
+                                    ////////////////////////////
+                                    bool infoSend = false;
+
+                                    switch (_DuelAction.actionType) {
+                                        case "PlayHolomem":
+                                            //checking if the card can be played
+
+                                            List<Record> avaliableCards = FileReader.QueryRecords(null, null, null, _DuelAction.usedCard.cardNumber);//  QueryRecordsByNameAndBloom(new List<Card>() { _DuelAction.usedCard }, "ホロメン");
+                                            
+                                            //avaliableCards.AddRange(FileReader.QueryRecordsByNameAndBloom(new List<Card>() { _DuelAction.usedCard }, "Buzzホロメン"));
+
+                                            //if not break
+                                            if (avaliableCards.Count < 1)
+                                                break;
+
+
+                                            bool canContinue = false;
+
+                                            if (avaliableCards[0].CardType.Equals("ホロメン") || avaliableCards[0].CardType.Equals("Buzzホロメン"))
+                                                canContinue = true;
+
+                                            if (!canContinue)
+                                                break;
+
+                                            //checking if the player has the card in the hand and getting the pos
+                                            handPos = -1;
+                                            if (int.Parse(playerRequest.playerID) == playerA)
+                                            {
+                                                int handPosCounter = 0;
+                                                foreach (Card inHand in cMatchRoom.playerAHand) {
+                                                    if (inHand.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
+                                                        handPos = handPosCounter;
+                                                    handPosCounter++;
+                                                }
+                                            }
+                                            else 
+                                            {
+                                                int handPosCounter = 0;
+                                                foreach (Card inHand in cMatchRoom.playerBHand)
+                                                {
+                                                    if (inHand.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
+                                                        handPos = handPosCounter;
+                                                    handPosCounter++;
+                                                }
+                                            }
+                                            if (handPos == -1)
+                                                break;
+
+                                            //checking of the card can be played at the spot
+                                            switch (_DuelAction.local) {
+                                                case "Stage":
+                                                    if (int.Parse(playerRequest.playerID) == playerA) {
+                                                        if (cMatchRoom.playerAStage != null) 
+                                                        {
+                                                            cMatchRoom.playerAStage = _DuelAction.usedCard; 
+                                                            cMatchRoom.playerAStage.cardPosition = _DuelAction.usedCard.cardPosition;
+                                                            cMatchRoom.playerAStage.playedFrom = _DuelAction.usedCard.playedFrom;
+                                                            cMatchRoom.playerAHand.RemoveAt(handPos);
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        if (cMatchRoom.playerBStage != null)
+                                                        {
+                                                            cMatchRoom.playerBStage = _DuelAction.usedCard;
+                                                            cMatchRoom.playerBStage.cardPosition = _DuelAction.usedCard.cardPosition;
+                                                            cMatchRoom.playerBStage.playedFrom = _DuelAction.usedCard.playedFrom;
+                                                            cMatchRoom.playerBHand.RemoveAt(handPos);
+                                                        }
+                                                    }
+                                                break;
+                                                case "BackStage1":
+                                                case "BackStage2":
+                                                case "BackStage3":
+                                                case "BackStage4":
+                                                case "BackStage5":
+                                                    List<Card> actionCardList = new List<Card>();
+                                                    if (int.Parse(playerRequest.playerID) == playerA) {
+                                                        foreach (Card cartinha in cMatchRoom.playerABackPosition)
+                                                        {
+                                                            if (cartinha.cardPosition.Equals(_DuelAction.local))
+                                                                break;
+                                                        }
+
+                                                        _DuelAction.usedCard.cardPosition = _DuelAction.local;
+                                                        _DuelAction.usedCard.playedFrom = _DuelAction.playedFrom;
+
+                                                        cMatchRoom.playerABackPosition.Add(_DuelAction.usedCard);
+                                                        cMatchRoom.playerAHand.RemoveAt(handPos);
+                                                    } else {
+                                                        foreach (Card cartinha in cMatchRoom.playerBBackPosition)
+                                                        {
+                                                            if (cartinha.cardPosition.Equals(_DuelAction.local))
+                                                                break;
+                                                        }
+                                                        _DuelAction.usedCard.cardPosition = _DuelAction.local;
+                                                        _DuelAction.usedCard.playedFrom = _DuelAction.playedFrom;
+
+                                                        cMatchRoom.playerBBackPosition.Add(_DuelAction.usedCard);
+                                                        cMatchRoom.playerBHand.RemoveAt(handPos);
+                                                    }
+                                                break;
+                                            }
+                                            break;
+                                        case "BloomHolomem":
+                                            canContinue = false;
+
+                                            if (!_DuelAction.usedCard.bloomLevel.Equals("Debut") || !_DuelAction.usedCard.bloomLevel.Equals("1st"))
+                                                canContinue = true;
+
+                                            if (!canContinue)
+                                                break;
+
+                                            List<Record> validCardToBloom = FileReader.QueryBloomableCard(_DuelAction.targetCard.name, _DuelAction.targetCard.bloomLevel);
+
+                                            //if not break possible to bloom, break
+                                            if (validCardToBloom.Count < 1)
+                                                break;
+
+                                            //checking if the player has the card in the hand and getting the pos
+                                            handPos = -1;
+                                            if (int.Parse(playerRequest.playerID) == playerA)
+                                            {
+                                                int nn = 0;
+                                                foreach (Card inHand in cMatchRoom.playerAHand)
+                                                {
+                                                    if (inHand.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
+                                                        handPos = nn;
+                                                    nn++;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                int nn = 0;
+                                                foreach (Card inHand in cMatchRoom.playerBHand)
+                                                {
+                                                    if (inHand.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
+                                                        handPos = nn;
+                                                    nn++;
+                                                }
+                                            }
+                                            if (handPos == -1)
+                                                break;
+
+                                            int validCardPos = -1;
+                                            int n = 0;
+                                            foreach (Record record in validCardToBloom)
+                                            {
+                                                if (record.CardNumber.Equals(_DuelAction.usedCard.cardNumber))
+                                                {
+                                                    validCardPos = n;
+                                                }
+                                                n++;
+                                            }
+
+                                            if (validCardPos == -1)
+                                                break;
+
+                                            switch (_DuelAction.local)
+                                            {
+                                                case "Stage":
+                                                    if (int.Parse(playerRequest.playerID) == playerA)
+                                                    {
+                                                            _DuelAction.usedCard.bloomChild.Add(cMatchRoom.playerAStage);
+                                                            _DuelAction.usedCard.attachedEnergy = cMatchRoom.playerAStage.attachedEnergy;
+                                                            cMatchRoom.playerAStage.attachedEnergy = null;
+                                                            cMatchRoom.playerAStage = _DuelAction.usedCard;
+
+                                                            cMatchRoom.playerAHand.RemoveAt(handPos);
+                                                    }
+                                                    else
+                                                    {
+                                                            _DuelAction.usedCard.bloomChild.Add(cMatchRoom.playerBStage);
+                                                            _DuelAction.usedCard.attachedEnergy = cMatchRoom.playerBStage.attachedEnergy;
+                                                            cMatchRoom.playerBStage.attachedEnergy = null;
+                                                            cMatchRoom.playerBStage = _DuelAction.usedCard;
+
+                                                            cMatchRoom.playerBHand.RemoveAt(handPos);
+                                                    }
+                                                break;
+                                                case "Collaboration":
+                                                    if (int.Parse(playerRequest.playerID) == playerA)
+                                                    {
+                                                            _DuelAction.usedCard.bloomChild.Add(cMatchRoom.playerACollaboration);
+                                                            _DuelAction.usedCard.attachedEnergy = cMatchRoom.playerACollaboration.attachedEnergy;
+                                                            cMatchRoom.playerACollaboration.attachedEnergy = null;
+                                                            cMatchRoom.playerACollaboration = _DuelAction.usedCard;
+
+                                                            cMatchRoom.playerAHand.RemoveAt(handPos);
+                                                    }
+                                                    else
+                                                    {
+                                                            _DuelAction.usedCard.bloomChild.Add(cMatchRoom.playerBCollaboration);
+                                                            _DuelAction.usedCard.attachedEnergy = cMatchRoom.playerBCollaboration.attachedEnergy;
+                                                            cMatchRoom.playerBCollaboration.attachedEnergy = null;
+                                                            cMatchRoom.playerBCollaboration = _DuelAction.usedCard;
+
+                                                            cMatchRoom.playerBHand.RemoveAt(handPos);
+                                                    }
+                                                break;
+                                                case "BackStage1":
+                                                case "BackStage2":
+                                                case "BackStage3":
+                                                case "BackStage4":
+                                                case "BackStage5":
+                                                    List<Card> actionCardList = new List<Card>();
+
+                                                    if (int.Parse(playerRequest.playerID) == playerA)
+                                                        actionCardList = cMatchRoom.playerABackPosition;
+                                                    else
+                                                        actionCardList = cMatchRoom.playerBBackPosition;
+
+                                                    int x = 0;
+                                                    int y = 0;
+                                                    foreach (Card cartinha in actionCardList)
+                                                    {
+                                                        if (cartinha.cardPosition.Equals(_DuelAction.local))
+                                                        {
+                                                            if (!cartinha.playedThisTurn)
+                                                                x = y;
+                                                        }
+                                                        y++;
+                                                    }
+
+                                                    _DuelAction.usedCard.bloomChild.Add(actionCardList[x]);
+                                                    _DuelAction.usedCard.attachedEnergy = actionCardList[x].attachedEnergy;
+                                                    actionCardList[x].attachedEnergy = null;
+                                                    actionCardList[x].cardNumber = _DuelAction.usedCard.cardNumber;
+
+                                                    if (int.Parse(playerRequest.playerID) == playerA)
+                                                    {
+                                                        cMatchRoom.playerABackPosition.Add(_DuelAction.usedCard);
+                                                        cMatchRoom.playerAHand.RemoveAt(handPos);
+                                                    }
+                                                    else
+                                                    {
+                                                        cMatchRoom.playerBBackPosition.Add(_DuelAction.usedCard);
+                                                        cMatchRoom.playerBHand.RemoveAt(handPos);
+                                                    }
+                                                    break;
+                                                }
+                                            break;
+                                        case "DoCollab":
+
+                                            if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
+                                                break;
+                                            _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+                                            _DuelAction.usedCard.GetCardInfo(_DuelAction.usedCard.cardNumber);
+                                            _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
+
+                                            if (playerA.Equals(_DuelAction.playerID)) {
+                                                if (cMatchRoom.playerADeck.Count == 0)
+                                                    break;
+                                                if (cMatchRoom.playerACollaboration.cardNumber == "") {
+                                                    int x = 0;
+                                                    foreach (Card c in cMatchRoom.playerABackPosition) {
+                                                        if (c.cardPosition.Equals(_DuelAction.usedCard.cardPosition) && c.cardNumber.Equals(_DuelAction.usedCard.cardNumber) && c.suspended == false)
+                                                        {
+                                                            cMatchRoom.playerAHoloPower.Add(cMatchRoom.playerADeck.Last());
+                                                            cMatchRoom.playerADeck.RemoveAt(cMatchRoom.playerADeck.Count - 1);
+                                                            cMatchRoom.playerACollaboration = _DuelAction.usedCard;
+                                                            cMatchRoom.playerABackPosition.RemoveAt(x);
+                                                            break;
+                                                        }
+                                                        x++;
+                                                    }
+                                                    break;
+                                                }
+                                            } else {
+                                                if (cMatchRoom.playerBDeck.Count == 0)
+                                                    break;
+                                                if (cMatchRoom.playerBCollaboration.cardNumber == "")
+                                                {
+                                                    int x = 0;
+                                                    foreach (Card c in cMatchRoom.playerBBackPosition)
+                                                    {
+                                                        if (c.cardPosition.Equals(_DuelAction.usedCard.cardPosition) && c.cardNumber.Equals(_DuelAction.usedCard.cardNumber) && c.suspended == false)
+                                                        {
+                                                            cMatchRoom.playerBHoloPower.Add(cMatchRoom.playerBDeck.Last());
+                                                            cMatchRoom.playerBDeck.RemoveAt(cMatchRoom.playerBDeck.Count - 1);
+                                                            cMatchRoom.playerBCollaboration = _DuelAction.usedCard;
+                                                            cMatchRoom.playerBBackPosition.RemoveAt(x);
+                                                            break;
+                                                        }
+                                                        x++;
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        case "UseSuportStaffMember":
+                                            if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
+                                                break;
+
+                                            _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+                                            _DuelAction.usedCard.GetCardInfo(_DuelAction.usedCard.cardNumber);
+                                            _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
+
+                                            foreach (Card cPlayed in cMatchRoom.playerALimiteCardPlayed)
+                                                if (cPlayed.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
+                                                    break;
+
+                                            switch (_DuelAction.usedCard.cardNumber)
+                                            {
+                                                case "hSD01-016":
+                                                    infoSend = true;
+                                                    UseCardEffectDrawAsync(cMatchRoom, playerA, playerB, 3, "hSD01-016", true, result.EndOfMessage);
+                                                    break;
+                                                case "XXXXXXXXXX":
+                                                    break;
+                                            }
+                                            break;
+                                        case "next":
+                                            break;
+                                    }
+                                    if (!infoSend) { 
+                                        _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
+                                        _ReturnData = new RequestData { type = "GamePhase", description = _DuelAction.actionType, requestObject = JsonSerializer.Serialize(_DuelAction)};
+
+                                        Console.WriteLine("\nEnvio " + playerRequest.playerID + JsonSerializer.Serialize(_ReturnData));
+                                        await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                        await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+
+                                        cMatchRoom.currentGameHigh++;
+                                    }
+                                    ////////////////////////////
+                                    //NOTHING BETTER THAN A SALAD 
+                                    ////////////////////////////
                                     break;
                                 case "MainPerformanceRequest":
                                     cMatchRoom.currentGamePhase = GAMEPHASE.PerformanceStep;
@@ -760,10 +1115,11 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
 
 
                                     _ReturnData = new RequestData { type = "GamePhase", description = "Endturn", requestObject = "" };
-                                    Console.WriteLine("Envio "+ playerRequest.playerID + JsonSerializer.Serialize(_ReturnData));
+                                    Console.WriteLine("\nEnvio "+ playerRequest.playerID + JsonSerializer.Serialize(_ReturnData));
                                     await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
                                     await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
 
+                                    cMatchRoom.currentGameHigh++;
                                     break;
                                 case "ResetRequest":
                                     if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
@@ -771,19 +1127,168 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
 
                                     if (cMatchRoom.currentGamePhase != GAMEPHASE.ResetStep)
                                     {
-                                        Console.WriteLine("current game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
+                                        Console.WriteLine("\ncurrent game phase: " + cMatchRoom.currentGamePhase.GetDisplayName() + " Player A game phase " + cMatchRoom.currentPlayerAGamePhase.GetDisplayName() + " Player B game phase " + cMatchRoom.currentPlayerBGamePhase.GetDisplayName());
                                         break;
                                     }
 
+
+                                    DuelAction duelAction = new DuelAction();
+
+                                    if (cMatchRoom.currentPlayerTurn.Equals(playerA))
+                                    {
+
+                                        ResetCardTurnStatusForPlayer(cMatchRoom.playerABackPosition, cMatchRoom.playerAStage, cMatchRoom.playerACollaboration);
+                                        if (cMatchRoom.playerACollaboration.cardNumber != "") 
+                                        {
+                                            List<bool> places = new List<bool>() { false, false, false, false, false };
+                                            foreach (Card _card in cMatchRoom.playerABackPosition)
+                                            {
+                                                switch (_card.cardPosition)
+                                                {
+                                                    case "BackStage1":
+                                                        places[0] = true;
+                                                        break;
+                                                    case "BackStage2":
+                                                        places[1] = true;
+                                                        break;
+                                                    case "BackStage3":
+                                                        places[2] = true;
+                                                        break;
+                                                    case "BackStage4":
+                                                        places[3] = true;
+                                                        break;
+                                                    case "BackStage5":
+                                                        places[4] = true;
+                                                        break;
+                                                }
+                                            }
+
+                                            cMatchRoom.playerACollaboration.suspended = true;
+
+                                            if (places[0] == false)
+                                            {
+                                                cMatchRoom.playerACollaboration.cardPosition = "BackStage1";
+                                                cMatchRoom.playerABackPosition.Add(cMatchRoom.playerACollaboration);
+                                            }
+                                            else if (places[1] == false)
+                                            {
+                                                cMatchRoom.playerACollaboration.cardPosition = "BackStage2";
+                                                cMatchRoom.playerABackPosition.Add(cMatchRoom.playerACollaboration);
+                                            }
+                                            else if (places[2] == false)
+                                            {
+                                                cMatchRoom.playerACollaboration.cardPosition = "BackStage3";
+                                                cMatchRoom.playerABackPosition.Add(cMatchRoom.playerACollaboration);
+                                            }
+                                            else if (places[3] == false)
+                                            {
+                                                cMatchRoom.playerACollaboration.cardPosition = "BackStage4";
+                                                cMatchRoom.playerABackPosition.Add(cMatchRoom.playerACollaboration);
+                                            }
+                                            else if (places[4] == false)
+                                            {
+                                                cMatchRoom.playerACollaboration.cardPosition = "BackStage5";
+                                                cMatchRoom.playerABackPosition.Add(cMatchRoom.playerACollaboration);
+                                            }
+
+                                            duelAction = new DuelAction
+                                            {
+                                                playerID = playerA,
+                                                usedCard = cMatchRoom.playerACollaboration,
+                                                playedFrom = "Collaboration",
+                                                local = cMatchRoom.playerACollaboration.playedFrom,
+                                                actionType = "UndoCollab"
+                                            };
+                                            cMatchRoom.playerACollaboration = new Card();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        ResetCardTurnStatusForPlayer(cMatchRoom.playerBBackPosition, cMatchRoom.playerBStage, cMatchRoom.playerBCollaboration);
+                                        if (cMatchRoom.playerBCollaboration.cardNumber != "")
+                                        {
+                                            List<bool> places = new List<bool>() { false, false, false, false, false };
+                                            foreach (Card _card in cMatchRoom.playerBBackPosition)
+                                            {
+                                                switch (_card.cardPosition)
+                                                {
+                                                    case "BackStage1":
+                                                        places[0] = true;
+                                                        break;
+                                                    case "BackStage2":
+                                                        places[1] = true;
+                                                        break;
+                                                    case "BackStage3":
+                                                        places[2] = true;
+                                                        break;
+                                                    case "BackStage4":
+                                                        places[3] = true;
+                                                        break;
+                                                    case "BackStage5":
+                                                        places[4] = true;
+                                                        break;
+                                                }
+                                            }
+
+                                            cMatchRoom.playerBCollaboration.suspended = true;
+
+                                            if (places[0] == false)
+                                            {
+                                                cMatchRoom.playerBCollaboration.cardPosition = "BackStage1";
+                                                cMatchRoom.playerBBackPosition.Add(cMatchRoom.playerBCollaboration);
+                                            }
+                                            else if (places[1] == false)
+                                            {
+                                                cMatchRoom.playerBCollaboration.cardPosition = "BackStage2";
+                                                cMatchRoom.playerBBackPosition.Add(cMatchRoom.playerBCollaboration);
+                                            }
+                                            else if (places[2] == false)
+                                            {
+                                                cMatchRoom.playerBCollaboration.cardPosition = "BackStage3";
+                                                cMatchRoom.playerBBackPosition.Add(cMatchRoom.playerBCollaboration);
+                                            }
+                                            else if (places[3] == false)
+                                            {
+                                                cMatchRoom.playerBCollaboration.cardPosition = "BackStage4";
+                                                cMatchRoom.playerBBackPosition.Add(cMatchRoom.playerBCollaboration);
+                                            }
+                                            else if (places[4] == false)
+                                            {
+                                                cMatchRoom.playerBCollaboration.cardPosition = "BackStage5";
+                                                cMatchRoom.playerBBackPosition.Add(cMatchRoom.playerBCollaboration);
+                                            }
+
+                                            duelAction = new DuelAction
+                                            {
+                                                playerID = playerA,
+                                                usedCard = cMatchRoom.playerBCollaboration,
+                                                playedFrom = "Collaboration",
+                                                local = cMatchRoom.playerBCollaboration.playedFrom,
+                                                actionType = "ReturnCollab"
+                                            };
+                                            cMatchRoom.playerACollaboration = new Card();
+                                        }
+                                    }
+
+                                     cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
+
+                                    _ReturnData = new RequestData { type = "GamePhase", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction) };
+
+                                    //_ReturnDataDummy = new RequestData { type = "GamePhase", description = _DuelAction.actionType, requestObject = "" };
+                                    Console.WriteLine("\nEnvio " + playerRequest.playerID + JsonSerializer.Serialize(_ReturnData));
+                                    //Console.WriteLine("\nEnvio " + playerRequest.playerID + JsonSerializer.Serialize(_ReturnDataDummy));
+                                    if (int.Parse(playerRequest.playerID) == playerA)
+                                    {
+                                        await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                        await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                    }
+                                    else
+                                    {
+                                        await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+                                        await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
+
+                                    }
                                     cMatchRoom.currentGameHigh++;
-
-                                    cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
-
-                                    _ReturnData = new RequestData { type = "GamePhase", description = "ResetStep", requestObject = "ResetStep" };
-                                    Console.WriteLine("Envio " + playerRequest.playerID + JsonSerializer.Serialize(_ReturnData));
-                                    await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-                                    await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(_ReturnData))), WebSocketMessageType.Text, result.EndOfMessage, CancellationToken.None);
-
                                     break;
                                 case "cancelMatch":
                                     break;
@@ -817,7 +1322,7 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
             /*
             if (m < 0 || m >= _MatchRooms.Count)
             {
-                Console.WriteLine("Error: Match room index out of range.");
+                Console.WriteLine("\nError: Match room index out of range.");
                 RequestData errorData = new() { type = "error", description = "Invalid match room index." };
                 //Alert player that the room dont exist
                 //await webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(errorData))), WebSocketMessageType.Text, true, CancellationToken.None);
@@ -847,7 +1352,57 @@ async Task HandleWebSocketAsync(HttpContext context, ConcurrentDictionary<string
     }
 }
 
-bool GamePhaseCheerChoosedAsync(DuelAction duelAction, MatchRoom matchRoom, Card stage, Card collab, List<Card> backStage) 
+async Task UseCardEffectDrawAsync(MatchRoom cMatchRoom, int playerA, int playerB, int cNum, string cUsedNumber, bool LimiteUseCard, Boolean result)
+{
+    Draw _Draw = new Draw()
+    {
+        playerID = cMatchRoom.currentPlayerTurn,
+        suffle = false,
+        zone = "Deck",
+        cardList = (cMatchRoom.currentPlayerTurn == playerA) ? cMatchRoom.playerAHand.GetRange(cMatchRoom.playerAHand.Count() - cNum, cNum) : cMatchRoom.playerBHand.GetRange(cMatchRoom.playerBHand.Count() - cNum, cNum)
+    };
+
+    DuelAction DuelActionResponse = new DuelAction()
+    {
+        playerID = cMatchRoom.currentPlayerTurn,
+        actionType = "doDraw"
+    };
+
+
+    if (playerA == cMatchRoom.currentPlayerTurn)
+    {
+        DuelActionResponse.actionObject = JsonSerializer.Serialize(_Draw.cardList = cMatchRoom.FillCardListWithEmptyCards(_Draw.cardList));
+        await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(DuelActionResponse))), WebSocketMessageType.Text, result, CancellationToken.None);
+        DuelActionResponse.actionObject = JsonSerializer.Serialize(_Draw);
+        await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(DuelActionResponse))), WebSocketMessageType.Text, result, CancellationToken.None);
+        if (LimiteUseCard)
+            cMatchRoom.playerALimiteCardPlayed.Add(new Card() { cardNumber = cUsedNumber });
+    }
+    else
+    {
+        DuelActionResponse.actionObject = JsonSerializer.Serialize(_Draw.cardList = cMatchRoom.FillCardListWithEmptyCards(_Draw.cardList));
+        await playerConnections[playerA.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(DuelActionResponse))), WebSocketMessageType.Text, result, CancellationToken.None);
+        DuelActionResponse.actionObject = JsonSerializer.Serialize(_Draw);
+        await playerConnections[playerB.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(DuelActionResponse))), WebSocketMessageType.Text, result, CancellationToken.None);
+        if (LimiteUseCard)
+            cMatchRoom.playerBLimiteCardPlayed.Add(new Card() { cardNumber = cUsedNumber });
+    }
+}
+void ResetCardTurnStatusForPlayer(List<Card> backstg, Card stage, Card collab)
+{
+    foreach (Card eachCard in backstg) {
+        eachCard.playedThisTurn = false;
+        if (eachCard.suspended)
+            eachCard.suspended = false;
+    }
+    stage.playedThisTurn = false;
+    if (stage.suspended)
+        stage.suspended = false;
+    collab.playedThisTurn = false;
+    if (collab.suspended)
+        collab.suspended = false;
+}
+    bool GamePhaseCheerChoosedAsync(DuelAction duelAction, MatchRoom matchRoom, Card stage, Card collab, List<Card> backStage) 
 {
     if (duelAction.usedCard == null)
         return false;
@@ -867,23 +1422,32 @@ bool GamePhaseCheerChoosedAsync(DuelAction duelAction, MatchRoom matchRoom, Card
         if (duelAction.targetCard.cardNumber.Equals(stage.cardNumber) && duelAction.local.Equals("Stage"))
         {
             stage.attachedEnergy.Add(duelAction.usedCard);
-            hasAttached = true;
+            return hasAttached = true;
         }
         if (duelAction.targetCard.cardNumber.Equals(collab.cardNumber) && duelAction.local.Equals("Collaboration"))
         {
             collab.attachedEnergy.Add(duelAction.usedCard);
-            hasAttached = true;
+            return hasAttached = true;
         }
-        foreach (Card c in backStage)
-        {
-            if (c.cardNumber.Equals(duelAction.targetCard.cardNumber) && !duelAction.local.Equals("BackStage"))
+        int n = 0;
+        for (int y = 0; y < backStage.Count; y++) {
+            for (int z = 1; z < 6; z++)
             {
-                c.attachedEnergy.Add(duelAction.usedCard);
-                hasAttached = true;
+                if (backStage[y].cardPosition.Equals("BackStage" + z))
+                {
+                    n = y;
+                    break;
+
+                }
             }
         }
+        if (duelAction.targetCard.cardNumber.Equals(backStage[n].cardNumber))
+        {
+            backStage[n].attachedEnergy.Add(duelAction.usedCard);
+            return hasAttached = true;
+        }
     }
-    return hasAttached;
+    return false;
 }
 
 async Task GamePhaseDrawAsync(int playerid, List<Card> PlayerHand, Boolean result, MatchRoom mr)
@@ -897,13 +1461,13 @@ async Task GamePhaseDrawAsync(int playerid, List<Card> PlayerHand, Boolean resul
     newDraw.cardList = new List<Card>() { PlayerHand[PlayerHand.Count - 1] };
     ReturnData.requestObject = JsonSerializer.Serialize(newDraw);
 
-    Console.WriteLine("Envio " + newDraw.playerID + JsonSerializer.Serialize(ReturnData));
+    Console.WriteLine("\nEnvio " + newDraw.playerID + JsonSerializer.Serialize(ReturnData));
 
     await playerConnections[newDraw.playerID.ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
 
     newDraw.cardList = new List<Card>() { new Card() };
     ReturnData.requestObject = JsonSerializer.Serialize(newDraw);
-    Console.WriteLine("Envio " + GetOtherPlayer(mr, newDraw.playerID) + JsonSerializer.Serialize(ReturnData));
+    Console.WriteLine("\nEnvio " + GetOtherPlayer(mr, newDraw.playerID) + JsonSerializer.Serialize(ReturnData));
     await playerConnections[GetOtherPlayer(mr, newDraw.playerID).ToString()].SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ReturnData))), WebSocketMessageType.Text, result, CancellationToken.None);
 }
 
@@ -1034,7 +1598,7 @@ bool FirstGameBoardSetup(DuelFieldData _duelFieldData, int playerid, MatchRoom m
     //checking if there is card in the Stage
     if (playerStage == null)
     {
-        Console.WriteLine("Invalid play, no card at stage: " + playerid + matchroom.currentGameHigh);
+        Console.WriteLine("\nInvalid play, no card at stage: " + playerid + matchroom.currentGameHigh);
         return false;
     }
 
@@ -1042,14 +1606,14 @@ bool FirstGameBoardSetup(DuelFieldData _duelFieldData, int playerid, MatchRoom m
     List<Record> cardlist = FileReader.QueryRecordsByNameAndBloom(new List<Card>() { playerStage }, "Debut");
     if (cardlist.Count == 0)
     {
-        Console.WriteLine("Invalid play, no card suitable at stage: " + playerid + matchroom.currentGameHigh);
+        Console.WriteLine("\nInvalid play, no card suitable at stage: " + playerid + matchroom.currentGameHigh);
         return false;
     }
     List<Card> cardsPlayedThisTurn = new() { playerStage };
     //check if backposition is in the maximum limite
     if (playerBackStage.Count > 5)
     {
-        Console.WriteLine("Invalid play, more cards at the back stage than what it should: " + playerid + matchroom.currentGameHigh);
+        Console.WriteLine("\nInvalid play, more cards at the back stage than what it should: " + playerid + matchroom.currentGameHigh);
         return false;
     }
 
@@ -1064,7 +1628,7 @@ bool FirstGameBoardSetup(DuelFieldData _duelFieldData, int playerid, MatchRoom m
         }
         if (n != playerBackStage.Count)
         {
-            Console.WriteLine("Invalid play, there card in the backstage that shouldnt: " + playerid + matchroom.currentGameHigh);
+            Console.WriteLine("\nInvalid play, there card in the backstage that shouldnt: " + playerid + matchroom.currentGameHigh);
             return false;
         }
     }
@@ -1076,13 +1640,13 @@ bool FirstGameBoardSetup(DuelFieldData _duelFieldData, int playerid, MatchRoom m
     if (matchroom.firstPlayer == playerid) { 
         if (!(HaveSameObjectCounts(cardsPlayedThisTurn, matchroom.playerAHand)))
         {
-            Console.WriteLine("Invalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
+            Console.WriteLine("\nInvalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
             return false;
         }
     } else {
         if (!(HaveSameObjectCounts(cardsPlayedThisTurn, matchroom.playerBHand)))
         {
-            Console.WriteLine("Invalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
+            Console.WriteLine("\nInvalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
             return false;
         }
     }

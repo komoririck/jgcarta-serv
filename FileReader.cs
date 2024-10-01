@@ -89,7 +89,7 @@ public class Record
         return result;
     }
 
-    public static List<Record> QueryRecords(string name = null, string type = null)
+    public static List<Record> QueryRecords(string name = null, string type = null, string bloomLevel = null, string cardNumber = null)
     {
         var query = result.AsQueryable();
 
@@ -103,6 +103,16 @@ public class Record
             query = query.Where(r => r.CardType == type);
         }
 
+        if (!string.IsNullOrEmpty(bloomLevel))
+        {
+            query = query.Where(r => r.BloomLevel == bloomLevel);
+        }
+
+        if (!string.IsNullOrEmpty(cardNumber))
+        {
+            query = query.Where(r => r.CardNumber == cardNumber);
+        }
+
         return query.ToList();
     }
 
@@ -113,5 +123,33 @@ public class Record
 
         return query.ToList();
     }
+
+    public static List<Record> QueryRecordsByType(List<string> type)
+    {
+        List<Record> record = new List<Record>();
+        foreach (string tp in type)
+        {
+            record.AddRange(result.Where(r => r.CardType == tp));
+        }
+
+        return record.ToList();
+    }
+    public static List<Record> QueryBloomableCard(string name, string bloomLevel)
+    {
+        string nextBloomLevel = "";
+        switch (bloomLevel) {
+            case "Debut":
+                nextBloomLevel = "1st";
+                break;
+            case "1st":
+                nextBloomLevel = "2nd";
+                break;
+        }
+
+        var query = result.Where(r => r.Name == name && r.BloomLevel == nextBloomLevel);
+        return query.ToList();
+    }
+
+
 }
 

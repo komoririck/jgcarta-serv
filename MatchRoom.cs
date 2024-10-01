@@ -37,6 +37,9 @@ public class MatchRoom
     public bool playerAInicialBoardSetup = false;
     public bool playerBInicialBoardSetup = false;
 
+    public List<Card> playerALimiteCardPlayed = new List<Card>();
+    public List<Card> playerBLimiteCardPlayed = new List<Card>();
+
     public List<Card> playerAHand = new List<Card>();
     public List<Card> playerBHand = new List<Card>();
 
@@ -111,7 +114,7 @@ public class MatchRoom
         return returnCards;
     }
 
-    static public bool getCardFromDeck(List<Card> deck, List<Card> target, int amount)
+    static public int getCardFromDeck(List<Card> deck, List<Card> target, int amount)
     {
         if (deck.Count > amount) {
             if (deck.Count < amount)
@@ -120,12 +123,15 @@ public class MatchRoom
             for (int i = 0; i < amount; i++)
             {
                 target.Add(deck[deck.Count - 1]);
-                deck.RemoveAt(deck.Count - 1);
+                if (deck[deck.Count - 1] != null)
+                    deck.RemoveAt(deck.Count - 1);
+                else
+                    return (i - amount);
 
             }
-            return true;
+            return amount;
         }
-        return false;
+        return amount;
     }
     public void suffleHandToTheDeck(List<Card> deck, List<Card> hand)
     {
@@ -157,6 +163,7 @@ public class MatchRoom
             newCard.cardNumber = "0";
             returnCards.Add(newCard);
         }
+        cards = new List<Card>();
         return returnCards;
     }
 
