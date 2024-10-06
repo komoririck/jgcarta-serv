@@ -12,9 +12,16 @@ public class DuelAction
     public Card usedCard { get; set; } = new Card();
     public string playedFrom { get; set; }
     public string local { get; set; }
-    public Card targetCard { get; set; } = new Card();
+    public Card targetCard { get; set; }
+    public Card cheerCostCard { get; set; }
     public string actionType { get; set; }
     public string actionObject { get; set; }
     [JsonIgnore]
     public List<CardEffect> cardEffects { get; set; } = new List<CardEffect>();
+}
+
+[Serializable]
+public class ConditionedDraw { 
+    public List<string> SelectedCards { get; set; }
+    public List<int> Order {  get; set; }
 }

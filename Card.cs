@@ -1,7 +1,9 @@
+﻿using Org.BouncyCastle.Crypto.Digests;
 using System.Diagnostics;
 using System.Resources;
 using System.Security.Policy;
 using System.Text.Json.Serialization;
+using static hololive_oficial_cardgame_server.ArtCalculator;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace hololive_oficial_cardgame_server;
@@ -10,6 +12,13 @@ namespace hololive_oficial_cardgame_server;
 public class Card
 {
     public string cardNumber { get; set; } = "";
+
+    [JsonIgnore]
+    public int currentHp = 0;
+    [JsonIgnore]
+    public int effectDamageRecieved = 0;
+    [JsonIgnore]
+    public int normalDamageRecieved = 0;
 
     [JsonIgnore]
     public string cardLimit { get; set; } = "";
@@ -66,6 +75,8 @@ public class Card
     public List<Card> attachedEnergy { get; set; } = new List<Card>();
     [JsonIgnore]
     public List<Card> bloomChild { get; set; } = new List<Card>();
+    [JsonIgnore]
+    public List<Art> Arts = new List<Art>();
 
     public void GetCardInfo(string cardNumber)
     {
@@ -98,7 +109,16 @@ public class Card
                 abilityText = record.AbilityText;
                 illustrator = record.Illustrator;
                 life = record.Life;
+
+                List<string> words = arts.Split(';').ToList();
+                foreach (string art in words) {
+                    Arts.Add(Art.ParseArtFromString(art));
+                }
             }
+        }
+        if (this.currentHp == 0)
+        {
+            currentHp = int.Parse(hp);
         }
     }
 }
@@ -115,4 +135,3 @@ public class CardEffect
     public string responseType { get; set; } = "";
     public string activationPhase { get; set; } = "";
 }
-

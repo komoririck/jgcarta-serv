@@ -43,6 +43,9 @@ public class MatchRoom
     public List<Card> playerAHand = new List<Card>();
     public List<Card> playerBHand = new List<Card>();
 
+    public List<Card> playerATempHand = new List<Card>();
+    public List<Card> playerBTempHand = new List<Card>();
+
     public List<Card> playerAHoloPower = new List<Card>();
     public List<Card> playerBHoloPower = new List<Card>();
 
@@ -73,6 +76,8 @@ public class MatchRoom
     public Card playerAOshi = new Card();
     public Card playerBOshi = new Card();
 
+    public string currentCardResolving = "";
+
     [Flags]
     public enum GAMEPHASE : byte
     {
@@ -85,7 +90,9 @@ public class MatchRoom
         MainStep = 6,
         PerformanceStep = 7,
         UseArt = 8,
-        EndStep = 9
+        EndStep = 9,
+        ConditionedDraw = 101,
+        ConditionedSummom = 102
     }
 
     public bool CheckRoomPlayers(int id)
@@ -133,6 +140,23 @@ public class MatchRoom
         }
         return amount;
     }
+    static public void getCardFromDeckIfType(List<Card> deck, List<Card> target, string type)
+    {
+        List<Card> newDeck = new();
+        for (int i = 0; i < deck.Count; i++)
+        {
+            if (deck[i].cardType.Equals(type))
+            {
+                target.Add(deck[i]);
+            }
+            else
+            {
+                newDeck.Add(deck[i]);
+            }
+        }
+        deck = newDeck;
+    }
+
     public void suffleHandToTheDeck(List<Card> deck, List<Card> hand)
     {
         deck.AddRange(hand);

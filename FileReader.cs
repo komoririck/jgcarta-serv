@@ -20,6 +20,7 @@ public class Record
     public string Illustrator { get; set; }
     public string CardNumber { get; set; }
     public string Life { get; set; }
+    public string Tag { get; set; }
 }
 
     public static class FileReader
@@ -78,7 +79,8 @@ public class Record
                         AbilityText = row[10]?.ToString() ?? "",
                         Illustrator = row[11]?.ToString() ?? "",
                         CardNumber = row[12]?.ToString() ?? "",
-                        Life = row[13]?.ToString() ?? ""
+                        Life = row[13]?.ToString() ?? "",
+                        Tag = row[14]?.ToString() ?? ""
                     };
 
                     result.Add(record);
@@ -89,7 +91,7 @@ public class Record
         return result;
     }
 
-    public static List<Record> QueryRecords(string name = null, string type = null, string bloomLevel = null, string cardNumber = null)
+    public static List<Record> QueryRecords(string name = null, string type = null, string bloomLevel = null, string cardNumber = null, string tag = null)
     {
         var query = result.AsQueryable();
 
@@ -112,11 +114,18 @@ public class Record
         {
             query = query.Where(r => r.CardNumber == cardNumber);
         }
+        if (!string.IsNullOrEmpty(tag))
+        {
+            query = query.Where(r => r.CardNumber == tag);
+        }
 
         return query.ToList();
     }
-
-
+    public static List<Record> QueryRecordsByNames(List<string> names)
+    {
+        var query = result.Where(r => names.Contains(r.Name));
+        return query.ToList();
+    }
     public static List<Record> QueryRecordsByNameAndBloom(List<Card> names, string type)
     {
         var query = result.Where(r => names.GroupBy(card => card.cardNumber).Select(group => group.First()).Any(card => card.cardNumber == r.CardNumber) && r.BloomLevel == type);
