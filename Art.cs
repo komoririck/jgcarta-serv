@@ -38,7 +38,7 @@ namespace hololive_oficial_cardgame_server
                         color += costString[i];
                     }
                     // Add to the cost list
-                    art.Cost.Add((color, amount));
+                    art.Cost.Add((color.Substring(1), amount));
                 }
             }
 
@@ -77,13 +77,16 @@ namespace hololive_oficial_cardgame_server
 
             // Base damage calculation
             int baseDamage = 0;
-            foreach (var cost in art.Cost)
+            bool _AreColorRequirementsMet = AreColorRequirementsMet(colorCount, costs);
+
+            if (_AreColorRequirementsMet)
             {
-                if (colorCount.ContainsKey(cost.Color))
-                {
-                    baseDamage += art.Damage.Amount * colorCount[cost.Color];
-                }
+                baseDamage += art.Damage.Amount * 5;
             }
+            else {
+                baseDamage = -1000;
+            }
+
             Console.WriteLine($"Base Damage: {baseDamage}");
 
             // Multiplier calculation
@@ -104,5 +107,37 @@ namespace hololive_oficial_cardgame_server
 
             return totalDamage;
         }
+
+        public static bool AreColorRequirementsMet(Dictionary<string, int> colorCount, List<Card> availableColors)
+        {
+            // Group and count the available colors
+            var availableColorCounts = availableColors
+                .GroupBy(item => item.color)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // Check if the available colors meet the required counts
+            bool genericColor = availableColorCounts.ContainsKey("無色");
+
+            foreach (var kvp in colorCount)
+            {
+                string color = kvp.Key;
+                int requiredCount = kvp.Value;
+
+                if (genericColor)
+                {
+                    continue; // Skip checking this color requirement
+                }
+
+                // Regular check for other colors
+                if (!availableColorCounts.TryGetValue(color, out int availableCount) || availableCount < requiredCount)
+                {
+                    return false; // Requirement not met
+                }
+            }
+
+            return true; // All requirements are met
+        }
+
+
     }
 }

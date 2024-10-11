@@ -2,6 +2,7 @@ namespace hololive_oficial_cardgame_server;
 
 public class DuelFieldData
 {
+
     public List<Card> playerAHand { get; set; }
     public List<Card> playerAArquive { get; set; }
     public List<Card> playerADeck { get; set; }

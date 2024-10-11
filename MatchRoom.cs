@@ -4,6 +4,9 @@ namespace hololive_oficial_cardgame_server;
 
 public class MatchRoom
 {
+    public bool centerStageArtUsed = false;
+    public bool collabStageArtUsed = false;
+
     public PlayerInfo playerA;
     public PlayerInfo playerB;
 
@@ -92,7 +95,10 @@ public class MatchRoom
         UseArt = 8,
         EndStep = 9,
         ConditionedDraw = 101,
-        ConditionedSummom = 102
+        ConditionedSummom = 102,
+        HolomemDefeated = 103,
+        HolomemDefeatedCheerChoose = 104,
+        HolomemDefeatedCheerChoosed = 105
     }
 
     public bool CheckRoomPlayers(int id)
@@ -184,7 +190,7 @@ public class MatchRoom
         foreach (Card c in cards)
         {
             Card newCard = new Card();
-            newCard.cardNumber = "0";
+            newCard.cardNumber = "";
             returnCards.Add(newCard);
         }
         cards = new List<Card>();
@@ -194,11 +200,11 @@ public class MatchRoom
     static public int FindPlayerMatchRoom(List<MatchRoom> LM, string playerid)
     {
         for (int i = 0; i < LM.Count; i++) {
-            if (LM[i].playerA.PlayerID.Equals(playerid)  || LM[i].playerB.PlayerID.Equals(playerid)) { 
+            if (LM[i].playerA.PlayerID.Equals(int.Parse(playerid))  || LM[i].playerB.PlayerID.Equals(int.Parse(playerid))) { 
                 return i;   
             }
         }
-        return 0;
+        return -1;
     }
     static public int GetOtherPlayer(MatchRoom m, int playerid)
     {

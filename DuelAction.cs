@@ -16,6 +16,7 @@ public class DuelAction
     public Card cheerCostCard { get; set; }
     public string actionType { get; set; }
     public string actionObject { get; set; }
+    public string selectedSkill { get; set; }
     [JsonIgnore]
     public List<CardEffect> cardEffects { get; set; } = new List<CardEffect>();
 }

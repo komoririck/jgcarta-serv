@@ -19,58 +19,43 @@ public class Card
     public int effectDamageRecieved = 0;
     [JsonIgnore]
     public int normalDamageRecieved = 0;
-
     [JsonIgnore]
     public string cardLimit { get; set; } = "";
-
     [JsonIgnore]
     public string playedFrom { get; set; } = "";
-
     public string cardPosition { get; set; } = "";
     [JsonIgnore]
     public bool playedThisTurn { get; set; } = true;
     [JsonIgnore]
     public bool suspended { get; set; } = false;
-
     [JsonIgnore]
     public string name { get; set; }
-
     [JsonIgnore]
     public string cardType { get; set; }
-
     [JsonIgnore]
     public string rarity { get; set; }
-
     [JsonIgnore]
     public string product { get; set; }
-
     [JsonIgnore]
     public string color { get; set; }
-
     [JsonIgnore]
     public string hp { get; set; }
-
     [JsonIgnore]
     public string bloomLevel { get; set; }
-
     [JsonIgnore]
     public string arts { get; set; }
-
     [JsonIgnore]
     public string oshiSkill { get; set; }
-
     [JsonIgnore]
     public string spOshiSkill { get; set; }
-
     [JsonIgnore]
     public string abilityText { get; set; }
     [JsonIgnore]
     public string illustrator { get; set; }
+    [JsonIgnore]
     public string life { get; set; }
-
     [JsonIgnore]
     public List<CardEffect> cardEffects { get; set; } = new List<CardEffect>();
-
     [JsonIgnore]
     public List<Card> attachedEnergy { get; set; } = new List<Card>();
     [JsonIgnore]
@@ -80,16 +65,11 @@ public class Card
 
     public void GetCardInfo(string cardNumber)
     {
-
         if (string.IsNullOrEmpty(cardNumber))
-        {
             return;
-        }
 
         if (cardNumber.Equals("0"))
-        {
             return;
-        }
 
         foreach (Record record in FileReader.result)
         {
@@ -115,10 +95,6 @@ public class Card
                     Arts.Add(Art.ParseArtFromString(art));
                 }
             }
-        }
-        if (this.currentHp == 0)
-        {
-            currentHp = int.Parse(hp);
         }
     }
 }
