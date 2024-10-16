@@ -1,4 +1,5 @@
 ﻿using hololive_oficial_cardgame_server.Controllers;
+using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
 using MySql.Data.MySqlClient;
 using Mysqlx.Crud;
 using Org.BouncyCastle.Asn1.Ocsp;
@@ -66,7 +67,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         // Rollback transaction in case of error
                         transaction.Rollback();
                         return null;
@@ -132,7 +133,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -185,7 +186,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -219,7 +220,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -253,7 +254,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -313,7 +314,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -338,7 +339,7 @@ namespace hololive_oficial_cardgame_server
                             idCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                             idCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
                             var dataTable = new DataTable();
-                            Console.WriteLine(GetQueryWithParameters(idCommand));
+                            Lib.WriteConsoleMessag(GetQueryWithParameters(idCommand));
                             dataTable.Load(idCommand.ExecuteReader());
 
                             if(dataTable.Rows.Count > 0)
@@ -347,7 +348,7 @@ namespace hololive_oficial_cardgame_server
                                 {
                                     updateCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                     updateCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                                    Console.WriteLine(GetQueryWithParameters(updateCommand));
+                                    Lib.WriteConsoleMessag(GetQueryWithParameters(updateCommand));
                                     updateCommand.ExecuteNonQuery();
                                 }
                             }
@@ -362,7 +363,7 @@ namespace hololive_oficial_cardgame_server
                             insertCommand.Parameters.AddWithValue("@type", _GenericPlayerCommunication.RequestData.description);
                             insertCommand.Parameters.AddWithValue("@code", _GenericPlayerCommunication.RequestData.requestObject);
                             //insertCommand.Parameters.AddWithValue("@uuidv7", GenerateUuidV7());
-                            Console.WriteLine(GetQueryWithParameters(insertCommand));
+                            Lib.WriteConsoleMessag(GetQueryWithParameters(insertCommand));
                             insertCommand.ExecuteNonQuery();
                         }
 
@@ -372,7 +373,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -403,7 +404,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -443,7 +444,7 @@ namespace hololive_oficial_cardgame_server
                                 idCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                 idCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
                                 var dataTable = new DataTable();
-                                Console.WriteLine(GetQueryWithParameters(idCommand));
+                                Lib.WriteConsoleMessag(GetQueryWithParameters(idCommand));
                                 dataTable.Load(idCommand.ExecuteReader());
                                 // if is active in another queue, remove from all the queues
                                 if (dataTable.Rows.Count > 0)
@@ -452,7 +453,7 @@ namespace hololive_oficial_cardgame_server
                                     {
                                         updateCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                         updateCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                                        Console.WriteLine(GetQueryWithParameters(updateCommand));
+                                        Lib.WriteConsoleMessag(GetQueryWithParameters(updateCommand));
                                         updateCommand.ExecuteNonQuery();
                                     }
                                 }
@@ -504,7 +505,7 @@ namespace hololive_oficial_cardgame_server
                             selectCommand.Parameters.AddWithValue("@roomid", uuidv7);
                             var dataTable = new DataTable();
                             dataTable.Load(selectCommand.ExecuteReader());
-                            Console.WriteLine(GetQueryWithParameters(selectCommand));
+                            Lib.WriteConsoleMessag(GetQueryWithParameters(selectCommand));
 
                             foreach (DataRow row in dataTable.Rows)
                             {
@@ -531,7 +532,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -643,7 +644,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -679,7 +680,7 @@ namespace hololive_oficial_cardgame_server
                                     Command.Parameters.AddWithValue("@roomid", dataT.Rows[0].Field<string>("RoomID"));
                                     Command.Parameters.AddWithValue("@ownerid", dataT.Rows[0].Field<int>("OwnerID"));
                                     var dataTable = new DataTable();
-                                    Console.WriteLine(GetQueryWithParameters(Command));
+                                    Lib.WriteConsoleMessag(GetQueryWithParameters(Command));
                                     dataTable.Load(Command.ExecuteReader());
 
                                     // if is active in another queue, remove from all the queues
@@ -691,7 +692,7 @@ namespace hololive_oficial_cardgame_server
                                             updateCommand.Parameters.AddWithValue("@roomid", dataTable.Rows[0].Field<string>("MatchRoomID"));
                                             updateCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                             updateCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                                            Console.WriteLine(GetQueryWithParameters(updateCommand));
+                                            Lib.WriteConsoleMessag(GetQueryWithParameters(updateCommand));
                                             updateCommand.ExecuteNonQuery();
                                         }
                                         transaction.Commit();
@@ -705,7 +706,7 @@ namespace hololive_oficial_cardgame_server
                                 updateCommand.Parameters.AddWithValue("@roomid", dataT.Rows[0].Field<string>("RoomID"));
                                 updateCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                                 updateCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                                Console.WriteLine(GetQueryWithParameters(updateCommand));
+                                Lib.WriteConsoleMessag(GetQueryWithParameters(updateCommand));
                                 updateCommand.ExecuteNonQuery();
                             }
                         }
@@ -715,7 +716,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -746,7 +747,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -773,7 +774,7 @@ namespace hololive_oficial_cardgame_server
                             idCommand.Parameters.AddWithValue("@playeridsql", PlayerIDSQL);
                             idCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                             idCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                            Console.WriteLine(GetQueryWithParameters(idCommand));
+                            Lib.WriteConsoleMessag(GetQueryWithParameters(idCommand));
                             dataT.Load(idCommand.ExecuteReader());
                             //PrintDataTable(dataT);
 
@@ -796,7 +797,7 @@ namespace hololive_oficial_cardgame_server
                             idCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
                             idCommand.Parameters.AddWithValue("@roomid", dataT.Rows[0].Field<string>("RoomID"));
 
-                            Console.WriteLine(GetQueryWithParameters(idCommand));
+                            Lib.WriteConsoleMessag(GetQueryWithParameters(idCommand));
                             dataTable.Load(idCommand.ExecuteReader());
 
                             if (dataTable.Rows.Count == 0)
@@ -813,7 +814,7 @@ namespace hololive_oficial_cardgame_server
                             updateCommand.Parameters.AddWithValue("@board", _GenericPlayerCommunication.RequestData.description);
                             updateCommand.Parameters.AddWithValue("@chair", TablePosition);
 
-                            Console.WriteLine(GetQueryWithParameters(updateCommand));
+                            Lib.WriteConsoleMessag(GetQueryWithParameters(updateCommand));
                             updateCommand.ExecuteNonQuery();
                         }
 
@@ -875,7 +876,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -906,7 +907,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -939,7 +940,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -972,7 +973,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -1001,7 +1002,7 @@ namespace hololive_oficial_cardgame_server
                         {
                             selectCommand.Parameters.AddWithValue("@playerid", _GenericPlayerCommunication.PlayerID);
                             selectCommand.Parameters.AddWithValue("@password", _GenericPlayerCommunication.Password);
-                            Console.WriteLine(GetQueryWithParameters(selectCommand));
+                            Lib.WriteConsoleMessag(GetQueryWithParameters(selectCommand));
                             dataTable.Load(selectCommand.ExecuteReader());
 
                             foreach (DataRow row in dataTable.Rows)
@@ -1026,7 +1027,7 @@ namespace hololive_oficial_cardgame_server
                         using (MySqlCommand idCommand = new MySqlCommand("SELECT * FROM `hololive-official-cardgame`.`matchroom` WHERE RoomID = @roomcode AND OwnerID != 0;", connection, transaction))
                         {
                             idCommand.Parameters.AddWithValue("@roomcode", dataTable.Rows[0].Field<string>("MatchRoomID"));
-                            Console.WriteLine(GetQueryWithParameters(idCommand));
+                            Lib.WriteConsoleMessag(GetQueryWithParameters(idCommand));
                             dataT.Load(idCommand.ExecuteReader());
                         }
 
@@ -1060,7 +1061,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -1094,7 +1095,7 @@ namespace hololive_oficial_cardgame_server
                         using (MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM `hololive-official-cardgame`.`matchpool` WHERE Status = 'A' ORDER BY `RegDate` ASC LIMIT 2;", connection, transaction))
                         {
                             if (DebugVatiable)
-                                Console.WriteLine(GetQueryWithParameters(selectCommand));
+                                Lib.WriteConsoleMessag(GetQueryWithParameters(selectCommand));
 
                             dataTable.Load(selectCommand.ExecuteReader());
 
@@ -1110,7 +1111,7 @@ namespace hololive_oficial_cardgame_server
                                 SelectUserCommand.Parameters.AddWithValue("@p2", dataTable.Rows[1].Field<int>("PlayerID"));
 
                                 if (DebugVatiable)
-                                    Console.WriteLine(GetQueryWithParameters(SelectUserCommand));
+                                    Lib.WriteConsoleMessag(GetQueryWithParameters(SelectUserCommand));
 
                                 dataT.Load(SelectUserCommand.ExecuteReader());
                             }
@@ -1145,7 +1146,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -1173,7 +1174,7 @@ namespace hololive_oficial_cardgame_server
                             updateCommand.Parameters.AddWithValue("@p1", p1);
                             updateCommand.Parameters.AddWithValue("@p2", p2);
                             if (DebugVatiable)
-                                Console.WriteLine(GetQueryWithParameters(updateCommand));
+                                Lib.WriteConsoleMessag(GetQueryWithParameters(updateCommand));
                             updateCommand.ExecuteNonQuery();
                         }
                         transaction.Commit();
@@ -1181,7 +1182,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                     }
                     return false;
@@ -1208,7 +1209,7 @@ namespace hololive_oficial_cardgame_server
                             updateCommand.Parameters.AddWithValue("@p2", p2);
 
                             if (DebugVatiable)
-                                Console.WriteLine(GetQueryWithParameters(updateCommand));
+                                Lib.WriteConsoleMessag(GetQueryWithParameters(updateCommand));
 
                             dataTable.Load(updateCommand.ExecuteReader());
                         }
@@ -1252,7 +1253,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                     }
                     return null;
@@ -1294,7 +1295,7 @@ namespace hololive_oficial_cardgame_server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: " + ex.Message);
+                        Lib.WriteConsoleMessag("\nError: " + ex.Message);
                         transaction.Rollback();
                         return null;
                     }
@@ -1441,7 +1442,6 @@ namespace hololive_oficial_cardgame_server
             {
                 Console.Write(column.ColumnName + "\t");
             }
-            Console.WriteLine();
 
             foreach (DataRow row in dataTable.Rows)
             {
@@ -1456,39 +1456,8 @@ namespace hololive_oficial_cardgame_server
                         Console.Write(item + "\t");
                     }
                 }
-                Console.WriteLine();
             }
         }
-        /*
-        public static string GenerateUuidV7()
-        {
-            // Get current timestamp in milliseconds since Unix epoch
-            long timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-            // Generate a random 48-bit value
-            byte[] randomBytes = new byte[6];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(randomBytes);
-            }
-
-            // Create the UUIDv7 byte array
-            byte[] uuidBytes = new byte[16];
-
-            // Copy timestamp (48 bits) into the first 6 bytes
-            BitConverter.GetBytes(timestamp).CopyTo(uuidBytes, 0);
-
-            // Insert version (0x7) into the 7th byte
-            uuidBytes[6] = (byte)((uuidBytes[6] & 0x0F) | 0x70);
-
-            // Copy random bytes into the last 6 bytes
-            Array.Copy(randomBytes, 0, uuidBytes, 8, 6);
-
-            // Create the UUID string in the standard format
-            Guid uuid = new Guid(uuidBytes);
-            return uuid.ToString();
-        }*/
-
 
         public class ReturnMessage
         {

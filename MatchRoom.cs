@@ -80,12 +80,15 @@ public class MatchRoom
     public Card playerBOshi = new Card();
 
     public string currentCardResolving = "";
+    internal int cheersAssignedThisChainAmount;
+    internal int cheersAssignedThisChainTotal = 1;
 
     [Flags]
     public enum GAMEPHASE : byte
     {
         StartMatch = 0,
         ResetStep = 1,
+        ResetStepReSetStage = 11,
         DrawStep = 2,
         CheerStep = 3,
         CheerStepChoose = 4,
@@ -109,43 +112,15 @@ public class MatchRoom
     }
 
     public void PassTurn() {
-        if (currentPlayerActing == playerA.PlayerID)
+        if (currentPlayerActing == firstPlayer)
             currentPlayerActing = playerB.PlayerID;
         else
-            currentPlayerActing = playerA.PlayerID;
+            currentPlayerActing = firstPlayer;
 
         currentGamePhase = nextGamePhase;
         nextGamePhase++;
     }
 
-    public List<string> CardListToStringList(List<Card> cards)
-    {
-        List<string> returnCards = new List<string>();
-        foreach (Card c in cards) {
-            returnCards.Add(c.cardNumber);
-        }
-        return returnCards;
-    }
-
-    static public int getCardFromDeck(List<Card> deck, List<Card> target, int amount)
-    {
-        if (deck.Count > amount) {
-            if (deck.Count < amount)
-                amount = deck.Count;
-
-            for (int i = 0; i < amount; i++)
-            {
-                target.Add(deck[deck.Count - 1]);
-                if (deck[deck.Count - 1] != null)
-                    deck.RemoveAt(deck.Count - 1);
-                else
-                    return (i - amount);
-
-            }
-            return amount;
-        }
-        return amount;
-    }
     static public void getCardFromDeckIfType(List<Card> deck, List<Card> target, string type)
     {
         List<Card> newDeck = new();

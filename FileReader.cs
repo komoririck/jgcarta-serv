@@ -1,6 +1,7 @@
 namespace hololive_oficial_cardgame_server;
 
 using ExcelDataReader;
+using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
 using System.Data;
 using System.Text;
 
@@ -35,7 +36,7 @@ public class Record
         // Check if the file exists
         if (!File.Exists(path))
         {
-            Console.WriteLine($"File does not exist at path: {path}");
+            Lib.WriteConsoleMessag($"File does not exist at path: {path}");
             return null;
         }
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -59,7 +60,7 @@ public class Record
                     // Ensure there are at least 13 columns
                     if (row.ItemArray.Length < 14)
                     {
-                        Console.WriteLine($"Invalid data format in line {i + 1}");
+                        Lib.WriteConsoleMessag($"Invalid data format in line {i + 1}");
                         continue;
                     }
 

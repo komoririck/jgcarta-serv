@@ -1,4 +1,5 @@
-﻿using System;
+﻿using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -42,7 +43,6 @@ namespace hololive_oficial_cardgame_server
                 }
             }
 
-            // Parse name (example: "あなたの心は…くもりのち晴れ！")
             art.Name = parts[1];
 
             // Parse damage (example: "50x1白")
@@ -81,13 +81,13 @@ namespace hololive_oficial_cardgame_server
 
             if (_AreColorRequirementsMet)
             {
-                baseDamage += art.Damage.Amount * 5;
+                baseDamage += art.Damage.Amount * 1;
             }
             else {
                 baseDamage = -1000;
             }
 
-            Console.WriteLine($"Base Damage: {baseDamage}");
+            Lib.WriteConsoleMessag($"Base Damage: {baseDamage}");
 
             // Multiplier calculation
             int totalDamage = baseDamage;
@@ -95,14 +95,14 @@ namespace hololive_oficial_cardgame_server
             {
                 int multiplier = art.DamageMultiplier.Amount * colorCount[art.DamageMultiplier.Color];
                 totalDamage += multiplier;
-                Console.WriteLine($"Multiplier Applied: {multiplier} (Multiplier: {art.DamageMultiplier.Amount})");
+                Lib.WriteConsoleMessag($"Multiplier Applied: {multiplier} (Multiplier: {art.DamageMultiplier.Amount})");
             }
 
             // Extra color damage calculation
             if (art.ExtraColorDamage.Color == extraColor)
             {
                 totalDamage += art.ExtraColorDamage.Amount;
-                Console.WriteLine($"Extra Color Damage Added: {art.ExtraColorDamage.Amount} (Extra Color: {extraColor})");
+                Lib.WriteConsoleMessag($"Extra Color Damage Added: {art.ExtraColorDamage.Amount} (Extra Color: {extraColor})");
             }
 
             return totalDamage;
