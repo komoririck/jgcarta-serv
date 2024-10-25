@@ -11,7 +11,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
     {
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
-        private Draw cardCheerDraw;
+        private DuelAction cardCheerDraw;
 
         public CheerRequestHolomemDownHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
         {
@@ -35,7 +35,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (cMatchRoom.currentGamePhase != GAMEPHASE.HolomemDefeated)
                 return;
 
-            cardCheerDraw = new Draw();
+            cardCheerDraw = new DuelAction();
             cardCheerDraw.playerID = otherPlayer;
             cardCheerDraw.zone = "Life";
 
@@ -54,7 +54,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     cardCheerDraw.cardList = new List<Card>();
                     for (int i = 0; i < cMatchRoom.cheersAssignedThisChainTotal; i++)
                         cardCheerDraw.cardList.Add(new Card());
-                    
+
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
                     Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }
@@ -76,7 +76,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
 
                     //adding empty objects so the current player can keep track of how much objects the oponent is drawing, may be 1 or 2 depending of the buzz
-                    cardCheerDraw.cardList = new List<Card>() { new Card() };
+                    cardCheerDraw.cardList = new List<Card>();
                     for (int i = 0; i < cMatchRoom.cheersAssignedThisChainTotal; i++)
                         cardCheerDraw.cardList.Add(new Card());
 

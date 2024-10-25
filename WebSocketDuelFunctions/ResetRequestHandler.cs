@@ -8,7 +8,7 @@ using System.Text.Json;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
-    internal class ResetRequestHandler
+    internal class ResetRequestHandler : Lib
     {
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
@@ -28,12 +28,19 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int playerB = cMatchRoom.secondPlayer;
 
             if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
+            {
+                Lib.WriteConsoleMessage("Wrong player calling");
                 return;
+            }
 
             if (cMatchRoom.currentGamePhase != GAMEPHASE.ResetStep)
+            {
+                Lib.WriteConsoleMessage("Wrong game phase to be called");
                 return;
+            }
 
             DuelAction duelAction = new DuelAction() { playerID = cMatchRoom.firstPlayer };
+
             Card currentStageCardd = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
             Card currentCollabCardd = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
             List<Card> currentBackStageCardd = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
@@ -49,6 +56,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 currentCollabCardd.suspended = true;
 
                 string locall = AssignCardToBackStage(places, currentBackStageCardd, currentCollabCardd);
+                if (locall.Equals("failToAssignToBackStage")) {
+                    WriteConsoleMessage("Error assign the card to the backposition");
+                    return;
+                }
 
                 duelAction = new DuelAction
                 {
@@ -64,13 +75,16 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //validating if player need to ReSet his card at main stage position
             Card card = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
 
-            if (!string.IsNullOrEmpty(card.cardNumber))
+            if (card != null)
                 cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
             else
                 cMatchRoom.currentGamePhase = GAMEPHASE.ResetStepReSetStage;
 
 
-            _ReturnData = new RequestData { type = "GamePhase", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
+            //cleaning effects that should end at the end of the turn
+            CollabEffects.currentActivatedTurnEffect.Clear();
+
+           _ReturnData = new RequestData { type = "GamePhase", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
@@ -87,56 +101,17 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 if (eachCard.suspended)
                     eachCard.suspended = false;
             }
-            stage.playedThisTurn = false;
-            if (stage.suspended)
-                stage.suspended = false;
-            collab.playedThisTurn = false;
-            if (collab.suspended)
-                collab.suspended = false;
-        }
-
-
-
-        string AssignCardToBackStage(List<bool> places, List<Card> backPosition, Card collaborationCard)
-        {
-            for (int i = 0; i < places.Count; i++)
-            {
-                if (!places[i])
-                {
-                    collaborationCard.cardPosition = $"BackStage{i + 1}";
-                    backPosition.Add(collaborationCard);
-                    return $"BackStage{i + 1}";
-                }
+            if (stage != null)
+            {      
+                stage.playedThisTurn = false;
+                if (stage.suspended)
+                    stage.suspended = false;
             }
-            return "failToAssignToBackStage";
-        }
-
-
-        List<bool> GetBackStageAvailability(List<Card> backPosition)
-        {
-            List<bool> places = new List<bool> { false, false, false, false, false };
-            foreach (Card _card in backPosition)
-            {
-                switch (_card.cardPosition)
-                {
-                    case "BackStage1":
-                        places[0] = true;
-                        break;
-                    case "BackStage2":
-                        places[1] = true;
-                        break;
-                    case "BackStage3":
-                        places[2] = true;
-                        break;
-                    case "BackStage4":
-                        places[3] = true;
-                        break;
-                    case "BackStage5":
-                        places[4] = true;
-                        break;
-                }
+            if (collab != null) { 
+                collab.playedThisTurn = false;
+                if (collab.suspended)
+                    collab.suspended = false;
             }
-            return places;
         }
     }
 }

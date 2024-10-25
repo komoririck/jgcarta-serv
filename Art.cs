@@ -13,8 +13,13 @@ namespace hololive_oficial_cardgame_server
         public (string Color, int Amount) DamageMultiplier { get; set; }
         public (string Color, int Amount) ExtraColorDamage { get; set; }
 
+        public static List<CardEffect> ArtEffectList = null;
+
         public static Art ParseArtFromString(string artString)
         {
+            if (ArtEffectList == null)
+                GenerateArtEffectData();
+
             var parts = artString.Split(':');
             if (parts.Length != 5)
                 return null; //throw new ArgumentException("Invalid art string format");
@@ -67,27 +72,94 @@ namespace hololive_oficial_cardgame_server
             // Return the populated Art object
             return art;
         }
+
+        private static void GenerateArtEffectData()
+        {
+            Art.ArtEffectList = new();
+
+            //hSD01-006
+            ArtEffectList.Add(new CardEffect() {
+                artName = "SorAZ シンパシー",
+                cardNumber = "hSD01-006",
+                zoneTarget = "Stage",
+                ExistXAtZone_Name = "AZKi",
+                type = CardEffectType.BuffThisCardDamageExistXAtZone,
+                damageType = 50,
+                listIndex = 0
+            });
+        }
     }
     public class ArtCalculator
     {
-        public static int CalculateTotalDamage(Art art, List<Card> costs, string extraColor)
+        public static int CalculateTotalDamage(Art art, List<Card> costs, string extraColor, Card attackingCard, Card AttackedCard, int playerWhoDeclaredAttack, int playerWhoWasTargeted, MatchRoom matchRoom)
         {
+            string cardZone = attackingCard.cardPosition;
             // Count the occurrences of each color in the list of cost objects
             var colorCount = costs.GroupBy(cost => cost.color).ToDictionary(g => g.Key, g => g.Count());
-
+            var effectExtraDamage = 0;
             // Base damage calculation
             int baseDamage = 0;
             bool _AreColorRequirementsMet = AreColorRequirementsMet(colorCount, costs);
 
+
+            //loop for collab active till turn effects
+            foreach (CardEffect cardeffect in CollabEffects.currentActivatedTurnEffect) {
+
+                //BuffDamageToCardAtZone
+                if (cardeffect.type == CardEffectType.BuffDamageToCardAtZone)
+                {
+                    if (!(cardeffect.playerWhoUsedTheEffect == playerWhoDeclaredAttack))
+                    continue;
+
+                    if (!(cardeffect.playerWhoIsTheTargetOfEffect == playerWhoWasTargeted))
+                        continue;
+
+                    //if this card is in the zone that the effect is active
+                    if (cardeffect.zoneTarget.Equals(cardZone)) {
+                        effectExtraDamage += cardeffect.Damage;
+                    }
+                }
+            }
+
+            //loop for skill effects
+            foreach (CardEffect cardeffect in CollabEffects.currentActivatedTurnEffect)
+            {
+                //BuffDamageToCardAtZoneIfNameMatch
+                if (cardeffect.type == CardEffectType.BuffThisCardDamageExistXAtZone)
+                {
+                    if (!(cardeffect.artName.Equals(art.Name)))
+                        continue;
+
+                    if (!cardeffect.cardNumber.Equals(attackingCard.cardNumber))
+                        continue;
+
+                    // if this card is in the same zone as the effect need another card, continue
+                    if (cardeffect.zoneTarget.Equals(cardZone))
+                        continue;
+
+                    Card cardAtStage = matchRoom.startPlayer == playerWhoDeclaredAttack ? matchRoom.playerAStage : matchRoom.playerBStage;
+
+                    // if the name didnt match what the effect need, continue
+                    if (!cardeffect.ExistXAtZone_Name.Equals(cardAtStage.name))
+                        continue;
+
+                    if (cardeffect.zoneTarget.Equals(cardZone))
+                    {
+                        effectExtraDamage += cardeffect.Damage;
+                    }
+                }
+            }
+
+
             if (_AreColorRequirementsMet)
             {
-                baseDamage += art.Damage.Amount * 1;
+                baseDamage += art.Damage.Amount * 1 + effectExtraDamage;
             }
             else {
                 baseDamage = -1000;
             }
 
-            Lib.WriteConsoleMessag($"Base Damage: {baseDamage}");
+            Lib.WriteConsoleMessage($"Base Damage: {baseDamage}");
 
             // Multiplier calculation
             int totalDamage = baseDamage;
@@ -95,14 +167,14 @@ namespace hololive_oficial_cardgame_server
             {
                 int multiplier = art.DamageMultiplier.Amount * colorCount[art.DamageMultiplier.Color];
                 totalDamage += multiplier;
-                Lib.WriteConsoleMessag($"Multiplier Applied: {multiplier} (Multiplier: {art.DamageMultiplier.Amount})");
+                Lib.WriteConsoleMessage($"Multiplier Applied: {multiplier} (Multiplier: {art.DamageMultiplier.Amount})");
             }
 
             // Extra color damage calculation
             if (art.ExtraColorDamage.Color == extraColor)
             {
                 totalDamage += art.ExtraColorDamage.Amount;
-                Lib.WriteConsoleMessag($"Extra Color Damage Added: {art.ExtraColorDamage.Amount} (Extra Color: {extraColor})");
+                Lib.WriteConsoleMessage($"Extra Color Damage Added: {art.ExtraColorDamage.Amount} (Extra Color: {extraColor})");
             }
 
             return totalDamage;

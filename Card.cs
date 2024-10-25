@@ -101,13 +101,26 @@ public class Card
 [Serializable]
 public class CardEffect
 {
-    public string effectTrigger { get; set; } = "";
-    public string text { get; set; } = "";
-    public int usageLimit { get; set; } = 0;
+    internal int listIndex;
 
-    [JsonIgnore] // Ignore this during serialization
-    public Card target { get; set; }
-    public int continuousEffect { get; set; } = 0;
-    public string responseType { get; set; } = "";
-    public string activationPhase { get; set; } = "";
+    public int playerWhoUsedTheEffect { get; set; } = 0;
+    public int playerWhoIsTheTargetOfEffect { get; set; } = 0;
+    public string cardNumber { get; set; } = "";
+    public string artName { get; set; } = "";
+    public string zoneTarget { get; set; } = "";
+    public string cardTarget { get; set; } = "";
+    public CardEffectType type { get; set; } = 0;
+    public int Damage { get; set; } = 0;
+    public int damageType { get; set; } = 0;
+    public string nameMatch { get; set; } = "";
+    //BuffThisCardDamageExistXAtZone
+    public string ExistXAtZone_Name { get; set; } = "";
+}
+
+[Flags]
+public enum CardEffectType : byte
+{
+    None = 0,
+    BuffDamageToCardAtZone = 1,
+    BuffThisCardDamageExistXAtZone = 2
 }

@@ -82,6 +82,8 @@ public class MatchRoom
     public string currentCardResolving = "";
     internal int cheersAssignedThisChainAmount;
     internal int cheersAssignedThisChainTotal = 1;
+    internal List<string> extraInfo;
+    internal string currentCardResolvingStage = "";
 
     [Flags]
     public enum GAMEPHASE : byte

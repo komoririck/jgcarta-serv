@@ -48,12 +48,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 if (cMatchRoom.playerA.PlayerID == int.Parse(playerRequest.playerID))
                 {
                     cMatchRoom.playerAHand.RemoveAt(cMatchRoom.playerAHand.Count - 1);
-                    hasAttached = Lib.GamePhaseCheerChoosedAsync(_DuelAction, cMatchRoom, cMatchRoom.playerAStage, cMatchRoom.playerACollaboration, cMatchRoom.playerABackPosition); // we are saving attached to the list only the name of the Cheer, add other information later i needded 
+                    hasAttached = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, cMatchRoom.playerAStage, cMatchRoom.playerACollaboration, cMatchRoom.playerABackPosition); // we are saving attached to the list only the name of the Cheer, add other information later i needded 
                 }
                 if (cMatchRoom.playerB.PlayerID == int.Parse(playerRequest.playerID))
                 {
                     cMatchRoom.playerBHand.RemoveAt(cMatchRoom.playerBHand.Count - 1);
-                    hasAttached = Lib.GamePhaseCheerChoosedAsync(_DuelAction, cMatchRoom, cMatchRoom.playerBStage, cMatchRoom.playerBCollaboration, cMatchRoom.playerBBackPosition);
+                    hasAttached = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, cMatchRoom.playerBStage, cMatchRoom.playerBCollaboration, cMatchRoom.playerBBackPosition);
                 }
 
                 if (!hasAttached)
@@ -73,8 +73,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             cMatchRoom.currentGameHigh++;
 
-            //if player need to assign more energy, for exemple, because of a buzzholomemdown, we change the phase acordinly, else we send to mainstep
-            if (cMatchRoom.cheersAssignedThisChainTotal > 1 && cMatchRoom.cheersAssignedThisChainAmount < cMatchRoom.cheersAssignedThisChainTotal) {
+            //if player need to assign more
+            //, for exemple, because of a buzzholomemdown, we change the phase acordinly, else we send to mainstep
+            if (cMatchRoom.cheersAssignedThisChainAmount < cMatchRoom.cheersAssignedThisChainTotal) {
                     cMatchRoom.currentGamePhase = GAMEPHASE.HolomemDefeatedCheerChoose;
                     cMatchRoom.cheersAssignedThisChainAmount++;
             }

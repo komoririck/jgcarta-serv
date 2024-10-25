@@ -24,7 +24,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            string Response = JsonSerializer.Deserialize<string>(playerRequest.requestData.extraRequestObject);
+            DuelAction _DuelActionRecieved = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            List<object> ResponseObjList = JsonSerializer.Deserialize<List<object>>(_DuelActionRecieved.actionObject);
+            string Response = (string)ResponseObjList[0];
 
             List<Card> query = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerADeck : cMatchRoom.playerBDeck;
 

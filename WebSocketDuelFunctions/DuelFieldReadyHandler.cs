@@ -92,7 +92,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //checking if there is card in the Stage
             if (playerStage == null)
             {
-                Lib.WriteConsoleMessag("\nInvalid play, no card at stage: " + playerid + matchroom.currentGameHigh);
+                Lib.WriteConsoleMessage("\nInvalid play, no card at stage: " + playerid + matchroom.currentGameHigh);
                 return false;
             }
 
@@ -100,14 +100,14 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             List<Record> cardlist = FileReader.QueryRecordsByNameAndBloom(new List<Card>() { playerStage }, "Debut");
             if (cardlist.Count == 0)
             {
-                Lib.WriteConsoleMessag("\nInvalid play, no card suitable at stage: " + playerid + matchroom.currentGameHigh);
+                Lib.WriteConsoleMessage("\nInvalid play, no card suitable at stage: " + playerid + matchroom.currentGameHigh);
                 return false;
             }
             List<Card> cardsPlayedThisTurn = new() { playerStage };
             //check if backposition is in the maximum limite
             if (playerBackStage.Count > 5)
             {
-                Lib.WriteConsoleMessag("\nInvalid play, more cards at the back stage than what it should: " + playerid + matchroom.currentGameHigh);
+                Lib.WriteConsoleMessage("\nInvalid play, more cards at the back stage than what it should: " + playerid + matchroom.currentGameHigh);
                 return false;
             }
 
@@ -123,7 +123,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 }
                 if (n != playerBackStage.Count)
                 {
-                    Lib.WriteConsoleMessag("\nInvalid play, there card in the backstage that shouldnt: " + playerid + matchroom.currentGameHigh);
+                    Lib.WriteConsoleMessage("\nInvalid play, there card in the backstage that shouldnt: " + playerid + matchroom.currentGameHigh);
                     return false;
                 }
             }
@@ -132,27 +132,48 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //check if all played cards exists in the player hand
             cardsPlayedThisTurn.AddRange(playerBackStage);
 
+            List<Card> playerHand = playerid == matchroom.firstPlayer ? matchroom.playerAHand : matchroom.playerBHand;
+
+            foreach (Card playedThisTurn in cardsPlayedThisTurn) {
+                int i = -1;
+                for (int j = 0; j < playerHand.Count; j++) {
+                    if(playerHand[j].cardNumber.Equals(playedThisTurn.cardNumber)){
+                        i = j;
+                        break;
+                    }
+                }
+                if (i == -1)
+                {
+                    Lib.PrintPlayerHand(matchroom);
+                    Lib.WriteConsoleMessage("\nInvalid play, there card in the field that are not at player hand: " + playedThisTurn.cardNumber);
+                    return false;
+                }
+                playerHand.RemoveAt(i);
+            }
+
+            /*
             if (matchroom.firstPlayer == playerid)
             {
+
+
+
                 if (!(Lib.HaveSameObjectCounts(cardsPlayedThisTurn, matchroom.playerAHand)))
                 {
-                    Lib.WriteConsoleMessag("\nInvalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
-                    return false;
                 }
             }
             else
             {
                 if (!(Lib.HaveSameObjectCounts(cardsPlayedThisTurn, matchroom.playerBHand)))
                 {
-                    Lib.WriteConsoleMessag("\nInvalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
+                    Lib.WriteConsoleMessage("\nInvalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
                     return false;
                 }
-            }
+            }*/
 
             //since we get this far, we remove the played cards from the hand
             if (matchroom.playerA.PlayerID == playerid)
             {
-                Lib.RemovePlayedCardsFromHand(matchroom.playerAHand, cardsPlayedThisTurn);
+//                Lib.RemovePlayedCardsFromHand(matchroom.playerAHand, cardsPlayedThisTurn);
 
                 //since the last code updated the hand, we only need to update the field now:
                 matchroom.playerAStage = _duelFieldData.playerAStage;
@@ -161,7 +182,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
             else
             {
-                Lib.RemovePlayedCardsFromHand(matchroom.playerBHand, cardsPlayedThisTurn);
+//             Lib.RemovePlayedCardsFromHand(matchroom.playerBHand, cardsPlayedThisTurn);
 
                 //since the last code updated the hand, we only need to update the field now:
                 matchroom.playerBStage = _duelFieldData.playerBStage;

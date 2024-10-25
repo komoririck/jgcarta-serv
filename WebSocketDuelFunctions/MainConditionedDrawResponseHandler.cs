@@ -5,6 +5,7 @@ using System.Net.WebSockets;
 using static hololive_oficial_cardgame_server.MatchRoom;
 using System.Text;
 using System.Text.Json;
+using Mysqlx.Crud;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -25,15 +26,19 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
+            DuelAction _DuelActionRecieved = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            List<object> ResponseObjList = JsonSerializer.Deserialize<List<object>>(_DuelActionRecieved.actionObject);
 
-            ConditionedDraw _ConditionedDraw = JsonSerializer.Deserialize<ConditionedDraw>(playerRequest.requestData.extraRequestObject);
+            DuelAction _ConditionedDraw = new()
+            {
+
+                SelectedCards = (List<string>)ResponseObjList[0],
+                Order = (List<int>)ResponseObjList[0]
+            };
 
             List<string> ChosedCardList = _ConditionedDraw.SelectedCards;
 
             List<Card> TempHand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
-
-
-
 
             //filtering the used card condition to draw
             bool canProguess = false;
@@ -192,7 +197,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 Lib.SortOrderToAddDeck(TempHand, _ConditionedDraw.Order);
             }
 
-            Draw DrawReturn = new Draw()
+            DuelAction DrawReturn = new DuelAction()
             {
                 playerID = cMatchRoom.currentPlayerTurn,
                 suffle = false,

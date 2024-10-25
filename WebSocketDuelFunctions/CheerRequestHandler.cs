@@ -31,7 +31,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (cMatchRoom.currentGamePhase != GAMEPHASE.CheerStep)
                return;
 
-            Draw cardCheerDraw = new Draw();
+            DuelAction cardCheerDraw = new DuelAction();
             cardCheerDraw.playerID = cMatchRoom.currentPlayerTurn;
             cardCheerDraw.zone = "CardCheer";
 

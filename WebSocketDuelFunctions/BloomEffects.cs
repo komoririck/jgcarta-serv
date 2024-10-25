@@ -1,0 +1,16 @@
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
+using System.Net.WebSockets;
+using System.Text.Json;
+using static hololive_oficial_cardgame_server.MatchRoom;
+
+namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
+{
+    class BloomEffects
+    {
+        internal static void OnBloomEffect(Card? usedCard)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}

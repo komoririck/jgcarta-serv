@@ -8,7 +8,7 @@ using static hololive_oficial_cardgame_server.MatchRoom;
 
 namespace hololive_oficial_cardgame_server
 {
-    public class MessageDispatcher
+    public class MessageDispatcher : Lib
     {
         // WebSockets
         public static ConcurrentDictionary<string, WebSocket> playerConnections = new ConcurrentDictionary<string, WebSocket>();
@@ -24,11 +24,11 @@ namespace hololive_oficial_cardgame_server
             MatchRoom cMatchRoom = null;
             int matchnumber = MatchRoom.FindPlayerMatchRoom(_MatchRooms, playerRequest.playerID);
             if (matchnumber != -1)
-                 cMatchRoom = _MatchRooms[matchnumber];
+                cMatchRoom = _MatchRooms[matchnumber];
             RequestData _ReturnData;
 
 
-            Lib.WriteConsoleMessag("Recieved from " + playerRequest.playerID + ":\n" + playerRequest.requestData.type + ":\n" + playerRequest.requestData.requestObject + ":\n" + playerRequest.requestData.extraRequestObject + ":\n");
+            Lib.WriteConsoleMessage("Recieved from " + playerRequest.playerID + ":\n" + playerRequest.requestData.type + ":\n" + playerRequest.requestData.requestObject + ":\n" + playerRequest.requestData.extraRequestObject + ":\n");
             switch (playerRequest.requestData.type)
             {
                 case "JoinPlayerQueueList":
@@ -78,9 +78,34 @@ namespace hololive_oficial_cardgame_server
                     Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" });
                     break;
                 case "MainDoActionRequest":
+                    if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
+                        return;
 
-                    var handler9 = new MainDoActionRequestHandler(playerConnections, _MatchRooms);
-                    await handler9.MainDoActionRequestHandleAsync(playerRequest, webSocket);
+                    DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+                    switch (_DuelAction.actionType)
+                    {
+                        case "doArt":
+                            var handler901 = new MainDoActionRequestDoArtHandler(playerConnections, _MatchRooms);
+                            await handler901.MainDoActionRequestDoArtHandleAsync(playerRequest, webSocket);
+                            break;
+                        case "PlayHolomem":
+                            var handler902 = new PlayHolomemHandler(playerConnections, _MatchRooms);
+                            await handler902.MainDoActionRequestPlayHolomemHandleAsync(playerRequest, webSocket);
+                            break;
+                        case "BloomHolomemWithEffect":
+                        case "BloomHolomem":
+                            var handler903 = new BloomHolomemHandler(playerConnections, _MatchRooms);
+                            await handler903.MainDoActionRequestBloomHolomemHandleAsync(playerRequest, webSocket);
+                            break;
+                        case "DoCollab":
+                            var handler904 = new DoCollabHandler(playerConnections, _MatchRooms);
+                            await handler904.DoCollabHandleAsync(playerRequest, webSocket);
+                            break;
+                        case "UseSuportStaffMember":
+                            var handler906 = new UseSuportStaffMemberHandler(playerConnections, _MatchRooms);
+                            await handler906.MainDoActionRequestUseSuportStaffMemberHandleAsync(playerRequest, webSocket);
+                            break;
+                    }
                     break;
                 case "MainPerformanceRequest":
                     cMatchRoom.currentGamePhase = GAMEPHASE.PerformanceStep;
@@ -102,7 +127,7 @@ namespace hololive_oficial_cardgame_server
                     cMatchRoom.centerStageArtUsed = false;
                     cMatchRoom.collabStageArtUsed = false;
 
-                    Lib.WriteConsoleMessag("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
+                    Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
 
                     Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new RequestData { type = "GamePhase", description = "Endturn", requestObject = "" });
                     Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new RequestData { type = "GamePhase", description = "Endturn", requestObject = "" });
@@ -113,9 +138,14 @@ namespace hololive_oficial_cardgame_server
                     var handler13 = new ResetRequestHandler(playerConnections, _MatchRooms);
                     await handler13.ResetRequestHandleAsync(playerRequest, webSocket);
                     break;
-                case "SuporteEffectAttachEnergyIfResponse":
+                case "ReSetCardAtStage":
+                    var handler905 = new ReSetCardAtStageHandler(playerConnections, _MatchRooms);
+                    await handler905.MainDoActionRequestReSetCardAtStageHandleAsync(playerRequest, webSocket);
+                    break;
+                case "AskAttachEnergy":
+                    //call to attach energy
                     var handler15 = new SuporteEffectAttachEnergyIfResponseHandler(playerConnections, _MatchRooms);
-                    await handler15.SuporteEffectAttachEnergyIfResponseHandleAsync(playerRequest, webSocket);
+                    await handler15.SuporteEffectAttachEnergyHandleAsync(playerRequest, webSocket);
                     break;
                 case "MainConditionedSummomResponse":
                     var handler16 = new MainConditionedSummomResponseHandler(playerConnections, _MatchRooms);
@@ -125,6 +155,17 @@ namespace hololive_oficial_cardgame_server
                     var handler17 = new MainConditionedDrawResponseHandler(playerConnections, _MatchRooms);
                     await handler17.MainConditionedDrawResponseHandleAsync(playerRequest, webSocket);
                     break;
+                case "ResolveOnCollabEffect":
+                    CollabEffects.OnCollabEffectResolutionAsync(playerConnections, _MatchRooms, playerRequest, webSocket);
+                    break;
+                default:
+                    //check if there is a resolving card
+                    if (string.IsNullOrEmpty(cMatchRoom.currentCardResolving))
+                        WriteConsoleMessage("resolving card is empty");
+                    else
+                        cMatchRoom.currentCardResolving = "";
+                    break;
+
             }
         }
     }

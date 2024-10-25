@@ -34,31 +34,36 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (cheerCount > 0)
             {
 
-                if (cMatchRoom.currentGamePhase == GAMEPHASE.CheerStepChoose)
+                if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
                 {
-                    if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
-                        return;
+                    Lib.WriteConsoleMessage("Wrong player calling");
+                    return;
                 }
 
                 if (cMatchRoom.currentGamePhase != GAMEPHASE.CheerStepChoose)
+                {
+                    Lib.WriteConsoleMessage("Wrong game phase to be called");
                     return;
+                }
 
                 bool hasAttached = false;
 
                 if (cMatchRoom.playerA.PlayerID == int.Parse(playerRequest.playerID))
                 {
                     cMatchRoom.playerAHand.RemoveAt(cMatchRoom.playerAHand.Count - 1);
-                    hasAttached = Lib.GamePhaseCheerChoosedAsync(_DuelAction, cMatchRoom, cMatchRoom.playerAStage, cMatchRoom.playerACollaboration, cMatchRoom.playerABackPosition); // we are saving attached to the list only the name of the Cheer, add other information later i needded 
+                    hasAttached = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, cMatchRoom.playerAStage, cMatchRoom.playerACollaboration, cMatchRoom.playerABackPosition); // we are saving attached to the list only the name of the Cheer, add other information later i needded 
                 }
                 if (cMatchRoom.playerB.PlayerID == int.Parse(playerRequest.playerID))
                 {
                     cMatchRoom.playerBHand.RemoveAt(cMatchRoom.playerBHand.Count - 1);
-                    hasAttached = Lib.GamePhaseCheerChoosedAsync(_DuelAction, cMatchRoom, cMatchRoom.playerBStage, cMatchRoom.playerBCollaboration, cMatchRoom.playerBBackPosition);
+                    hasAttached = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, cMatchRoom.playerBStage, cMatchRoom.playerBCollaboration, cMatchRoom.playerBBackPosition);
                 }
 
-                if (!hasAttached)
+                if (!hasAttached) {
+                    Lib.WriteConsoleMessage("Cannot attach the energy");
                     return;
                 }
+            }
             else
             {
                 // we dont need to pass anything to the client if the user doesnt have energy, but lets just send some empty object

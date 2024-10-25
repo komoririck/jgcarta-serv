@@ -39,6 +39,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             // Add the WebSocket connection to the dictionary with player ID as key
             playerConnections[playerRequest.playerID] = webSocket;
 
+            //getting avalible players from the pool
             List<PlayerInfo> pList = new DBConnection().CheckForAvaliablePlayers();
 
             if (pList.Count < 2)
@@ -67,6 +68,14 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             // since we passed the verification, players are ready in the base and in the socket
+
+
+            //we need to update the socket, so the players can be paired or enter the pool again:
+            bool isPlayersnew = new DBConnection().LockPlayersForAMatch(pList[0].PlayerID, pList[1].PlayerID);
+
+            if (!isPlayersnew)
+                return;
+
             returnData = new RequestData { type = "matchFound", description = "matchFound", requestObject = "matchFound" };
             Lib.SendMessage(playerConnections[pList[0].PlayerID.ToString()], returnData);
             Lib.SendMessage(playerConnections[pList[1].PlayerID.ToString()], returnData);
@@ -75,7 +84,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             List<List<Card>> decksinfo = new DBConnection().GetMatchPlayersDeck(pList[0].PlayerID, pList[1].PlayerID);
             if (!(decksinfo.Count == 6))
             {
-                Lib.WriteConsoleMessag($"not able to get players decks");
+                Lib.WriteConsoleMessage($"not able to get players decks");
                 return;
             }
 
@@ -94,7 +103,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             if (!(decksinfo.Count == 6))
             {
-                Lib.WriteConsoleMessag($"not able to get players decks");
+                Lib.WriteConsoleMessage($"not able to get players decks");
                 return null;
             }
 
@@ -135,8 +144,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
         private async Task SetupInitialHands(MatchRoom cMatchRoom)
         {
-            Draw draw;
-            Draw drawDummy;
+            DuelAction draw;
+            DuelAction drawDummy;
             List<Record> cardlist;
             DuelFieldData _DuelFieldDataA = new();
             DuelFieldData _DuelFieldDataB = new();
@@ -188,7 +197,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
             //BEGIN - SEND FIRST PLAYER STARTER HAND 
-            draw = new Draw()
+            draw = new DuelAction()
             {
                 playerID = cMatchRoom.startPlayer,
                 suffle = false,
@@ -196,18 +205,18 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cardList = cMatchRoom.playerAHand
             };
             pReturnData = new RequestData { type = "duelUpdate", description = "InitialDraw", requestObject = JsonSerializer.Serialize(draw, options) };
-            Lib.WriteConsoleMessag(pReturnData.requestObject);
+            Lib.WriteConsoleMessage(pReturnData.requestObject);
              Lib.SendMessage(playerConnections[cMatchRoom.startPlayer.ToString()], pReturnData);
 
             draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerAHand);
             pReturnData = new RequestData { type = "duelUpdate", description = "InitialDraw", requestObject = JsonSerializer.Serialize(draw, options) };
-            Lib.WriteConsoleMessag(pReturnData.requestObject);
+            Lib.WriteConsoleMessage(pReturnData.requestObject);
              Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
             cMatchRoom.currentGameHigh = 2;
 
             //P2 START HAND
-            draw = new Draw()
+            draw = new DuelAction()
             {
                 playerID = GetOtherPlayer(cMatchRoom, cMatchRoom.startPlayer),
                 suffle = false,
@@ -216,12 +225,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             };
 
             pReturnData = new RequestData { type = "duelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw, options) };
-            Lib.WriteConsoleMessag(pReturnData.requestObject);
+            Lib.WriteConsoleMessage(pReturnData.requestObject);
              Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
 
             draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBHand);
             pReturnData = new RequestData { type = "duelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw, options) };
-            Lib.WriteConsoleMessag(pReturnData.requestObject);
+            Lib.WriteConsoleMessage(pReturnData.requestObject);
              Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
 
             cMatchRoom.currentGameHigh = 3;

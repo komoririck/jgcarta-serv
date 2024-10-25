@@ -57,7 +57,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
         async Task GamePhaseDrawAsync(int playerid, List<Card> PlayerHand, Boolean result, MatchRoom mr)
         {
-            Draw newDraw = new Draw();
+            DuelAction newDraw = new DuelAction();
             newDraw.playerID = playerid;
             newDraw.zone = "Deck";
 

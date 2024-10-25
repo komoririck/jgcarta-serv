@@ -23,7 +23,7 @@ var webSocketPath = "/ws";
 
 // Print the WebSocket URL
 var webSocketUrl = $"{baseUrl}{webSocketPath}";
-Lib.WriteConsoleMessag($"Listening for WebSocket connections at: {webSocketUrl}");
+Lib.WriteConsoleMessage($"Listening for WebSocket connections at: {webSocketUrl}");
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -36,6 +36,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
+
+DBConnection.StartServerClearQueue();
 
 // Add WebSocket handling middleware before other middlewares
 app.UseWebSockets();
@@ -73,13 +75,13 @@ async Task HandleWebSocketAsync(HttpContext context)
                 catch (WebSocketException wsEx)
                 {
                     // Log the exception and break the loop to clean up
-                    Lib.WriteConsoleMessag($"WebSocketException during ReceiveAsync: {wsEx.Message}");
+                    Lib.WriteConsoleMessage($"WebSocketException during ReceiveAsync: {wsEx}");
                     break;
                 }
                 catch (Exception ex)
                 {
                     // Log unexpected exceptions and break the loop
-                    Lib.WriteConsoleMessag($"Exception during ReceiveAsync: {ex.Message}");
+                    Lib.WriteConsoleMessage($"Exception during ReceiveAsync: {ex}");
                     break;
                 }
 
@@ -96,12 +98,12 @@ async Task HandleWebSocketAsync(HttpContext context)
                     catch (WebSocketException wsEx)
                     {
                         // Log the exception but continue to clean up
-                        Lib.WriteConsoleMessag($"WebSocketException during CloseAsync: {wsEx.Message}");
+                        Lib.WriteConsoleMessage($"WebSocketException during CloseAsync: {wsEx}");
                     }
                     catch (Exception ex)
                     {
                         // Log unexpected exceptions
-                        Lib.WriteConsoleMessag($"Exception during CloseAsync: {ex.Message}");
+                        Lib.WriteConsoleMessage($"Exception during CloseAsync: {ex}");
                     }
                     finally
                     {
@@ -132,12 +134,12 @@ async Task HandleWebSocketAsync(HttpContext context)
                     catch (JsonException jsonEx)
                     {
                         // Handle JSON deserialization errors
-                        Lib.WriteConsoleMessag($"JSON Exception: {jsonEx.Message}");
+                        Lib.WriteConsoleMessage($"JSON Exception: {jsonEx}");
                     }
                     catch (Exception ex)
                     {
                         // Handle other unexpected exceptions
-                        Lib.WriteConsoleMessag($"Exception during message processing: {ex.Message}");
+                        Lib.WriteConsoleMessage($"Exception during message processing: {ex}");
                     }
                 }
             }
@@ -145,7 +147,7 @@ async Task HandleWebSocketAsync(HttpContext context)
         catch (Exception ex)
         {
             // Log any exceptions that occurred outside the receive loop
-            Lib.WriteConsoleMessag($"Unhandled Exception: {ex.Message}");
+            Lib.WriteConsoleMessage($"Unhandled Exception: {ex}");
         }
         finally
         {
@@ -159,12 +161,12 @@ async Task HandleWebSocketAsync(HttpContext context)
                 catch (WebSocketException wsEx)
                 {
                     // Log the exception but proceed to dispose
-                    Lib.WriteConsoleMessag($"WebSocketException during final CloseAsync: {wsEx.Message}");
+                    Lib.WriteConsoleMessage($"WebSocketException during final CloseAsync: {wsEx}");
                 }
                 catch (Exception ex)
                 {
                     // Log unexpected exceptions
-                    Lib.WriteConsoleMessag($"Exception during final CloseAsync: {ex.Message}");
+                    Lib.WriteConsoleMessage($"Exception during final CloseAsync: {ex}");
                 }
             }
 
