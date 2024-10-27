@@ -76,8 +76,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             //getting card info
             playerHand[handPos].GetCardInfo(playerHand[handPos].cardNumber);
+            bool canContinue = false;
 
-            if (!playerHand[handPos].bloomLevel.Equals("Debut"))
+            if (playerHand[handPos].bloomLevel.Equals("Debut") || playerHand[handPos].bloomLevel.Equals("Spot"))
+                canContinue = true;
+
+            if (!canContinue)
             {
                 Lib.WriteConsoleMessage("this card cannot be played at this point");
                 return;

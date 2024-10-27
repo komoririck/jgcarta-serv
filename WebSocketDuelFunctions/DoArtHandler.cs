@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
+using hololive_oficial_cardgame_server.EffectControllers;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -88,43 +89,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 }
             }
 
-            List<Card> attachedCards = _DuelAction.usedCard.cardPosition.Equals("Stage") ? cMatchRoom.playerAStage.attachedEnergy : cMatchRoom.playerACollaboration.attachedEnergy;
+            //check the attacking effect
+            cMatchRoom.currentArtResolving = usedArt;
+            cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
+            cMatchRoom.extraInfo.Add(JsonSerializer.Serialize(_DuelAction, Lib.options));
+            ArtEffects.OnArtEffectResolutionAsync(playerConnections, MessageDispatcher._MatchRooms, playerRequest, webSocket);
 
-            if (attachedCards.Count == 0)
-                return;
-
-            int currentPlayer = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
-            int damage = ArtCalculator.CalculateTotalDamage(usedArt, attachedCards, _DuelAction.targetCard.color, _DuelAction.usedCard, _DuelAction.targetCard, currentPlayer, MatchRoom.GetOtherPlayer(cMatchRoom, currentPlayer), cMatchRoom);
-
-            if (damage < 0)
-                return;
-
-            currentOponnentCard.currentHp -= damage;
-            currentOponnentCard.normalDamageRecieved += damage;
-            currentOponnentCard.GetCardInfo(currentOponnentCard.cardNumber);
-
-
-            if (_DuelAction.usedCard.cardPosition.Equals("Stage"))
-                cMatchRoom.centerStageArtUsed = true;
-            if (_DuelAction.usedCard.cardPosition.Equals("Collaboration"))
-                cMatchRoom.collabStageArtUsed = true;
-
-            if (int.Parse(currentOponnentCard.hp) <= (-1 * currentOponnentCard.currentHp))
-            {
-                List<Card> arquive = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
-
-                Lib.DefeatedHoloMemberAsync(arquive, currentOponnentCard, cMatchRoom, true, _DuelAction);
-            }
-            else 
-            { 
-                _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
-                _DuelAction.actionObject = damage.ToString();
-                _DuelAction.actionType = "UseArt";
-
-                pReturnData = new RequestData { type = "GamePhase", description = "UsedArt", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
-                Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
-            }
 
             cMatchRoom.currentGameHigh++;
             return;

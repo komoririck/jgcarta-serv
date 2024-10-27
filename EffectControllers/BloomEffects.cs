@@ -4,7 +4,7 @@ using System.Net.WebSockets;
 using System.Text.Json;
 using static hololive_oficial_cardgame_server.MatchRoom;
 
-namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
+namespace hololive_oficial_cardgame_server.EffectControllers
 {
     class BloomEffects
     {

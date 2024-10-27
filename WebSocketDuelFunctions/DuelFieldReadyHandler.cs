@@ -98,6 +98,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             //check if card in the stage can be there
             List<Record> cardlist = FileReader.QueryRecordsByNameAndBloom(new List<Card>() { playerStage }, "Debut");
+            cardlist.AddRange(FileReader.QueryRecordsByNameAndBloom(new List<Card>() { playerStage }, "Spot"));
             if (cardlist.Count == 0)
             {
                 Lib.WriteConsoleMessage("\nInvalid play, no card suitable at stage: " + playerid + matchroom.currentGameHigh);
@@ -118,6 +119,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 foreach (Card c in playerBackStage)
                 {
                     List<Record> subcardlist = FileReader.QueryRecordsByNameAndBloom(new List<Card>() { c }, "Debut");
+                    subcardlist.AddRange(FileReader.QueryRecordsByNameAndBloom(new List<Card>() { c }, "Spot"));
                     if (subcardlist.Count > 0)
                         n++;
                 }
@@ -151,24 +153,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 playerHand.RemoveAt(i);
             }
 
-            /*
-            if (matchroom.firstPlayer == playerid)
-            {
-
-
-
-                if (!(Lib.HaveSameObjectCounts(cardsPlayedThisTurn, matchroom.playerAHand)))
-                {
-                }
-            }
-            else
-            {
-                if (!(Lib.HaveSameObjectCounts(cardsPlayedThisTurn, matchroom.playerBHand)))
-                {
-                    Lib.WriteConsoleMessage("\nInvalid play, there card in the field that are not at player hand: " + playerid + matchroom.currentGameHigh);
-                    return false;
-                }
-            }*/
+            
 
             //since we get this far, we remove the played cards from the hand
             if (matchroom.playerA.PlayerID == playerid)

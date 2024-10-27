@@ -5,6 +5,7 @@ using static hololive_oficial_cardgame_server.MatchRoom;
 using System.Text;
 using Microsoft.OpenApi.Extensions;
 using System.Text.Json;
+using hololive_oficial_cardgame_server.EffectControllers;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -48,7 +49,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             ResetCardTurnStatusForPlayer(currentBackStageCardd, currentStageCardd, currentCollabCardd);
 
-            if (!string.IsNullOrEmpty(currentCollabCardd.cardNumber))
+            if (currentCollabCardd != null)
             { // client send null when theres no card in the collab
 
                 List<bool> places = GetBackStageAvailability(currentBackStageCardd);
@@ -69,7 +70,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     actionType = "UndoCollab"
                 };
                 duelAction.usedCard.cardPosition = locall;
-                currentCollabCardd = null;
+
+                if (cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID)
+                    cMatchRoom.playerACollaboration = null;
+                else
+                    cMatchRoom.playerBCollaboration = null;
             }
 
             //validating if player need to ReSet his card at main stage position
@@ -83,8 +88,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             //cleaning effects that should end at the end of the turn
             CollabEffects.currentActivatedTurnEffect.Clear();
+            ArtEffects.currentActivatedTurnEffect.Clear();
 
-           _ReturnData = new RequestData { type = "GamePhase", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
+            _ReturnData = new RequestData { type = "GamePhase", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);

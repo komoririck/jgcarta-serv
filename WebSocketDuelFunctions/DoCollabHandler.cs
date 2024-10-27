@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
+using hololive_oficial_cardgame_server.EffectControllers;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -38,7 +39,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     return;
                 }
                 //must be empty or null so theres no card in the collab before sending 
-                if (string.IsNullOrEmpty(cMatchRoom.playerACollaboration.cardNumber))
+                if (cMatchRoom.playerACollaboration == null)
                 {
                     int x = -1;
                     int j = 0;
@@ -70,7 +71,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     return;
                 }
                 //must be empty or null so theres no card in the collab before sending 
-                if (string.IsNullOrEmpty(cMatchRoom.playerBCollaboration.cardNumber))
+                if (cMatchRoom.playerBCollaboration == null)
                 {
                     int j = 0;
                     int x = -1;
@@ -100,7 +101,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
-            CollabEffects.OnCollabEffectAsync(_DuelAction.usedCard, cMatchRoom, cMatchRoom.currentPlayerTurn);
+            cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
+            CollabEffects.OnCollabEffectAsync(_DuelAction, cMatchRoom, cMatchRoom.currentPlayerTurn);
 
             cMatchRoom.currentGameHigh++;
         }

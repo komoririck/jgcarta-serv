@@ -32,13 +32,15 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (cMatchRoom.currentGamePhase != GAMEPHASE.DrawStep)
                 return;
 
+
+            RequestData ReturnData = new RequestData { type = "GamePhase", description = "DrawPhase", requestObject = "" };
             if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
             {
                 if (cMatchRoom.playerADeck.Count == 0)
                     _ = Lib.EndDuelAsync(true, cMatchRoom);
 
                 Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
-                task = GamePhaseDrawAsync(cMatchRoom.firstPlayer, cMatchRoom.playerAHand, true, cMatchRoom);
+                task = Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.firstPlayer, cMatchRoom.playerAHand, true, cMatchRoom, ReturnData);
             }
             else
             {
@@ -46,33 +48,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     _ = Lib.EndDuelAsync(true, cMatchRoom);
 
                 Lib.getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 1);
-                task = GamePhaseDrawAsync(cMatchRoom.secondPlayer, cMatchRoom.playerBHand, true, cMatchRoom);
+                task = Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.secondPlayer, cMatchRoom.playerBHand, true, cMatchRoom, ReturnData);
             }
 
             cMatchRoom.currentGamePhase = GAMEPHASE.CheerStep;
             cMatchRoom.currentGameHigh++;
         }
-
-
-
-        async Task GamePhaseDrawAsync(int playerid, List<Card> PlayerHand, Boolean result, MatchRoom mr)
-        {
-            DuelAction newDraw = new DuelAction();
-            newDraw.playerID = playerid;
-            newDraw.zone = "Deck";
-
-            RequestData ReturnData = new RequestData { type = "GamePhase", description = "DrawPhase", requestObject = "" };
-
-            newDraw.cardList = new List<Card>() { PlayerHand[PlayerHand.Count - 1] };
-            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, Lib.options);
-
-            Lib.SendMessage(MessageDispatcher.playerConnections[newDraw.playerID.ToString()], ReturnData);
-
-            newDraw.cardList = new List<Card>() { new Card() };
-            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, Lib.options);
-            Lib.SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(mr, newDraw.playerID).ToString()], ReturnData);
-        }
-
-
     }
 }

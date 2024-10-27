@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Resources;
 using System.Security.Policy;
 using System.Text.Json.Serialization;
-using static hololive_oficial_cardgame_server.ArtCalculator;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace hololive_oficial_cardgame_server;
@@ -122,5 +121,6 @@ public enum CardEffectType : byte
 {
     None = 0,
     BuffDamageToCardAtZone = 1,
-    BuffThisCardDamageExistXAtZone = 2
+    BuffThisCardDamageExistXAtZone = 2,
+    BuffThisCardDamage = 3
 }

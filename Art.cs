@@ -1,4 +1,5 @@
-﻿using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
+﻿using hololive_oficial_cardgame_server.EffectControllers;
+using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,9 +102,12 @@ namespace hololive_oficial_cardgame_server
             int baseDamage = 0;
             bool _AreColorRequirementsMet = AreColorRequirementsMet(colorCount, costs);
 
+            List<CardEffect> currentActivatedTurnEffect = new();
+            currentActivatedTurnEffect.AddRange(CollabEffects.currentActivatedTurnEffect);
+            currentActivatedTurnEffect.AddRange(ArtEffects.currentActivatedTurnEffect);
 
             //loop for collab active till turn effects
-            foreach (CardEffect cardeffect in CollabEffects.currentActivatedTurnEffect) {
+            foreach (CardEffect cardeffect in currentActivatedTurnEffect) {
 
                 //BuffDamageToCardAtZone
                 if (cardeffect.type == CardEffectType.BuffDamageToCardAtZone)
@@ -119,13 +123,8 @@ namespace hololive_oficial_cardgame_server
                         effectExtraDamage += cardeffect.Damage;
                     }
                 }
-            }
-
-            //loop for skill effects
-            foreach (CardEffect cardeffect in CollabEffects.currentActivatedTurnEffect)
-            {
                 //BuffDamageToCardAtZoneIfNameMatch
-                if (cardeffect.type == CardEffectType.BuffThisCardDamageExistXAtZone)
+                else if (cardeffect.type == CardEffectType.BuffThisCardDamageExistXAtZone)
                 {
                     if (!(cardeffect.artName.Equals(art.Name)))
                         continue;
@@ -148,15 +147,25 @@ namespace hololive_oficial_cardgame_server
                         effectExtraDamage += cardeffect.Damage;
                     }
                 }
-            }
+                else if (cardeffect.type == CardEffectType.BuffThisCardDamage)
+                {
+                    if (!cardeffect.cardNumber.Equals(attackingCard.cardNumber))
+                        continue;
 
+                    if (!cardeffect.zoneTarget.Equals(cardZone))
+                        continue;
+
+                    Card cardAtStage = matchRoom.startPlayer == playerWhoDeclaredAttack ? matchRoom.playerAStage : matchRoom.playerBStage;
+                    effectExtraDamage += cardeffect.Damage;
+                }
+            }
 
             if (_AreColorRequirementsMet)
             {
                 baseDamage += art.Damage.Amount * 1 + effectExtraDamage;
             }
             else {
-                baseDamage = -1000;
+                baseDamage = -100000;
             }
 
             Lib.WriteConsoleMessage($"Base Damage: {baseDamage}");

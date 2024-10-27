@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using MySqlX.XDevAPI.Common;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
 
@@ -17,12 +18,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
         internal async Task MainDoActionRequestBloomHolomemHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
         {
-
-            int handPos = -1;
-
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
-
 
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
 
@@ -35,44 +32,48 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
             bool canContinueBloomHolomem = false;
-
             if (!_DuelAction.usedCard.bloomLevel.Equals("Debut") || !_DuelAction.usedCard.bloomLevel.Equals("1st"))
                 canContinueBloomHolomem = true;
 
-            if (!canContinueBloomHolomem)
+            if (!canContinueBloomHolomem) {
+                Lib.WriteConsoleMessage("Used card is not valid to bloom");
                 return;
+            }
 
+            //QueryBloomableCard has a special treatment for card with more than one name
             List<Record> validCardToBloom = FileReader.QueryBloomableCard(_DuelAction.targetCard.name, _DuelAction.targetCard.bloomLevel);
-
+            //lets add especial conditions to the bloom, like SorAZ
+            /*if (_DuelAction.usedCard.name.Equals("SorAZ") && _DuelAction.targetCard.bloomLevel.Equals("Debut")) {
+                foreach (Record r in FileReader.result)
+                {
+                    if (r.CardNumber.Equals("hSD01-013")) 
+                    {
+                        validCardToBloom.Add(r);
+                    }
+                }
+            }*/
+                
             //if not break possible to bloom, break
             if (validCardToBloom.Count < 1)
                 return;
 
             //checking if the player has the card in the hand and getting the pos
-            handPos = -1;
-            if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+            List<Card> playerHand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
+            int handPos = -1;
+            int nn = 0;
+            foreach (Card inHand in playerHand)
             {
-                int nn = 0;
-                foreach (Card inHand in cMatchRoom.playerAHand)
-                {
-                    if (inHand.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
-                        handPos = nn;
-                    nn++;
-                }
+                if (inHand.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
+                    handPos = nn;
+                nn++;
             }
-            else
-            {
-                int nn = 0;
-                foreach (Card inHand in cMatchRoom.playerBHand)
-                {
-                    if (inHand.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
-                        handPos = nn;
-                    nn++;
-                }
-            }
-            if (handPos == -1)
-                return;
 
+            if (handPos == -1) {
+                Lib.WriteConsoleMessage("used card doesnt exist in the player hand");
+                return;
+            }
+
+            //check if the used card exist in the validCardToBloom since we search using name above
             int validCardPos = -1;
             int nnn = 0;
             foreach (Record record in validCardToBloom)
@@ -85,8 +86,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             if (validCardPos == -1)
+            {
+                Lib.WriteConsoleMessage("used card doesnt exist in the bloom result");
                 return;
+            }
 
+            //since we pass all the validation, lets just assign the new card
             void bloomCard(Card cardToBloom, Card cardWithBloomInfo)
             {
                 cardToBloom.bloomChild.Add(new Card() { cardNumber = cardToBloom.cardNumber });

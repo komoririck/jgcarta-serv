@@ -4,18 +4,19 @@ using System.Text.Json;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
-    internal class AttachTopCheerEnergyToBackHandler
+    internal class AttachRangeFromCheerEnergyToZoneHandler
     {
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
+        private int energyIndex;
 
-        public AttachTopCheerEnergyToBackHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        public AttachRangeFromCheerEnergyToZoneHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
         {
             this.playerConnections = playerConnections;
             this.matchRooms = matchRooms;
         }
 
-        internal async Task AttachTopCheerEnergyHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, bool stage, bool collab, bool back, int energyIndex = -1)
+        internal async Task AttachRangeFromCheerEnergyToZoneHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, bool stage, bool collab, bool back, List<Card> tempHandList)
         {
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
@@ -29,10 +30,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (_DuelAction.cheerCostCard != null)
                 _DuelAction.cheerCostCard.GetCardInfo(_DuelAction.cheerCostCard.cardNumber);
 
-            List<string> objects = JsonSerializer.Deserialize<List<string>>(_DuelAction.actionObject);
-            string topCheerEnergy = objects[energyIndex];
-
-
             //temphand
             List<Card> playertemphand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
             if (playertemphand.Count == 0)
@@ -40,35 +37,23 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 Lib.WriteConsoleMessage("temp hand null -- RISK PLAY");
                 return;
             }
-            if (!topCheerEnergy.Equals(playertemphand[0].cardNumber) || !playertemphand[0].playedFrom.Equals("CardCheer"))
-            {
-                // if neither of the matches are valid, something is wrong with the play the player send the information
-                Lib.WriteConsoleMessage("card didnt match temphand -- RISK PLAY");
-                return;
+
+            int x = -1;
+            for (int y = 0; y < playertemphand.Count; y++) {
+                if (playertemphand[y].cardNumber.Equals(_DuelAction.usedCard.cardNumber)) {
+                    x = y;
+                }
             }
-
-            //energy list
-            List<Card> playerCheerDeck = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
-
-            if (!topCheerEnergy.Equals(playerCheerDeck[playerCheerDeck.Count - 1].cardNumber)) {
-                Lib.WriteConsoleMessage("Card didnt match the last position of the cheer");
+            if (x == -1)
+            {
+                Lib.WriteConsoleMessage("Invalid card used");
                 return;
             }
 
             //since pass the valition remove last pos
-            playerCheerDeck.RemoveAt(playerCheerDeck.Count - 1);
+            playertemphand.RemoveAt(x);
 
-        
-            //AssignEnergyToZoneAsync checks if the used card is the energy we're trying to attach, só we need to change here for the topCheerEnergy = _DuelAction.actionObject
-            //because the client is sending the card of activate the effect as the one who used the effect
-            //holding the used card
-            Card tempUsedCard = _DuelAction.usedCard;
-            //changing for the energy
-            _DuelAction.usedCard = playertemphand[0];
-            
             bool assinged;
-
-
             if (cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID)
                 assinged = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, (stage == true ? cMatchRoom.playerAStage : null), (collab == true ? cMatchRoom.playerACollaboration : null), (back == true ? cMatchRoom.playerABackPosition : null));
             else
@@ -81,8 +66,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             //since we assign, lets return the usedcard as the card who activate the effect instead of the energy
-            //_DuelAction.usedCard = tempUsedCard;
-
             if (cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID) { cMatchRoom.playerATempHand.Clear(); } else { cMatchRoom.playerBTempHand.Clear(); }
 
             //creating the action to send to the player, we are recycing some information from what player send

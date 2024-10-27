@@ -58,14 +58,14 @@ public class MatchRoom
     public List<Card> playerABackPosition = new List<Card>();
     public List<Card> playerBBackPosition = new List<Card>();
 
-    public Card playerAFavourite = new Card();
-    public Card playerBFavourite = new Card();
+    public Card playerAFavourite = null;
+    public Card playerBFavourite = null;
 
-    public Card playerAStage = new Card();
-    public Card playerBStage = new Card();
+    public Card playerAStage = null;
+    public Card playerBStage = null;
 
-    public Card playerACollaboration = new Card();
-    public Card playerBCollaboration = new Card();
+    public Card playerACollaboration = null;
+    public Card playerBCollaboration = null;
 
     public List<Card> playerAArquive = new List<Card>();
     public List<Card> playerBArquive = new List<Card>();
@@ -76,14 +76,17 @@ public class MatchRoom
     public List<Card> playerACardCheer = new List<Card>();
     public List<Card> playerBCardCheer = new List<Card>();
 
-    public Card playerAOshi = new Card();
-    public Card playerBOshi = new Card();
+    public Card playerAOshi = null;
+    public Card playerBOshi = null;
 
     public string currentCardResolving = "";
+    public Art currentArtResolving = null;
     internal int cheersAssignedThisChainAmount;
     internal int cheersAssignedThisChainTotal = 1;
-    internal List<string> extraInfo;
+    internal List<string> extraInfo = new();
     internal string currentCardResolvingStage = "";
+    internal int currentArtDamage;
+    internal List<DuelAction> currentDuelActionResolvingRecieved = new();
 
     [Flags]
     public enum GAMEPHASE : byte

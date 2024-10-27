@@ -1,4 +1,5 @@
-﻿using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
+﻿using hololive_oficial_cardgame_server.EffectControllers;
+using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
 using MySqlX.XDevAPI.Common;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
@@ -127,6 +128,8 @@ namespace hololive_oficial_cardgame_server
                     cMatchRoom.centerStageArtUsed = false;
                     cMatchRoom.collabStageArtUsed = false;
 
+                    CollabEffects.currentActivatedTurnEffect.Clear();
+
                     Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
 
                     Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new RequestData { type = "GamePhase", description = "Endturn", requestObject = "" });
@@ -158,14 +161,9 @@ namespace hololive_oficial_cardgame_server
                 case "ResolveOnCollabEffect":
                     CollabEffects.OnCollabEffectResolutionAsync(playerConnections, _MatchRooms, playerRequest, webSocket);
                     break;
-                default:
-                    //check if there is a resolving card
-                    if (string.IsNullOrEmpty(cMatchRoom.currentCardResolving))
-                        WriteConsoleMessage("resolving card is empty");
-                    else
-                        cMatchRoom.currentCardResolving = "";
+                case "ResolveOnArtEffect":
+                    ArtEffects.OnArtEffectResolutionAsync(playerConnections, _MatchRooms, playerRequest, webSocket);
                     break;
-
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using System.Security.Policy;
 using System.Text.Json;
 using static hololive_oficial_cardgame_server.MatchRoom;
 
@@ -34,7 +35,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (_DuelAction.cheerCostCard != null)
                 _DuelAction.cheerCostCard.GetCardInfo(_DuelAction.cheerCostCard.cardNumber);
 
-            DuelAction draw;
             RequestData pReturnData;
             int playerA = cMatchRoom.firstPlayer;
             int playerB = cMatchRoom.secondPlayer;
@@ -150,31 +150,26 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     else
                         cMatchRoom.playerBLimiteCardPlayed.Add(new Card() { cardNumber = "hSD01-017" });
 
-                    draw = new DuelAction()
-                    {
-                        playerID = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.startPlayer : cMatchRoom.secondPlayer,
-                        suffle = true,
-                        zone = "Deck",
-                        cardList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAHand : cMatchRoom.playerBHand
-                    };
+                    _DuelAction.playerID = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.startPlayer : cMatchRoom.secondPlayer;
+                    _DuelAction.suffle = true;
+                    _DuelAction.zone = "Deck";
+                    _DuelAction.cardList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
 
+                    _DuelAction = new() { usedCard = new Card() {cardNumber = "hSD01-017" }, actionType = "SuffleAllThenDraw", playerID = cMatchRoom.currentPlayerTurn};
 
-                    _DuelAction = new() { usedCard = new Card() {cardNumber = "hSD01-017" }, actionType = "SuffleAllThenDraw", playerID = cMatchRoom.currentPlayerTurn, actionObject = JsonSerializer.Serialize(draw) };
                     pReturnData = new RequestData { type = "GamePhase", description = "Draw", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                     Console.WriteLine(pReturnData);
                     if (cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID)
                     {
                         Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
-                        draw.cardList = cMatchRoom.FillCardListWithEmptyCards(draw.cardList);
-                        _DuelAction.actionObject = JsonSerializer.Serialize(draw);
+                        _DuelAction.cardList = cMatchRoom.FillCardListWithEmptyCards(_DuelAction.cardList);
                         pReturnData = new RequestData { type = "GamePhase", description = "Draw", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                         Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
                     }
                     else
                     {
                         Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
-                        draw.cardList = cMatchRoom.FillCardListWithEmptyCards(draw.cardList);
-                        _DuelAction.actionObject = JsonSerializer.Serialize(draw);
+                        _DuelAction.cardList = cMatchRoom.FillCardListWithEmptyCards(_DuelAction.cardList);
                         pReturnData = new RequestData { type = "GamePhase", description = "Draw", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                         Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
                     }

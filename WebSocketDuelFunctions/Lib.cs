@@ -40,7 +40,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             return amount;
         }
 
-
+        /*
         static public void RemovePlayedCardsFromHand(List<Card> handCards, List<Card> playedCards)
         {
             foreach (var playedCard in playedCards)
@@ -79,7 +79,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             // Check if the count matches the number of played cards
             return n == playedthisturn.Count;
         }
-
+        */
 
 
 
@@ -201,14 +201,14 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (duelAction.usedCard.cardType.Equals("エール"))
             {
                 if (stage != null)
-                    if (duelAction.targetCard.cardNumber.Equals(stage.cardNumber) && duelAction.local.Equals("Stage"))
+                    if (duelAction.targetCard.cardNumber.Equals(stage.cardNumber) && duelAction.targetCard.cardPosition.Equals("Stage"))
                     {
                         stage.attachedEnergy.Add(duelAction.usedCard);
                         return hasAttached = true;
                     }
 
                 if (collab != null)
-                    if (duelAction.targetCard.cardNumber.Equals(collab.cardNumber) && duelAction.local.Equals("Collaboration"))
+                    if (duelAction.targetCard.cardNumber.Equals(collab.cardNumber) && duelAction.targetCard.cardPosition.Equals("Collaboration"))
                     {
                         collab.attachedEnergy.Add(duelAction.usedCard);
                         return hasAttached = true;
@@ -494,6 +494,22 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 frase += $"{card.cardNumber}-";
             }
             Lib.WriteConsoleMessage(frase);
+        }
+
+        static public async Task AddTopDeckToDrawObjectAsync(int playerid, List<Card> PlayerHand, Boolean result, MatchRoom mr, RequestData ReturnData)
+        {
+            DuelAction newDraw = new DuelAction();
+            newDraw.playerID = playerid;
+            newDraw.zone = "Deck";
+
+            newDraw.cardList = new List<Card>() { PlayerHand[PlayerHand.Count - 1] };
+            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, Lib.options);
+
+            Lib.SendMessage(MessageDispatcher.playerConnections[newDraw.playerID.ToString()], ReturnData);
+
+            newDraw.cardList = new List<Card>() { new Card() };
+            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, Lib.options);
+            Lib.SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(mr, newDraw.playerID).ToString()], ReturnData);
         }
     }
 }

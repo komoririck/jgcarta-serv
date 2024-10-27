@@ -1,4 +1,4 @@
-namespace hololive_oficial_cardgame_server;
+﻿namespace hololive_oficial_cardgame_server;
 
 using ExcelDataReader;
 using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
@@ -8,6 +8,8 @@ using System.Text;
 public class Record
 {
     public string Name { get; set; }
+    public string OtherNameOne { get; set; }
+    public string OtherNameTwo { get; set; }
     public string CardType { get; set; }
     public string Rarity { get; set; }
     public string Product { get; set; }
@@ -81,7 +83,9 @@ public class Record
                         Illustrator = row[11]?.ToString() ?? "",
                         CardNumber = row[12]?.ToString() ?? "",
                         Life = row[13]?.ToString() ?? "",
-                        Tag = row[14]?.ToString() ?? ""
+                        Tag = row[14]?.ToString() ?? "",
+                        OtherNameOne = row[15]?.ToString() ?? "",
+                        OtherNameTwo = row[15]?.ToString() ?? ""
                     };
 
                     result.Add(record);
@@ -156,10 +160,17 @@ public class Record
                 break;
         }
 
-        var query = result.Where(r => r.Name == name && r.BloomLevel == nextBloomLevel);
-        return query.ToList();
+        List<Record> query = new();
+        if (name.Equals("SorAZ"))
+        {
+            query.AddRange(result.Where(r => ((r.Name == "AZKi") || (r.Name == "ときのそら")) && r.BloomLevel == nextBloomLevel).ToList());
+            //query.AddRange(result.Where(r => ((r.OtherNameOne == "?????") || (r.OtherNameTwo == "AZKi") || (r.OtherNameOne == "AZKi") || (r.OtherNameTwo == "?????")) && r.BloomLevel == nextBloomLevel).ToList());
+        }
+        else
+        {
+            query.AddRange(result.Where(r => r.Name == name && r.BloomLevel == nextBloomLevel).ToList());
+        }
+        return query;
     }
-
-
 }
 
