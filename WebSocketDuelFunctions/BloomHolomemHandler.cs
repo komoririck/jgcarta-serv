@@ -40,10 +40,51 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 return;
             }
 
+            //targetcardValidation
+            Card serverTarget = null;
+            switch (_DuelAction.targetCard.cardPosition) 
+            {
+                case "Stage":
+                    serverTarget = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
+                    if (!serverTarget.cardPosition.Equals(_DuelAction.targetCard.cardPosition))
+                    {
+                        Lib.WriteConsoleMessage("invalid target");
+                        return;
+                    }
+                    break;
+                case "Collaboration":
+                    serverTarget = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
+                    if (!serverTarget.cardPosition.Equals(_DuelAction.targetCard.cardPosition))
+                    {
+                        Lib.WriteConsoleMessage("invalid target");
+                        return;
+                    }
+                    break;
+                case "BackStage1":
+                case "BackStage2":
+                case "BackStage3":
+                case "BackStage4":
+                case "BackStage5":
+                    List<Card> backstage = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
+                    foreach (Card card in backstage) 
+                    {
+                        if (card.cardPosition.Equals(_DuelAction.targetCard.cardPosition)) {
+                            serverTarget = card;
+                        }
+                    }
+                    if(serverTarget == null)
+                    {
+                        Lib.WriteConsoleMessage("invalid target");
+                        return;
+                    }
+                    break;
+            }
+
+
             //QueryBloomableCard has a special treatment for card with more than one name
             List<Record> validCardToBloom = FileReader.QueryBloomableCard(_DuelAction.targetCard.name, _DuelAction.targetCard.bloomLevel);
             //lets add especial conditions to the bloom, like SorAZ
-            /*if (_DuelAction.usedCard.name.Equals("SorAZ") && _DuelAction.targetCard.bloomLevel.Equals("Debut")) {
+            if (_DuelAction.usedCard.name.Equals("SorAZ") && _DuelAction.targetCard.bloomLevel.Equals("Debut") && (_DuelAction.targetCard.name.Equals("ときのそら") || _DuelAction.targetCard.name.Equals("AZKi"))) {
                 foreach (Record r in FileReader.result)
                 {
                     if (r.CardNumber.Equals("hSD01-013")) 
@@ -51,7 +92,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                         validCardToBloom.Add(r);
                     }
                 }
-            }*/
+            }
                 
             //if not break possible to bloom, break
             if (validCardToBloom.Count < 1)
@@ -157,14 +198,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     else
                         cMatchRoom.playerBHand.RemoveAt(handPos);
 
-
-                    if (_DuelAction.actionType.Equals("BloomHolomem"))
-                        return;
-
                     checkBloomEffect();
                     break;
             }
-            RequestData pReturnData = new RequestData { type = "GamePhase", description = "UsedArt", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            RequestData pReturnData = new RequestData { type = "GamePhase", description = "BloomHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
 
@@ -173,7 +210,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
         private void checkBloomEffect()
         {
-            throw new NotImplementedException();
         }
     }
 }

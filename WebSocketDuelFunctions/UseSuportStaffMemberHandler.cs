@@ -131,49 +131,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
                     UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, playerA, playerB, 0, "hSD01-020", true, true, 0, false, _DuelAction.targetCard.cardPosition, _DuelAction.targetCard.cardNumber, false, _DuelAction.cheerCostCard);
                     break;
-                case "hSD01-017":
-                    tempHand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
 
-                    List<Card> tempDeck = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerADeck : cMatchRoom.playerBDeck;
-
-                    if (tempHand.Count < 2) {
-                        Lib.WriteConsoleMessage("Player dont have enough cards in the hand to activatehSD01-017");
-                        return;
-                    }
-
-                    cMatchRoom.suffleHandToTheDeck(tempDeck, tempHand);
-                    cMatchRoom.ShuffleCards(tempDeck);
-                    Lib.getCardFromDeck(tempDeck, tempHand, 5);
-
-                    if (cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID)
-                        cMatchRoom.playerALimiteCardPlayed.Add(new Card() { cardNumber = "hSD01-017" });
-                    else
-                        cMatchRoom.playerBLimiteCardPlayed.Add(new Card() { cardNumber = "hSD01-017" });
-
-                    _DuelAction.playerID = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.startPlayer : cMatchRoom.secondPlayer;
-                    _DuelAction.suffle = true;
-                    _DuelAction.zone = "Deck";
-                    _DuelAction.cardList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
-
-                    _DuelAction = new() { usedCard = new Card() {cardNumber = "hSD01-017" }, actionType = "SuffleAllThenDraw", playerID = cMatchRoom.currentPlayerTurn};
-
-                    pReturnData = new RequestData { type = "GamePhase", description = "Draw", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                    Console.WriteLine(pReturnData);
-                    if (cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID)
-                    {
-                        Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
-                        _DuelAction.cardList = cMatchRoom.FillCardListWithEmptyCards(_DuelAction.cardList);
-                        pReturnData = new RequestData { type = "GamePhase", description = "Draw", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
-                    }
-                    else
-                    {
-                        Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
-                        _DuelAction.cardList = cMatchRoom.FillCardListWithEmptyCards(_DuelAction.cardList);
-                        pReturnData = new RequestData { type = "GamePhase", description = "Draw", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
-                    }
-                    break;
             }
 
 
@@ -293,7 +251,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             DuelAction DuelActionResponse = new DuelAction()
             {
                 playerID = cMatchRoom.currentPlayerTurn,
-                actionType = "doDraw",
                 usedCard = new Card() { cardNumber = cUsedNumber }
             };
 

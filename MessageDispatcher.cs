@@ -164,6 +164,11 @@ namespace hololive_oficial_cardgame_server
                 case "ResolveOnArtEffect":
                     ArtEffects.OnArtEffectResolutionAsync(playerConnections, _MatchRooms, playerRequest, webSocket);
                     break;
+                case "ResolveOnSupportEffect":
+                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+                    SupportEffects.OnSupportEffects(_DuelAction, cMatchRoom, playerRequest, webSocket);
+                    break;
+                    
             }
         }
     }

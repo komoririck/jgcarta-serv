@@ -8,7 +8,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 {
     class BloomEffects
     {
-        internal static void OnBloomEffect(Card? usedCard)
+        internal static void SupportStaffEffects(Card? usedCard)
         {
             throw new NotImplementedException();
         }

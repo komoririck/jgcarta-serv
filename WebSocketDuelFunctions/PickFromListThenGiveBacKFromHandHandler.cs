@@ -21,7 +21,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             this.matchRooms = matchRooms;
         }
 
-        internal async Task PickFromListThenGiveBacKFromHandHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
+        internal async Task PickFromHoloPowerThenGiveBacKFromHandHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
         {
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
@@ -54,10 +54,13 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 return;
             }
 
+            holoPowerList.RemoveAt(n);
+
             //adding selected card to the hand
             List<Card> playerHandList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
 
             playerHandList.Add(new() { cardNumber = returnedCardList[0] });
+            holoPowerList.Add(new() { cardNumber = returnedCardList[1] });
 
             //checking if the card to return to the holopower is valid
             n = -1;

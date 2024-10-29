@@ -105,7 +105,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     break;
                 case "hSD01-0071":
                     var handler1 = new PickFromListThenGiveBacKFromHandHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                    await handler1.PickFromListThenGiveBacKFromHandHandleAsync(playerRequest, webSocket);
+                    await handler1.PickFromHoloPowerThenGiveBacKFromHandHandleAsync(playerRequest, webSocket);
                     ResetResolution();
                     break;
                 case "hSD01-009":

@@ -336,6 +336,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cMatchRoom.cheersAssignedThisChainAmount = 0;
             }
 
+            //adding cards from the deafeat holomem to the arquive
             arquive.AddRange(currentOponnentCard.attachedEnergy);
             arquive.AddRange(currentOponnentCard.bloomChild);
             arquive.Add(currentOponnentCard);
@@ -511,5 +512,75 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             ReturnData.requestObject = JsonSerializer.Serialize(newDraw, Lib.options);
             Lib.SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(mr, newDraw.playerID).ToString()], ReturnData);
         }
+
+        static public int CheckIfCardExistInPlayerHand(MatchRoom cMatchRoom, int playerId, string UsedCard) {
+            List<Card> playerHand = playerId == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
+            int handPos = -1;
+            int handPosCounter = 0;
+            foreach (Card inHand in playerHand)
+            {
+                if (inHand.cardNumber.Equals(UsedCard))
+                {
+                    handPos = handPosCounter;
+                    break;
+                }
+                handPosCounter++;
+            }
+            return handPos;
+        }
+
+        static public bool PayCardEffectCheerFieldCost(MatchRoom cMatchRoom, string zone, string cardNumber)
+        {
+
+            Card seletectedCard = new();
+
+            switch (zone)
+            {
+                case "Favourite":
+                    seletectedCard = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAFavourite : cMatchRoom.playerBFavourite;
+                    break;
+                case "Collaboration":
+                    seletectedCard = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
+                    break;
+                case "Stage":
+                    seletectedCard = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
+                    break;
+                case "BackStage1":
+                case "BackStage2":
+                case "BackStage3":
+                case "BackStage4":
+                case "BackStage5":
+                    List<Card> seletectedCardList;
+                    seletectedCardList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
+                    foreach (Card card in seletectedCardList)
+                        if (card.cardPosition.Equals(zone))
+                            seletectedCard = card;
+                    break;
+            }
+
+            int removePos = -1;
+            int n = 0;
+            foreach (Card energy in seletectedCard.attachedEnergy)
+            {
+                if (energy.cardNumber.Equals(cardNumber))
+                {
+                    removePos = n;
+                    break;
+                }
+                n++;
+            }
+
+            if (removePos > -1)
+            {
+                //adding the card that should be removed to the arquive, then removing from the player hand
+                List<Card> tempArquive = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
+                tempArquive.Add(seletectedCard.attachedEnergy[removePos]);
+                seletectedCard.attachedEnergy.RemoveAt(removePos);
+                return true;
+            }
+
+            return false;
+        }
+
     }
 }
