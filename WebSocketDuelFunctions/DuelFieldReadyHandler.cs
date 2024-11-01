@@ -1,9 +1,8 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using static hololive_oficial_cardgame_server.MatchRoom;
-using System.Text;
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -23,23 +22,20 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            int playerA = cMatchRoom.firstPlayer;
-            int playerB = cMatchRoom.secondPlayer;
-
             DuelFieldData _DuelFieldDataA = new();
             DuelFieldData _DuelFieldDataB = new();
 
-            RequestData pReturnData = new();
+            PlayerRequest pReturnData = new();
 
-            DuelFieldData _duelFieldData = JsonSerializer.Deserialize<DuelFieldData>(playerRequest.requestData.requestObject);
+            DuelFieldData _duelFieldData = JsonSerializer.Deserialize<DuelFieldData>(playerRequest.requestObject);
 
-            if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+            if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
             {
-                FirstGameBoardSetup(_duelFieldData, int.Parse(playerRequest.playerID), cMatchRoom, MessageDispatcher.CardList, _duelFieldData.playerAStage, _duelFieldData.playerABackPosition);
+                FirstGameBoardSetup(_duelFieldData, playerRequest.playerID, cMatchRoom, MessageDispatcher.CardList, _duelFieldData.playerAStage, _duelFieldData.playerABackPosition);
             }
             else
             {
-                FirstGameBoardSetup(_duelFieldData, int.Parse(playerRequest.playerID), cMatchRoom, MessageDispatcher.CardList, _duelFieldData.playerBStage, _duelFieldData.playerBBackPosition);
+                FirstGameBoardSetup(_duelFieldData, playerRequest.playerID, cMatchRoom, MessageDispatcher.CardList, _duelFieldData.playerBStage, _duelFieldData.playerBBackPosition);
             }
 
             if (!(cMatchRoom.playerAInicialBoardSetup && cMatchRoom.playerBInicialBoardSetup))
@@ -72,10 +68,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
             //since we were able to update the users table to lock the match, send both players to the match
-            pReturnData = new RequestData { type = "BoardReadyToPlay", description = "BoardReadyToPlay", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) };
+            pReturnData = new PlayerRequest { type = "BoardReadyToPlay", description = "BoardReadyToPlay", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
 
-            pReturnData = new RequestData { type = "BoardReadyToPlay", description = "BoardReadyToPlay", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) }; 
+            pReturnData = new PlayerRequest { type = "BoardReadyToPlay", description = "BoardReadyToPlay", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) }; 
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
             //update the room phase, so the server can take it automaticaly from here
@@ -83,9 +79,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             cMatchRoom.currentGameHigh = 7;
             //devolver um synchigh com informações de quem vai comprar
 
+            cMatchRoom.StopTimer(MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn));
+            cMatchRoom.StartOrResetTimer(cMatchRoom.currentPlayerTurn.ToString(), enduel => Lib.EndDuelAsync(cMatchRoom, MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)));
         }
 
-        bool FirstGameBoardSetup(DuelFieldData _duelFieldData, int playerid, MatchRoom matchroom, List<Record> AllCardList, Card playerStage, List<Card> playerBackStage)
+        bool FirstGameBoardSetup(DuelFieldData _duelFieldData, string playerid, MatchRoom matchroom, List<Record> AllCardList, Card playerStage, List<Card> playerBackStage)
         {
 
 
@@ -158,8 +156,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //since we get this far, we remove the played cards from the hand
             if (matchroom.playerA.PlayerID == playerid)
             {
-//                Lib.RemovePlayedCardsFromHand(matchroom.playerAHand, cardsPlayedThisTurn);
-
                 //since the last code updated the hand, we only need to update the field now:
                 matchroom.playerAStage = _duelFieldData.playerAStage;
                 matchroom.playerABackPosition = _duelFieldData.playerABackPosition;
@@ -167,13 +163,13 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
             else
             {
-//             Lib.RemovePlayedCardsFromHand(matchroom.playerBHand, cardsPlayedThisTurn);
-
                 //since the last code updated the hand, we only need to update the field now:
                 matchroom.playerBStage = _duelFieldData.playerBStage;
                 matchroom.playerBBackPosition = _duelFieldData.playerBBackPosition;
                 matchroom.playerBInicialBoardSetup = true;
             }
+
+
             return true;
         }
 

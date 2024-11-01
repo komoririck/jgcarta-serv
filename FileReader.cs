@@ -1,7 +1,7 @@
 ﻿namespace hololive_oficial_cardgame_server;
 
 using ExcelDataReader;
-using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
+using hololive_oficial_cardgame_server.SerializableObjects;
 using System.Data;
 using System.Text;
 

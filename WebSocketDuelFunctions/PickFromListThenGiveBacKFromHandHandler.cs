@@ -1,4 +1,5 @@
-﻿using Org.BouncyCastle.Asn1.X509;
+﻿using hololive_oficial_cardgame_server.SerializableObjects;
+using Org.BouncyCastle.Asn1.X509;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
@@ -12,7 +13,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
     {
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
-        private RequestData pReturnData;
+        private PlayerRequest pReturnData;
         private DuelAction _DuelAction = new();
 
         public PickFromListThenGiveBacKFromHandHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
@@ -26,7 +27,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            DuelAction response = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            DuelAction response = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
             List<string> returnedCardList = JsonSerializer.Deserialize<List<string>>(response.actionObject);
 
             if (returnedCardList.Count != 2)
@@ -103,7 +104,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             _DuelAction.targetCard = new() { cardNumber = returnedCardList[1]};
             _DuelAction.actionObject = JsonSerializer.Serialize(_Draw, Lib.options);
 
-            pReturnData = new RequestData { type = "GamePhase", description = "PickFromListThenGiveBacKFromHandDone", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            pReturnData = new PlayerRequest { type = "GamePhase", description = "PickFromListThenGiveBacKFromHandDone", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
             Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
 

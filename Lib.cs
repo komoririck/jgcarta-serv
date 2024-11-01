@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using hololive_oficial_cardgame_server.SerializableObjects;
+using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.WebSockets;
@@ -6,9 +7,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using static hololive_oficial_cardgame_server.MatchRoom;
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 
-namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
+namespace hololive_oficial_cardgame_server
 {
     public class Lib
     {
@@ -32,7 +33,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     if (deck[deck.Count - 1] != null)
                         deck.RemoveAt(deck.Count - 1);
                     else
-                        return (i - amount);
+                        return i - amount;
 
                 }
                 return amount;
@@ -83,19 +84,19 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
 
-        static public async Task EndDuelAsync(Boolean result, MatchRoom matchRoom, int pickWinner = -2)
+        static public async Task EndDuelAsync(MatchRoom matchRoom, string pickWinner = "")
         {
 
-            int currentPlayerTurn = matchRoom.currentPlayerTurn;
-            if (pickWinner > -1)
+            string currentPlayerTurn = matchRoom.currentPlayerTurn;
+            if (string.IsNullOrEmpty(pickWinner))
                 currentPlayerTurn = pickWinner;
 
-            int oponnent = MatchRoom.GetOtherPlayer(matchRoom, currentPlayerTurn);
+            string oponnent = GetOtherPlayer(matchRoom, currentPlayerTurn);
             DuelAction _duelaction = new();
             _duelaction.actionType = "Victory";
-            _duelaction.playerID = currentPlayerTurn;
+            _duelaction.playerID = currentPlayerTurn.ToString();
 
-            RequestData _ReturnData = new RequestData { type = "GamePhase", description = "Endduel", requestObject = JsonSerializer.Serialize(_duelaction, Lib.options) };
+            PlayerRequest _ReturnData = new PlayerRequest { type = "GamePhase", description = "Endduel", requestObject = JsonSerializer.Serialize(_duelaction, options) };
 
 
             await SendMessage(MessageDispatcher.playerConnections[currentPlayerTurn.ToString()], _ReturnData);
@@ -117,7 +118,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     try
                     {
                         if (currentPlayerConnection.State != WebSocketState.Closed) { }
-//                        await currentPlayerConnection.CloseAsync(WebSocketCloseStatus.NormalClosure,"Closing connection",CancellationToken.None);
+                        //                        await currentPlayerConnection.CloseAsync(WebSocketCloseStatus.NormalClosure,"Closing connection",CancellationToken.None);
                     }
                     catch (WebSocketException ex)
                     {
@@ -133,7 +134,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     try
                     {
                         if (opponentConnection.State != WebSocketState.Closed) { }
-//                            await opponentConnection.CloseAsync(WebSocketCloseStatus.NormalClosure,"Closing connection",CancellationToken.None);
+                        //                            await opponentConnection.CloseAsync(WebSocketCloseStatus.NormalClosure,"Closing connection",CancellationToken.None);
                     }
                     catch (WebSocketException ex)
                     {
@@ -151,10 +152,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
         }
 
-        public static async Task SendMessage(WebSocket webSocket, RequestData data, [CallerMemberName] string callerName = "")
+        public static async Task SendMessage(WebSocket webSocket, PlayerRequest data, [CallerMemberName] string callerName = "")
         {
 
-            Lib.WriteConsoleMessage("Send to " +  GetKeyByValue(webSocket) + ":\n" + $"{callerName}\n" + JsonSerializer.Serialize(data, options).Replace("\\u0022", "\"") + ":\n");
+            WriteConsoleMessage("Send to " + GetKeyByValue(webSocket) + ":\n" + $"{callerName}\n" + JsonSerializer.Serialize(data, options).Replace("\\u0022", "\"") + ":\n");
 
             webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data, options))), WebSocketMessageType.Text, true, CancellationToken.None);
         }
@@ -175,8 +176,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //THIS FUNCTION DOESNOT MAKE VALIDATIONS IF CAN BE PLAYED OR REMOTIONS, ONLY ATTACH IF MATCH THE POSTION/NAME
 
             //validating usedCard
-            if (duelAction.usedCard == null) {
-                Lib.WriteConsoleMessage("usedCard is null at AssignEnergyToZoneAsync");
+            if (duelAction.usedCard == null)
+            {
+                WriteConsoleMessage("usedCard is null at AssignEnergyToZoneAsync");
                 return false;
             }
 
@@ -184,14 +186,14 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             if (string.IsNullOrEmpty(duelAction.usedCard.cardType))
             {
-                Lib.WriteConsoleMessage("usedCard.cardType is empty at AssignEnergyToZoneAsync");
+                WriteConsoleMessage("usedCard.cardType is empty at AssignEnergyToZoneAsync");
                 return false;
             }
 
             //validating targetCard
             if (duelAction.targetCard == null)
             {
-                Lib.WriteConsoleMessage("targetCard is null at AssignEnergyToZoneAsync");
+                WriteConsoleMessage("targetCard is null at AssignEnergyToZoneAsync");
                 return false;
             }
             duelAction.targetCard.GetCardInfo(duelAction.targetCard.cardNumber);
@@ -227,13 +229,13 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                                 return hasAttached = true;
                             }
                         }
-                   }
+                    }
                 // fallied to find the target to assign the energy
-                Lib.WriteConsoleMessage($"Error: failled to assign the energy at {duelAction.local}.");
+                WriteConsoleMessage($"Error: failled to assign the energy at {duelAction.local}.");
             }
             else
             {
-                Lib.WriteConsoleMessage("Error: used card is not a cheer.");
+                WriteConsoleMessage("Error: used card is not a cheer.");
             }
             return false;
         }
@@ -327,7 +329,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
         }
 
 
-        static public async Task DefeatedHoloMemberAsync(List<Card> arquive, Card currentOponnentCard, MatchRoom cMatchRoom, Boolean result, DuelAction _Duelaction)
+        static public async Task DefeatedHoloMemberAsync(List<Card> arquive, Card currentOponnentCard, MatchRoom cMatchRoom, bool result, DuelAction _Duelaction)
         {
             cMatchRoom.cheersAssignedThisChainTotal = GetDownneedCheerAmount(currentOponnentCard.cardNumber);
 
@@ -347,9 +349,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             _duelaction.targetCard = currentOponnentCard;
 
 
-            int otherPlayer = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn);
+            string otherPlayer = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn);
 
-            if (otherPlayer == cMatchRoom.startPlayer)
+            if (otherPlayer.Equals(cMatchRoom.firstPlayer))
             {
                 if (currentOponnentCard.cardPosition.Equals("Stage"))
                 {
@@ -360,7 +362,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     cMatchRoom.playerACollaboration = null;
                 }
             }
-            else 
+            else
             {
                 if (currentOponnentCard.cardPosition.Equals("Stage"))
                 {
@@ -373,7 +375,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 }
             }
 
-            RequestData _ReturnData = new RequestData { type = "GamePhase", description = "DefeatedHoloMember", requestObject = JsonSerializer.Serialize(_duelaction, Lib.options) }; /// mudei o targeto aqui de _DuelAction para duelaction, conferir dps
+            PlayerRequest _ReturnData = new PlayerRequest { type = "GamePhase", description = "DefeatedHoloMember", requestObject = JsonSerializer.Serialize(_duelaction, options) }; /// mudei o targeto aqui de _DuelAction para duelaction, conferir dps
 
             cMatchRoom.currentGamePhase = GAMEPHASE.HolomemDefeated;
 
@@ -383,23 +385,24 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             if (attackedPlayerLife.Count == 1)
             {
-                _ = Lib.EndDuelAsync(result, cMatchRoom);
+                _ = EndDuelAsync(cMatchRoom);
                 return;
             }
 
             if (attackedPlayerBackStage.Count == 0)
             {
-                _ = Lib.EndDuelAsync(result, cMatchRoom);
+                _ = EndDuelAsync(cMatchRoom);
                 return;
             }
             // if the player didnt win the duel, awnser the player to get his new cheer
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
+            SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
+            SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
         }
 
         static private int GetDownneedCheerAmount(string cardNumber)
         {
-            switch (cardNumber) {
+            switch (cardNumber)
+            {
                 case "hSD01-006":
                     return 2;
                 default:
@@ -449,13 +452,14 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             return places;
         }
 
-        public bool ReturnCollabToBackStage(MatchRoom cMatchRoom) {
+        public bool ReturnCollabToBackStage(MatchRoom cMatchRoom)
+        {
             Card currentStageCardd = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
             Card currentCollabCardd = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
             List<Card> currentBackStageCardd = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
 
             if (!string.IsNullOrEmpty(currentCollabCardd.cardNumber))
-            { 
+            {
                 //try to assign the card to the back position
                 List<bool> places = GetBackStageAvailability(currentBackStageCardd);
                 string locall = AssignCardToBackStage(places, currentBackStageCardd, currentCollabCardd);
@@ -475,9 +479,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 duelAction.usedCard.cardPosition = locall;
                 currentCollabCardd = null;
 
-                RequestData _ReturnData = new () { type = "GamePhase", description = "UnDoCollab", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+                PlayerRequest _ReturnData = new() { type = "GamePhase", description = "UnDoCollab", requestObject = JsonSerializer.Serialize(duelAction, options) };
+                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
             }
             return true;
         }
@@ -486,7 +490,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
         {
             string frase = "";
             frase += $"Player:{matchRoom.firstPlayer}-";
-            foreach (Card card in matchRoom.playerAHand) {
+            foreach (Card card in matchRoom.playerAHand)
+            {
                 frase += $"{card.cardNumber}-";
             }
             frase += $"\nPlayer:{matchRoom.secondPlayer}-";
@@ -494,27 +499,28 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             {
                 frase += $"{card.cardNumber}-";
             }
-            Lib.WriteConsoleMessage(frase);
+            WriteConsoleMessage(frase);
         }
 
-        static public async Task AddTopDeckToDrawObjectAsync(int playerid, List<Card> PlayerHand, Boolean result, MatchRoom mr, RequestData ReturnData)
+        static public async Task AddTopDeckToDrawObjectAsync(string playerid, List<Card> PlayerHand, bool result, MatchRoom mr, PlayerRequest ReturnData)
         {
             DuelAction newDraw = new DuelAction();
             newDraw.playerID = playerid;
             newDraw.zone = "Deck";
 
             newDraw.cardList = new List<Card>() { PlayerHand[PlayerHand.Count - 1] };
-            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, Lib.options);
+            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, options);
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[newDraw.playerID.ToString()], ReturnData);
+            SendMessage(MessageDispatcher.playerConnections[newDraw.playerID.ToString()], ReturnData);
 
             newDraw.cardList = new List<Card>() { new Card() };
-            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, Lib.options);
-            Lib.SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(mr, newDraw.playerID).ToString()], ReturnData);
+            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, options);
+            SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(mr, newDraw.playerID).ToString()], ReturnData);
         }
 
-        static public int CheckIfCardExistInPlayerHand(MatchRoom cMatchRoom, int playerId, string UsedCard) {
-            List<Card> playerHand = playerId == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
+        static public int CheckIfCardExistInPlayerHand(MatchRoom cMatchRoom, string playerId, string UsedCard)
+        {
+            List<Card> playerHand = playerId.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
             int handPos = -1;
             int handPosCounter = 0;
             foreach (Card inHand in playerHand)
@@ -572,10 +578,21 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             if (removePos > -1)
             {
+
+                DuelAction _DisposeAction = new()
+                {
+                    playerID = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn),
+                    usedCard = new() { cardNumber = seletectedCard.attachedEnergy[removePos].cardNumber },
+                };
+                PlayerRequest pReturnData = new PlayerRequest { type = "GamePhase", description = "DisposeUsedSupport", requestObject = JsonSerializer.Serialize(_DisposeAction, options) };
+                SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
+
+
                 //adding the card that should be removed to the arquive, then removing from the player hand
                 List<Card> tempArquive = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
                 tempArquive.Add(seletectedCard.attachedEnergy[removePos]);
                 seletectedCard.attachedEnergy.RemoveAt(removePos);
+
                 return true;
             }
 

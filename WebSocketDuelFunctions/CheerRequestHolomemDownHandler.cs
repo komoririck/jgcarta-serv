@@ -1,9 +1,8 @@
-﻿using Microsoft.OpenApi.Extensions;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using static hololive_oficial_cardgame_server.MatchRoom;
-using System.Text;
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 using System.Text.Json;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -19,7 +18,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             this.matchRooms = matchRooms;
         }
 
-        public RequestData ReturnData { get; private set; }
+        public PlayerRequest ReturnData { get; private set; }
 
         internal async Task CheerRequestHolomemDownHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
         {
@@ -27,9 +26,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
 
-            int otherPlayer = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn);
+            string otherPlayer = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn);
 
-            if (int.Parse(playerRequest.playerID) != otherPlayer)
+            if (playerRequest.playerID.Equals(otherPlayer))
                 return;
 
             if (cMatchRoom.currentGamePhase != GAMEPHASE.HolomemDefeated)
@@ -39,7 +38,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             cardCheerDraw.playerID = otherPlayer;
             cardCheerDraw.zone = "Life";
 
-            ReturnData = new RequestData { type = "GamePhase", description = "HolomemDefatedSoGainCheer", requestObject = "" };
+            ReturnData = new PlayerRequest { type = "GamePhase", description = "HolomemDefatedSoGainCheer", requestObject = "" };
 
             if (otherPlayer.Equals(cMatchRoom.firstPlayer))
             {

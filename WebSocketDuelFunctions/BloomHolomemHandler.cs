@@ -1,4 +1,4 @@
-﻿using MySqlX.XDevAPI.Common;
+﻿using hololive_oficial_cardgame_server.SerializableObjects;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
@@ -21,7 +21,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             if (_DuelAction.targetCard != null)
                 _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
@@ -143,7 +143,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             switch (_DuelAction.local)
             {
                 case "Stage":
-                    if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+                    if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                     {
                         bloomCard(cMatchRoom.playerAStage, _DuelAction.usedCard);
 
@@ -156,7 +156,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     }
                     break;
                 case "Collaboration":
-                    if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+                    if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                     {
                         bloomCard(cMatchRoom.playerACollaboration, _DuelAction.usedCard);
                         cMatchRoom.playerAHand.RemoveAt(handPos);
@@ -174,7 +174,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 case "BackStage5":
                     List<Card> actionCardList = new List<Card>();
 
-                    if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+                    if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                         actionCardList = cMatchRoom.playerABackPosition;
                     else
                         actionCardList = cMatchRoom.playerBBackPosition;
@@ -193,7 +193,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
                     bloomCard(actionCardList[x], _DuelAction.usedCard);
 
-                    if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+                    if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                         cMatchRoom.playerAHand.RemoveAt(handPos);
                     else
                         cMatchRoom.playerBHand.RemoveAt(handPos);
@@ -201,7 +201,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     checkBloomEffect();
                     break;
             }
-            RequestData pReturnData = new RequestData { type = "GamePhase", description = "BloomHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            PlayerRequest pReturnData = new PlayerRequest { type = "GamePhase", description = "BloomHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
 

@@ -1,22 +1,24 @@
+using System.Collections.Concurrent;
 using System.Text;
 
-namespace hololive_oficial_cardgame_server;
+namespace hololive_oficial_cardgame_server.SerializableObjects;
 
 public class MatchRoom
 {
+
+    private readonly ConcurrentDictionary<string, Timer> playerTimers = new ConcurrentDictionary<string, Timer>();
+    private int turnDurationSeconds = 120;
+
     public bool centerStageArtUsed = false;
     public bool collabStageArtUsed = false;
 
     public PlayerInfo playerA;
     public PlayerInfo playerB;
 
-    public int startPlayer = 0;
+    public string firstPlayer;
+    public string secondPlayer;
 
-    public int firstPlayer = 0;
-    public int secondPlayer = 0;
-
-    public int currentPlayerActing = 0;
-    public int currentPlayerTurn = 0;
+    public string currentPlayerTurn;
 
     public int currentTurn = 0;
 
@@ -26,10 +28,6 @@ public class MatchRoom
     public GAMEPHASE nextGamePhase = 0;
 
     public int currentGameHigh = 0;
-    public int playerAGameHigh = 0;
-    public int playerBGameHigh = 0;
-
-    public int actionHight = 0;
 
     public int playerAActionTimmer = 180;
     public int playerBActionTimmer = 180;
@@ -109,40 +107,6 @@ public class MatchRoom
         HolomemDefeatedCheerChoosed = 105
     }
 
-    public bool CheckRoomPlayers(int id)
-    {
-        if (playerA.PlayerID == id || playerB.PlayerID == id)
-            return true;
-        return false;
-    }
-
-    public void PassTurn() {
-        if (currentPlayerActing == firstPlayer)
-            currentPlayerActing = playerB.PlayerID;
-        else
-            currentPlayerActing = firstPlayer;
-
-        currentGamePhase = nextGamePhase;
-        nextGamePhase++;
-    }
-
-    static public void getCardFromDeckIfType(List<Card> deck, List<Card> target, string type)
-    {
-        List<Card> newDeck = new();
-        for (int i = 0; i < deck.Count; i++)
-        {
-            if (deck[i].cardType.Equals(type))
-            {
-                target.Add(deck[i]);
-            }
-            else
-            {
-                newDeck.Add(deck[i]);
-            }
-        }
-        deck = newDeck;
-    }
-
     public void suffleHandToTheDeck(List<Card> deck, List<Card> hand)
     {
         deck.AddRange(hand);
@@ -179,21 +143,68 @@ public class MatchRoom
 
     static public int FindPlayerMatchRoom(List<MatchRoom> LM, string playerid)
     {
-        for (int i = 0; i < LM.Count; i++) {
-            if (LM[i].playerA.PlayerID.Equals(int.Parse(playerid))  || LM[i].playerB.PlayerID.Equals(int.Parse(playerid))) { 
-                return i;   
+        for (int i = 0; i < LM.Count; i++)
+        {
+            if (LM[i].playerA.PlayerID.Equals(playerid) || LM[i].playerB.PlayerID.Equals(playerid))
+            {
+                return i;
             }
         }
         return -1;
     }
-    static public int GetOtherPlayer(MatchRoom m, int playerid)
+    static public string GetOtherPlayer(MatchRoom m, string playerid)
     {
-        if (m.playerA.PlayerID == playerid)
+        if (m.playerA.PlayerID.Equals(playerid))
         {
             return m.playerB.PlayerID;
         }
-        else {
+        else
+        {
             return m.playerA.PlayerID;
-        } 
+        }
     }
+
+
+
+
+    // Starts or resets the timer for a player's turn
+    public void StartOrResetTimer(string playerId, Action<string> onTimeout)
+    {
+        // If the player already has a timer, reset it; otherwise, create a new one
+        if (playerTimers.TryGetValue(playerId, out var existingTimer))
+        {
+            existingTimer.Change(turnDurationSeconds * 1000, Timeout.Infinite);
+        }
+        else
+        {
+            var newTimer = new Timer(_ => TimerExpired(playerId, onTimeout), null, turnDurationSeconds * 1000, Timeout.Infinite);
+            playerTimers[playerId] = newTimer;
+        }
+    }
+
+    // Called when the player takes an action to reset their timer
+    public void ResetTimer(string playerId)
+    {
+        if (playerTimers.TryGetValue(playerId, out var timer))
+        {
+            timer.Change(turnDurationSeconds * 1000, Timeout.Infinite);
+        }
+    }
+
+    // Manually stop a player's timer, e.g., when the turn ends or they disconnect
+    public void StopTimer(string playerId)
+    {
+        if (playerTimers.TryRemove(playerId, out var timer))
+        {
+            timer.Dispose();
+        }
+    }
+
+    // Called when the timer expires
+    private void TimerExpired(string playerId, Action<string> onTimeout)
+    {
+        StopTimer(playerId); // Clean up the timer
+        onTimeout?.Invoke(playerId); // Trigger the timeout action
+    }
+
 }

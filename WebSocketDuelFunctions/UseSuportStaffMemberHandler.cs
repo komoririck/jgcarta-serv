@@ -1,9 +1,8 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using hololive_oficial_cardgame_server.SerializableObjects;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Security.Policy;
 using System.Text.Json;
-using static hololive_oficial_cardgame_server.MatchRoom;
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -11,7 +10,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
     {
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
-        private RequestData _ReturnData;
+        private PlayerRequest _ReturnData;
 
         public UseSuportStaffMemberHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
         {
@@ -26,7 +25,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
 
-            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             if (_DuelAction.targetCard != null)
                 _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
@@ -35,9 +34,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (_DuelAction.cheerCostCard != null)
                 _DuelAction.cheerCostCard.GetCardInfo(_DuelAction.cheerCostCard.cardNumber);
 
-            RequestData pReturnData;
-            int playerA = cMatchRoom.firstPlayer;
-            int playerB = cMatchRoom.secondPlayer;
+            PlayerRequest pReturnData;
 
             bool passLimit = false;
             if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
@@ -57,30 +54,31 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 return;
 
             bool energyPaid = false;
+            /*
             switch (_DuelAction.usedCard.cardNumber)
             {
                 case "hSD01-016":
-                    UseCardEffectDrawAsync(cMatchRoom, playerA, playerB, 3, "hSD01-016", true, true);
+                    UseCardEffectDrawAsync(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 3, "hSD01-016", true, true);
                     break;
                 case "hSD01-019":
 
-                    energyPaid = PayCardEffectCheerFieldCost(cMatchRoom, playerA, playerB, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, _DuelAction.usedCard.cardNumber);
+                    energyPaid = PayCardEffectCheerFieldCost(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, _DuelAction.usedCard.cardNumber);
 
                     if (!energyPaid)
                         break;
-                    UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, playerA, playerB, 0, "hSD01-019", true, true, 0, false, _DuelAction.targetCard.cardPosition, _DuelAction.targetCard.cardNumber, false, _DuelAction.cheerCostCard);
+                    UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 0, "hSD01-019", true, true, 0, false, _DuelAction.targetCard.cardPosition, _DuelAction.targetCard.cardNumber, false, _DuelAction.cheerCostCard);
                     break;
                 case "hBP01-103":
 
-                    energyPaid = PayCardEffectCheerFieldCost(cMatchRoom, playerA, playerB, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, _DuelAction.usedCard.cardNumber);
+                    energyPaid = PayCardEffectCheerFieldCost(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, _DuelAction.usedCard.cardNumber);
 
                     if (!energyPaid)
                         break;
-                    UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, playerA, playerB, 0, "hBP01-103", true, true, 0, true, _DuelAction.targetCard.cardPosition, _DuelAction.targetCard.cardNumber, false, _DuelAction.cheerCostCard);
+                    UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 0, "hBP01-103", true, true, 0, true, _DuelAction.targetCard.cardPosition, _DuelAction.targetCard.cardNumber, false, _DuelAction.cheerCostCard);
                     break;
                 case "hBP01-105":
 
-                    energyPaid = PayCardEffectCheerFieldCost(cMatchRoom, playerA, playerB, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, _DuelAction.usedCard.cardNumber);
+                    energyPaid = PayCardEffectCheerFieldCost(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, _DuelAction.usedCard.cardNumber);
 
                     if (!energyPaid)
                         break;
@@ -90,34 +88,34 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     tempHand.Add(_DuelAction.cheerCostCard);
                     tempHand.Add(_DuelAction.targetCard);
 
-                    UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, playerA, playerB, 0, "hBP01-105", true, true, 0, false, _DuelAction.targetCard.cardPosition, _DuelAction.targetCard.cardNumber, false, _DuelAction.cheerCostCard);
+                    UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 0, "hBP01-105", true, true, 0, false, _DuelAction.targetCard.cardPosition, _DuelAction.targetCard.cardNumber, false, _DuelAction.cheerCostCard);
                     break;
                 case "hBP01-109":
-                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, playerA, playerB, 3, "hBP01-109", true, true, 0);
+                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 3, "hBP01-109", true, true, 0);
                     break;
                 case "hSD01-018":
-                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, playerA, playerB, 5, "hSD01-018", false, true, 0, false, "", "", true);
+                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 5, "hSD01-018", false, true, 0, false, "", "", true);
                     break;
                 case "hBP01-104":
-                    UseCardEffectToSummom(cMatchRoom, playerA, playerB, "Deck", "hBP01-104", true, "Debut");
+                    UseCardEffectToSummom(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, "Deck", "hBP01-104", true, "Debut");
                     break;
                 case "hBP01-102":
-                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, playerA, playerB, 4, "hBP01-102", true, true, 7);
+                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 4, "hBP01-102", true, true, 7);
                     break;
                 case "hSD01-021":
-                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, playerA, playerB, 4, "hBP01-102", true, true, 7);
+                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 4, "hBP01-102", true, true, 7);
                     break;
                 case "hBP01-111":
-                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, playerA, playerB, 4, "hBP01-111", true, true, 7);
+                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 4, "hBP01-111", true, true, 7);
                     break;
                 case "hBP01-113":
-                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, playerA, playerB, 4, "hBP01-113", true, true, 7);
+                    UseCardEffectDrawXAddIfBetweenReview(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 4, "hBP01-113", true, true, 7);
                     break;
                 case "hSD01-020":
                     Random random = new Random();
                     int randomNumber = random.Next(1, 7);
 
-                    _ReturnData = new RequestData { type = "GamePhase", description = "RollDice", requestObject = randomNumber.ToString() };
+                    _ReturnData = new PlayerRequest { type = "GamePhase", description = "RollDice", requestObject = randomNumber.ToString() };
                     Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
                     Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
 
@@ -129,11 +127,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     tempHand.Add(_DuelAction.cheerCostCard);
                     tempHand.Add(_DuelAction.targetCard);
 
-                    UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, playerA, playerB, 0, "hSD01-020", true, true, 0, false, _DuelAction.targetCard.cardPosition, _DuelAction.targetCard.cardNumber, false, _DuelAction.cheerCostCard);
+                    UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, cMatchRoom.firstPlayer, cMatchRoom.secondPlayer, 0, "hSD01-020", true, true, 0, false, _DuelAction.targetCard.cardPosition, _DuelAction.targetCard.cardNumber, false, _DuelAction.cheerCostCard);
                     break;
 
             }
-
+            */
 
 
 
@@ -195,7 +193,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
         async Task UseCardEffectDrawXAddIfBetweenReview(MatchRoom cMatchRoom, int playerA, int playerB, int cNum, string cUsedNumber, bool LimiteUseCard, bool result, int HandMustHave, bool needEnergy = false, string zone = "", string costCardnumber = "", bool reveal = false)
         {
 
-            if (playerA == cMatchRoom.currentPlayerTurn)
+            if (playerA.Equals(cMatchRoom.currentPlayerTurn))
             {
                 if (cMatchRoom.playerADeck.Count < HandMustHave && HandMustHave > 0)
                     return;
@@ -232,9 +230,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             SendPlayerData(cMatchRoom, reveal, _Draw, DuelActionResponse, "SuporteEffectDrawXAddIf", LimiteUseCard, cUsedNumber, result);
         }
 
-        async Task UseCardEffectDrawAsync(MatchRoom cMatchRoom, int playerA, int playerB, int cNum, string cUsedNumber, bool LimiteUseCard, bool result)
+        async Task UseCardEffectDrawAsync(MatchRoom cMatchRoom, string playerA, string playerB, int cNum, string cUsedNumber, bool LimiteUseCard, bool result)
         {
-            if (playerA == cMatchRoom.currentPlayerTurn)
+            if (playerA.Equals(cMatchRoom.currentPlayerTurn))
                 Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, cNum);
             else
                 Lib.getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, cNum);
@@ -263,12 +261,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
         async Task SendPlayerData(MatchRoom cMatchRoom, bool reveal, DuelAction _Draw, DuelAction DuelActionResponse, string description, bool LimiteUseCard, string cUsedNumber, bool result)
         {
-            RequestData _ReturnData;
-            int otherPlayer = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerB.PlayerID : cMatchRoom.playerA.PlayerID;
+            PlayerRequest _ReturnData;
+            string otherPlayer = cMatchRoom.currentPlayerTurn.Equals(cMatchRoom.playerA.PlayerID) ? cMatchRoom.playerB.PlayerID : cMatchRoom.playerA.PlayerID;
 
             // Serialize and send data to the current player
             DuelActionResponse.actionObject = JsonSerializer.Serialize(_Draw);
-            _ReturnData = new RequestData { type = "GamePhase", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "GamePhase", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
 
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], _ReturnData);
 
@@ -279,7 +277,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 DuelActionResponse.actionObject = JsonSerializer.Serialize(_Draw);
             }
 
-            _ReturnData = new RequestData { type = "GamePhase", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "GamePhase", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
             Lib.SendMessage(MessageDispatcher.playerConnections[otherPlayer.ToString()], _ReturnData);
 
             // Update the limit card played for the appropriate player

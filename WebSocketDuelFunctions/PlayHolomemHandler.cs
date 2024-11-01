@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -8,7 +9,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
     {
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
-        private RequestData _ReturnData;
+        private PlayerRequest _ReturnData;
 
         public PlayHolomemHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
         {
@@ -22,7 +23,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
             
             if (_DuelAction.targetCard != null)
                 _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
@@ -52,12 +53,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 return;
             }
 
-            List<Card> playerHand = int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
+            List<Card> playerHand = playerRequest.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
 
 
            
             //checking if the player has the card in the hand and getting the pos
-            int handPos = Lib.CheckIfCardExistInPlayerHand(cMatchRoom, int.Parse(playerRequest.playerID), _DuelAction.usedCard.cardNumber);
+            int handPos = Lib.CheckIfCardExistInPlayerHand(cMatchRoom, playerRequest.playerID, _DuelAction.usedCard.cardNumber);
             if (handPos == -1)
             {
                 Lib.PrintPlayerHand(cMatchRoom);
@@ -82,7 +83,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             switch (_DuelAction.local)
             {
                 case "Stage":
-                    if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+                    if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                     {
                         if (cMatchRoom.playerAStage != null)
                         {
@@ -109,7 +110,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 case "BackStage4":
                 case "BackStage5":
 
-                    if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+                    if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                     {
                         foreach (Card cartinha in cMatchRoom.playerABackPosition)
                         {
@@ -140,7 +141,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
-            _ReturnData = new RequestData { type = "GamePhase", description = _DuelAction.actionType, requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "GamePhase", description = _DuelAction.actionType, requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);

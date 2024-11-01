@@ -1,4 +1,4 @@
-namespace hololive_oficial_cardgame_server;
+namespace hololive_oficial_cardgame_server.SerializableObjects;
 
 public class DuelFieldData
 {
@@ -25,11 +25,7 @@ public class DuelFieldData
     public List<Card> playerBCardCheer { get; set; }
     public List<Card> playerBLife { get; set; }
 
-    public int currentTurn { get; set; }
-    public int currentPlayerTurn { get; set; }
-    public int currentPlayerActing { get; set; }
-    public int currentGamePhase { get; set; }
-    public int firstPlayer { get; set; }
-    public int secondPlayer { get; set; }
-    public int currentGameHigh { get; set; }
+    public string currentPlayerTurn { get; set; }
+    public string firstPlayer { get; set; }
+    public string secondPlayer { get; set; }
 }

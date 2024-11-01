@@ -1,11 +1,10 @@
 ﻿using hololive_oficial_cardgame_server.EffectControllers;
+using hololive_oficial_cardgame_server.SerializableObjects;
 using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
-using MySqlX.XDevAPI.Common;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
 using System.Text.Json;
-using static hololive_oficial_cardgame_server.MatchRoom;
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 
 namespace hololive_oficial_cardgame_server
 {
@@ -26,11 +25,11 @@ namespace hololive_oficial_cardgame_server
             int matchnumber = MatchRoom.FindPlayerMatchRoom(_MatchRooms, playerRequest.playerID);
             if (matchnumber != -1)
                 cMatchRoom = _MatchRooms[matchnumber];
-            RequestData _ReturnData;
+            PlayerRequest _ReturnData;
 
 
-            Lib.WriteConsoleMessage("Recieved from " + playerRequest.playerID + ":\n" + playerRequest.requestData.type + ":\n" + playerRequest.requestData.requestObject + ":\n" + playerRequest.requestData.extraRequestObject + ":\n");
-            switch (playerRequest.requestData.type)
+            Lib.WriteConsoleMessage("Recieved from " + playerRequest.playerID + ":\n" + playerRequest.type + ":\n" + playerRequest.requestObject + ":\n");
+            switch (playerRequest.type)
             {
                 case "JoinPlayerQueueList":
                     var handler = new JoinPlayerQueueListHandler(playerConnections, _MatchRooms);
@@ -65,24 +64,24 @@ namespace hololive_oficial_cardgame_server
                     await handler66.CheerChooseRequestHolomemDownHandleAsync(playerRequest, webSocket);
                     break;
                 case "ContinueCurrentPlayerTurn":
-                    if (!(int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn))
+                    if (!(playerRequest.playerID != cMatchRoom.currentPlayerTurn))
                         break;
 
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "MainPhase", requestObject = "" });
                     break;
                 case "MainStartRequest":
-                    if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
+                    if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                         break;
 
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new RequestData { type = "GamePhase", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "MainPhase", requestObject = "" });
                     break;
                 case "MainDoActionRequest":
-                    if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
+                    if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
                         return;
 
-                    DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+                    DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
                     switch (_DuelAction.actionType)
                     {
                         case "doArt":
@@ -115,7 +114,7 @@ namespace hololive_oficial_cardgame_server
                     cMatchRoom.currentGamePhase = GAMEPHASE.UseArt;
                     break;
                 case "MainEndturnRequest":
-                    if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
+                    if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                         break;
 
                     if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
@@ -132,8 +131,8 @@ namespace hololive_oficial_cardgame_server
 
                     Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
 
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new RequestData { type = "GamePhase", description = "Endturn", requestObject = "" });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new RequestData { type = "GamePhase", description = "Endturn", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "Endturn", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "Endturn", requestObject = "" });
 
                     cMatchRoom.currentGameHigh++;
                     break;
@@ -165,7 +164,7 @@ namespace hololive_oficial_cardgame_server
                     ArtEffects.OnArtEffectResolutionAsync(playerConnections, _MatchRooms, playerRequest, webSocket);
                     break;
                 case "ResolveOnSupportEffect":
-                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
                     SupportEffects.OnSupportEffects(_DuelAction, cMatchRoom, playerRequest, webSocket);
                     break;
                     

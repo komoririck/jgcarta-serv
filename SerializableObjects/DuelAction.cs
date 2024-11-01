@@ -1,14 +1,8 @@
-using Mysqlx.Expr;
-using MySqlX.XDevAPI.Common;
-using Newtonsoft.Json;
-using System.Net.WebSockets;
-using System.Text;
-using ZstdSharp.Unsafe;
-namespace hololive_oficial_cardgame_server;
+namespace hololive_oficial_cardgame_server.SerializableObjects;
 
 public class DuelAction
 {
-    public int playerID { get; set; }
+    public string playerID { get; set; }
     public Card usedCard { get; set; }
     public string playedFrom { get; set; }
     public string local { get; set; }

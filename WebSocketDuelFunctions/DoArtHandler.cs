@@ -2,6 +2,7 @@
 using System.Net.WebSockets;
 using System.Text.Json;
 using hololive_oficial_cardgame_server.EffectControllers;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -10,7 +11,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
         private DuelAction _DuelAction;
-        private RequestData pReturnData;
+        private PlayerRequest pReturnData;
 
 
 
@@ -30,7 +31,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             Card currentStageCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
             Card currentCollabCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;

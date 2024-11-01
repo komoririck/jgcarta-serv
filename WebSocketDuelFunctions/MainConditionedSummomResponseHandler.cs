@@ -1,7 +1,6 @@
-﻿using MySqlX.XDevAPI.Common;
+﻿using hololive_oficial_cardgame_server.SerializableObjects;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
 using System.Text.Json;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
@@ -10,7 +9,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
     {
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
-        private RequestData _ReturnData;
+        private PlayerRequest _ReturnData;
         private DuelAction _DuelAction;
 
         public MainConditionedSummomResponseHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
@@ -24,7 +23,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            DuelAction _DuelActionRecieved = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            DuelAction _DuelActionRecieved = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
             List<object> ResponseObjList = JsonSerializer.Deserialize<List<object>>(_DuelActionRecieved.actionObject);
             string Response = (string)ResponseObjList[0];
 
@@ -56,7 +55,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 case "hBP01-104":
                     DuelAction _DuelActio = new();
                     string local = "BackStage1";
-                    if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+                    if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                     {
                         cMatchRoom.playerADeck.RemoveAt(n);
                         cMatchRoom.playerADeck = cMatchRoom.ShuffleCards(cMatchRoom.playerADeck);
@@ -123,8 +122,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                     break;
                 default:
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new RequestData { type = "GamePhase", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new RequestData { type = "GamePhase", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) });
+                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) });
+                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) });
                     cMatchRoom.currentGameHigh++;
                     break;
             }

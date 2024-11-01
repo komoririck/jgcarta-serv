@@ -1,12 +1,8 @@
-﻿using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
-using Org.BouncyCastle.Cms;
+﻿using hololive_oficial_cardgame_server.SerializableObjects;
+using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
 using System.Collections.Concurrent;
-using System.Diagnostics.Eventing.Reader;
 using System.Net.WebSockets;
 using System.Text.Json;
-using System.Threading.Tasks;
-using ZstdSharp.Unsafe;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace hololive_oficial_cardgame_server.EffectControllers
 {
@@ -20,12 +16,12 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
         internal static async Task OnArtEffectResolutionAsync(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms, PlayerRequest playerRequest, WebSocket webSocket)
         {
-            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
+            if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
             {
                 cMatchRoom.currentArtResolving = null;
                 cMatchRoom.currentCardResolving = "";
@@ -42,13 +38,13 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 return;
             }
 
-            OnArtEffectsAsync(_DuelAction, cMatchRoom, int.Parse(playerRequest.playerID), cMatchRoom.currentArtResolving, playerRequest, webSocket);
+            OnArtEffectsAsync(_DuelAction, cMatchRoom, playerRequest.playerID, cMatchRoom.currentArtResolving, playerRequest, webSocket);
         }
 
-        internal static async Task OnArtEffectsAsync(DuelAction _DuelAction, MatchRoom cMatchRoom, int playerWhoUsedTheEffect, Art art, PlayerRequest playerRequest = null, WebSocket webSocket = null)
+        internal static async Task OnArtEffectsAsync(DuelAction _DuelAction, MatchRoom cMatchRoom, string playerWhoUsedTheEffect, Art art, PlayerRequest playerRequest = null, WebSocket webSocket = null)
         {
             CardEffect _CardEffect;
-            RequestData pReturnData = new();
+            PlayerRequest pReturnData = new();
 
             cMatchRoom.currentDuelActionResolvingRecieved.Add(_DuelAction);
 
@@ -94,13 +90,13 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         //send the info to the currentplayer so he can pick the card
                         _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
-                        pReturnData = new RequestData { type = "GamePhase", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                        pReturnData = new PlayerRequest { type = "GamePhase", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                         Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
                         Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
                     }
                     else
                     {
-                        RequestData ReturnData = new RequestData { type = "GamePhase", description = "DrawArtEffect", requestObject = "" };
+                        PlayerRequest ReturnData = new PlayerRequest { type = "GamePhase", description = "DrawArtEffect", requestObject = "" };
                         if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
                         {
                             Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
@@ -153,7 +149,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                     //send the info to the currentplayer so he can pick the card
                     _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
-                    pReturnData = new RequestData { type = "GamePhase", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    pReturnData = new PlayerRequest { type = "GamePhase", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
                     Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
                     break;
@@ -166,8 +162,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     //random dice number
                     int randomNumber = random.Next(1, 7);
 
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], new RequestData { type = "GamePhase", description = "RollDice", requestObject = randomNumber.ToString() });
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], new RequestData { type = "GamePhase", description = "RollDice", requestObject = randomNumber.ToString() });
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], new PlayerRequest { type = "GamePhase", description = "RollDice", requestObject = randomNumber.ToString() });
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], new PlayerRequest { type = "GamePhase", description = "RollDice", requestObject = randomNumber.ToString() });
 
                     if (randomNumber == 1 || randomNumber == 3 || randomNumber == 5)
                     {
@@ -272,7 +268,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             if (attachedCards.Count == 0)
                 return;
 
-            int currentPlayer = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
+            string currentPlayer = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
             cMatchRoom.currentArtDamage = ArtCalculator.CalculateTotalDamage(cMatchRoom.currentArtResolving, attachedCards, _DuelAction.targetCard.color, _DuelAction.usedCard, _DuelAction.targetCard, currentPlayer, MatchRoom.GetOtherPlayer(cMatchRoom, currentPlayer), cMatchRoom);
 
             if (cMatchRoom.currentArtDamage < -10000)
@@ -301,11 +297,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             }
             else
             {
-                _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
+                _DuelAction.playerID = cMatchRoom.currentPlayerTurn.ToString();
                 _DuelAction.actionObject = damage.ToString();
                 _DuelAction.actionType = "UseArt";
 
-                var pReturnData = new RequestData { type = "GamePhase", description = "UsedArt", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                var pReturnData = new PlayerRequest { type = "GamePhase", description = "UsedArt", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                 Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
                 Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
             }

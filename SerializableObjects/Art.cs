@@ -1,10 +1,6 @@
 ﻿using hololive_oficial_cardgame_server.EffectControllers;
-using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace hololive_oficial_cardgame_server
+namespace hololive_oficial_cardgame_server.SerializableObjects
 {
     public class Art
     {
@@ -76,10 +72,11 @@ namespace hololive_oficial_cardgame_server
 
         private static void GenerateArtEffectData()
         {
-            Art.ArtEffectList = new();
+            ArtEffectList = new();
 
             //hSD01-006
-            ArtEffectList.Add(new CardEffect() {
+            ArtEffectList.Add(new CardEffect()
+            {
                 artName = "SorAZ シンパシー",
                 cardNumber = "hSD01-006",
                 zoneTarget = "Stage",
@@ -92,7 +89,7 @@ namespace hololive_oficial_cardgame_server
     }
     public class ArtCalculator
     {
-        public static int CalculateTotalDamage(Art art, List<Card> costs, string extraColor, Card attackingCard, Card AttackedCard, int playerWhoDeclaredAttack, int playerWhoWasTargeted, MatchRoom matchRoom)
+        public static int CalculateTotalDamage(Art art, List<Card> costs, string extraColor, Card attackingCard, Card AttackedCard, string playerWhoDeclaredAttack, string playerWhoWasTargeted, MatchRoom matchRoom)
         {
             string cardZone = attackingCard.cardPosition;
             // Count the occurrences of each color in the list of cost objects
@@ -107,26 +104,28 @@ namespace hololive_oficial_cardgame_server
             currentActivatedTurnEffect.AddRange(ArtEffects.currentActivatedTurnEffect);
 
             //loop for collab active till turn effects
-            foreach (CardEffect cardeffect in currentActivatedTurnEffect) {
+            foreach (CardEffect cardeffect in currentActivatedTurnEffect)
+            {
 
                 //BuffDamageToCardAtZone
                 if (cardeffect.type == CardEffectType.BuffDamageToCardAtZone)
                 {
-                    if (!(cardeffect.playerWhoUsedTheEffect == playerWhoDeclaredAttack))
-                    continue;
+                    if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
+                        continue;
 
-                    if (!(cardeffect.playerWhoIsTheTargetOfEffect == playerWhoWasTargeted))
+                    if (!(cardeffect.playerWhoIsTheTargetOfEffect.Equals(playerWhoWasTargeted)))
                         continue;
 
                     //if this card is in the zone that the effect is active
-                    if (cardeffect.zoneTarget.Equals(cardZone)) {
+                    if (cardeffect.zoneTarget.Equals(cardZone))
+                    {
                         effectExtraDamage += cardeffect.Damage;
                     }
                 }
                 //BuffDamageToCardAtZoneIfNameMatch
                 else if (cardeffect.type == CardEffectType.BuffThisCardDamageExistXAtZone)
                 {
-                    if (!(cardeffect.artName.Equals(art.Name)))
+                    if (!cardeffect.artName.Equals(art.Name))
                         continue;
 
                     if (!cardeffect.cardNumber.Equals(attackingCard.cardNumber))
@@ -136,7 +135,7 @@ namespace hololive_oficial_cardgame_server
                     if (cardeffect.zoneTarget.Equals(cardZone))
                         continue;
 
-                    Card cardAtStage = matchRoom.startPlayer == playerWhoDeclaredAttack ? matchRoom.playerAStage : matchRoom.playerBStage;
+                    Card cardAtStage = matchRoom.firstPlayer.Equals(playerWhoDeclaredAttack) ? matchRoom.playerAStage : matchRoom.playerBStage;
 
                     // if the name didnt match what the effect need, continue
                     if (!cardeffect.ExistXAtZone_Name.Equals(cardAtStage.name))
@@ -155,7 +154,7 @@ namespace hololive_oficial_cardgame_server
                     if (!cardeffect.zoneTarget.Equals(cardZone))
                         continue;
 
-                    Card cardAtStage = matchRoom.startPlayer == playerWhoDeclaredAttack ? matchRoom.playerAStage : matchRoom.playerBStage;
+                    Card cardAtStage = matchRoom.firstPlayer.Equals(playerWhoDeclaredAttack) ? matchRoom.playerAStage : matchRoom.playerBStage;
                     effectExtraDamage += cardeffect.Damage;
                 }
             }
@@ -164,7 +163,8 @@ namespace hololive_oficial_cardgame_server
             {
                 baseDamage += art.Damage.Amount * 1 + effectExtraDamage;
             }
-            else {
+            else
+            {
                 baseDamage = -100000;
             }
 

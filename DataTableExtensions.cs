@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
 using System.Reflection;
 
-namespace hololive_oficial_cardgame_server.Controllers
+namespace hololive_oficial_cardgame_server
 {
     public static class DataTableExtensions
     {

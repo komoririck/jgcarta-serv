@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -21,7 +22,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             if (_DuelAction.targetCard != null)
                 _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
@@ -72,7 +73,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             _DuelAction.playedFrom = "CardCheer";
 
             //lest send to player AttachEnergyResponse since is generic
-            RequestData _ReturnData = new RequestData { type = "GamePhase", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            PlayerRequest _ReturnData = new PlayerRequest { type = "GamePhase", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);

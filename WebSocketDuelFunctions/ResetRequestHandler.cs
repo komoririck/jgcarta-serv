@@ -1,11 +1,9 @@
-﻿using MySqlX.XDevAPI.Common;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using static hololive_oficial_cardgame_server.MatchRoom;
-using System.Text;
-using Microsoft.OpenApi.Extensions;
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 using System.Text.Json;
 using hololive_oficial_cardgame_server.EffectControllers;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -13,7 +11,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
     {
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
-        private RequestData _ReturnData;
+        private PlayerRequest _ReturnData;
 
         public ResetRequestHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
         {
@@ -23,12 +21,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
         internal async Task ResetRequestHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
         {
+
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
-            int playerA = cMatchRoom.firstPlayer;
-            int playerB = cMatchRoom.secondPlayer;
 
-            if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
+            if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
             {
                 Lib.WriteConsoleMessage("Wrong player calling");
                 return;
@@ -90,12 +87,15 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             CollabEffects.currentActivatedTurnEffect.Clear();
             ArtEffects.currentActivatedTurnEffect.Clear();
 
-            _ReturnData = new RequestData { type = "GamePhase", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "GamePhase", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
 
             cMatchRoom.currentGameHigh++;
+
+            cMatchRoom.StopTimer(MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn));
+            cMatchRoom.StartOrResetTimer(cMatchRoom.currentPlayerTurn.ToString(), enduel => Lib.EndDuelAsync(cMatchRoom, MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)));
         }
 
 

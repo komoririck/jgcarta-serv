@@ -1,4 +1,4 @@
-namespace hololive_oficial_cardgame_server;
+namespace hololive_oficial_cardgame_server.SerializableObjects;
 
 public class PlayerItemBox
 {

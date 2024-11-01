@@ -2,6 +2,7 @@
 using System.Net.WebSockets;
 using System.Text.Json;
 using hololive_oficial_cardgame_server.EffectControllers;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -22,7 +23,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             if (_DuelAction.targetCard != null)
                 _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
@@ -97,7 +98,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 }
             }
 
-            RequestData pReturnData = new RequestData { type = "GamePhase", description = "DoCollab", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            PlayerRequest pReturnData = new PlayerRequest { type = "GamePhase", description = "DoCollab", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 

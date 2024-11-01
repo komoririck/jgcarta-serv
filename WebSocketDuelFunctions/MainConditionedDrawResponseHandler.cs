@@ -1,11 +1,9 @@
-﻿using MySqlX.XDevAPI.Common;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net.WebSockets;
-using static hololive_oficial_cardgame_server.MatchRoom;
-using System.Text;
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 using System.Text.Json;
-using Mysqlx.Crud;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -13,7 +11,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
     {
         private ConcurrentDictionary<string, WebSocket> playerConnections;
         private List<MatchRoom> matchRooms;
-        private RequestData _ReturnData;
+        private PlayerRequest _ReturnData;
 
         public MainConditionedDrawResponseHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
         {
@@ -26,7 +24,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            DuelAction _DuelActionRecieved = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestData.extraRequestObject);
+            DuelAction _DuelActionRecieved = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
             List<object> ResponseObjList = JsonSerializer.Deserialize<List<object>>(_DuelActionRecieved.actionObject);
 
             DuelAction _ConditionedDraw = new()
@@ -204,9 +202,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 zone = "Deck",
                 cardList = AddToHand
             };
-            _ReturnData = new RequestData { type = "GamePhase", description = "SuporteEffectDrawXAddIfDone", requestObject = JsonSerializer.Serialize(DrawReturn, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "GamePhase", description = "SuporteEffectDrawXAddIfDone", requestObject = JsonSerializer.Serialize(DrawReturn, Lib.options) };
 
-            if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer)
+            if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
             {
                 cMatchRoom.playerAHand.AddRange(AddToHand);
                 cMatchRoom.playerADeck.InsertRange(0, ReturnToDeck);

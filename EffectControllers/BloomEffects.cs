@@ -1,8 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Collections.Concurrent;
-using System.Net.WebSockets;
-using System.Text.Json;
-using static hololive_oficial_cardgame_server.MatchRoom;
+﻿using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.EffectControllers
 {

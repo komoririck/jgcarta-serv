@@ -1,17 +1,20 @@
 ﻿using hololive_oficial_cardgame_server;
-using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
+using hololive_oficial_cardgame_server.SerializableObjects;
 using System.Diagnostics;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using static hololive_oficial_cardgame_server.MatchRoom;
+using System.Text.Json.Serialization;
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 
 var builder = WebApplication.CreateBuilder(args);
-//
-//
+
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -35,7 +38,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-
 
 DBConnection.StartServerClearQueue();
 
@@ -74,13 +76,11 @@ async Task HandleWebSocketAsync(HttpContext context)
                 }
                 catch (WebSocketException wsEx)
                 {
-                    // Log the exception and break the loop to clean up
                     Lib.WriteConsoleMessage($"WebSocketException during ReceiveAsync: {wsEx}");
                     break;
                 }
                 catch (Exception ex)
                 {
-                    // Log unexpected exceptions and break the loop
                     Lib.WriteConsoleMessage($"Exception during ReceiveAsync: {ex}");
                     break;
                 }
@@ -89,7 +89,6 @@ async Task HandleWebSocketAsync(HttpContext context)
                 {
                     try
                     {
-                        // Attempt to close the WebSocket gracefully
                         if (webSocket.State == WebSocketState.Open || webSocket.State == WebSocketState.CloseReceived)
                         {
                             await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
@@ -97,22 +96,21 @@ async Task HandleWebSocketAsync(HttpContext context)
                     }
                     catch (WebSocketException wsEx)
                     {
-                        // Log the exception but continue to clean up
                         Lib.WriteConsoleMessage($"WebSocketException during CloseAsync: {wsEx}");
                     }
                     catch (Exception ex)
                     {
-                        // Log unexpected exceptions
                         Lib.WriteConsoleMessage($"Exception during CloseAsync: {ex}");
                     }
                     finally
                     {
-                        string palyer = Lib.GetKeyByValue(webSocket);
-                        MatchRoom cMatchRoom = null;
-                        int matchnumber = MatchRoom.FindPlayerMatchRoom(MessageDispatcher._MatchRooms, palyer);
-                        if (matchnumber != -1) { 
-                            cMatchRoom = MessageDispatcher._MatchRooms[matchnumber];
-                            Lib.EndDuelAsync(true, cMatchRoom,  GetOtherPlayer(cMatchRoom, int.Parse(palyer)));
+                        string player = Lib.GetKeyByValue(webSocket);
+                        MatchRoom matchRoom = null;
+                        int matchNumber = MatchRoom.FindPlayerMatchRoom(MessageDispatcher._MatchRooms, player);
+                        if (matchNumber != -1)
+                        {
+                            matchRoom = MessageDispatcher._MatchRooms[matchNumber];
+                            Lib.EndDuelAsync(matchRoom, GetOtherPlayer(matchRoom, player));
                         }
                     }
                 }
@@ -122,23 +120,19 @@ async Task HandleWebSocketAsync(HttpContext context)
 
                     try
                     {
-                        // Deserialize the received JSON message
                         var playerRequest = JsonSerializer.Deserialize<PlayerRequest>(receivedMessage);
 
                         if (playerRequest != null && Lib.ValidatePlayerRequest(playerRequest))
                         {
-                            // Dispatch the message to the appropriate handler
                             await MessageDispatcher.DispatchMessage(playerRequest, webSocket);
                         }
                     }
                     catch (JsonException jsonEx)
                     {
-                        // Handle JSON deserialization errors
                         Lib.WriteConsoleMessage($"JSON Exception: {jsonEx}");
                     }
                     catch (Exception ex)
                     {
-                        // Handle other unexpected exceptions
                         Lib.WriteConsoleMessage($"Exception during message processing: {ex}");
                     }
                 }
@@ -146,12 +140,10 @@ async Task HandleWebSocketAsync(HttpContext context)
         }
         catch (Exception ex)
         {
-            // Log any exceptions that occurred outside the receive loop
             Lib.WriteConsoleMessage($"Unhandled Exception: {ex}");
         }
         finally
         {
-            // Ensure the WebSocket is closed if it's still open
             if (webSocket.State != WebSocketState.Closed && webSocket.State != WebSocketState.Aborted)
             {
                 try
@@ -160,21 +152,17 @@ async Task HandleWebSocketAsync(HttpContext context)
                 }
                 catch (WebSocketException wsEx)
                 {
-                    // Log the exception but proceed to dispose
                     Lib.WriteConsoleMessage($"WebSocketException during final CloseAsync: {wsEx}");
                 }
                 catch (Exception ex)
                 {
-                    // Log unexpected exceptions
                     Lib.WriteConsoleMessage($"Exception during final CloseAsync: {ex}");
                 }
             }
 
-            // Dispose the WebSocket to free resources
             webSocket.Dispose();
         }
     }
-
 }
 
 // Run the application

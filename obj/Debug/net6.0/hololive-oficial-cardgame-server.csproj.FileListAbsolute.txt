@@ -54,7 +54,6 @@ C:\Users\PC\hololive-oficial-cardgame-server\bin\Debug\net6.0\runtimes\win-x64\n
 C:\Users\PC\hololive-oficial-cardgame-server\bin\Debug\net6.0\runtimes\win\lib\net6.0\System.Text.Encoding.CodePages.dll
 C:\Users\PC\hololive-oficial-cardgame-server\bin\Debug\net6.0\runtimes\browser\lib\net6.0\System.Text.Encodings.Web.dll
 C:\Users\PC\hololive-oficial-cardgame-server\bin\Debug\net6.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
-C:\Users\PC\hololive-oficial-cardgame-server\bin\Debug\net6.0\Newtonsoft.Json.dll
 C:\Users\PC\hololive-oficial-cardgame-server\bin\Debug\net6.0\ExcelDataReader.dll
 C:\Users\PC\hololive-oficial-cardgame-server\bin\Debug\net6.0\ExcelDataReader.DataSet.dll
 C:\Users\PC\hololive-oficial-cardgame-server\obj\Debug\net6.0\hololive-oficial-cardgame-server.sourcelink.json

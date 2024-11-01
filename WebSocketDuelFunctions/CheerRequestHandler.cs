@@ -1,11 +1,8 @@
-﻿using MySqlX.XDevAPI.Common;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using static hololive_oficial_cardgame_server.MatchRoom;
-using System.Text;
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 using System.Text.Json;
-using Microsoft.OpenApi.Extensions;
-using System.ComponentModel.Design;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -25,7 +22,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            if (int.Parse(playerRequest.playerID) != cMatchRoom.currentPlayerTurn)
+            if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                 return;
 
             if (cMatchRoom.currentGamePhase != GAMEPHASE.CheerStep)
@@ -35,7 +32,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             cardCheerDraw.playerID = cMatchRoom.currentPlayerTurn;
             cardCheerDraw.zone = "CardCheer";
 
-            RequestData ReturnData = new RequestData { type = "GamePhase", description = "CheerStep", requestObject = "" };
+            PlayerRequest ReturnData = new PlayerRequest { type = "GamePhase", description = "CheerStep", requestObject = "" };
 
             if (cMatchRoom.currentPlayerTurn.Equals(cMatchRoom.firstPlayer))
             {

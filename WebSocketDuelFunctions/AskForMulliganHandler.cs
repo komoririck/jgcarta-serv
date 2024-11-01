@@ -2,6 +2,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
@@ -20,25 +21,25 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
-            if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer && cMatchRoom.PAMulliganAsked)
+            if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer) && cMatchRoom.PAMulliganAsked)
             {
                 return;
             }
-            if (int.Parse(playerRequest.playerID) == cMatchRoom.secondPlayer && cMatchRoom.PBMulliganAsked)
+            if (playerRequest.playerID.Equals(cMatchRoom.secondPlayer) && cMatchRoom.PBMulliganAsked)
             {
                 return;
             }
 
             DuelAction draw;
             List<Record> cardlist;
-            RequestData returnData;
-            RequestData pReturnData;
+            PlayerRequest returnData;
+            PlayerRequest pReturnData;
 
 
             /////////////
             /////////////
             // For Player A
-            if (int.Parse(playerRequest.playerID) == cMatchRoom.firstPlayer && !cMatchRoom.PAMulliganAsked)
+            if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer) && !cMatchRoom.PAMulliganAsked)
             {
                 Lib.PrintPlayerHand(cMatchRoom);
                 await HandleMulligan(cMatchRoom, true, playerRequest, playerConnections[cMatchRoom.firstPlayer.ToString()], playerConnections[cMatchRoom.secondPlayer.ToString()]);
@@ -46,7 +47,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             // For Player B
-            if (int.Parse(playerRequest.playerID) == cMatchRoom.secondPlayer && !cMatchRoom.PBMulliganAsked)
+            if (playerRequest.playerID.Equals(cMatchRoom.secondPlayer) && !cMatchRoom.PBMulliganAsked)
             {
                 Lib.PrintPlayerHand(cMatchRoom);
                 await HandleMulligan(cMatchRoom, false, playerRequest, playerConnections[cMatchRoom.secondPlayer.ToString()], playerConnections[cMatchRoom.firstPlayer.ToString()]);
@@ -79,12 +80,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 zone = "Deck",
                 cardList = cMatchRoom.playerAHand
             };
-            pReturnData = new RequestData { type = "duelUpdate", description = "PAMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
+            pReturnData = new PlayerRequest { type = "duelUpdate", description = "PAMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
             // we are changing the line here
             draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerAHand);
 
-            pReturnData = new RequestData { type = "duelUpdate", description = "PAMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
+            pReturnData = new PlayerRequest { type = "duelUpdate", description = "PAMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
             /////////////
@@ -112,12 +113,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cardList = cMatchRoom.playerBHand
             };
 
-            pReturnData = new RequestData { type = "duelUpdate", description = "PBMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
+            pReturnData = new PlayerRequest { type = "duelUpdate", description = "PBMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
             draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBHand);
 
-            pReturnData = new RequestData { type = "duelUpdate", description = "PBMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
+            pReturnData = new PlayerRequest { type = "duelUpdate", description = "PBMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
 
 
@@ -137,7 +138,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             var playerID = isFirstPlayer ? room.playerA.PlayerID : room.playerB.PlayerID;
             var playerName = isFirstPlayer ? "PA" : "PB";  // For PANoMulligan, PBMulligan, etc.
 
-            if (request.requestData.requestObject.Equals("t"))
+            if (request.requestObject.Equals("t"))
             {
                 // Shuffle and redraw cards
                 room.suffleHandToTheDeck(playerDeck, playerHand);
@@ -163,19 +164,19 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             };
 
             // Handle response for acting player (actual cards)
-            var playerResponse = new RequestData
+            var playerResponse = new PlayerRequest
             {
                 type = "duelUpdate",
-                description = request.requestData.requestObject.Equals("t") ? $"{playerName}Mulligan" : $"{playerName}NoMulligan",
+                description = request.requestObject.Equals("t") ? $"{playerName}Mulligan" : $"{playerName}NoMulligan",
                 requestObject = JsonSerializer.Serialize(draw, Lib.options)  // Acting player gets the real hand
             };
             Lib.SendMessage(socketA, playerResponse);
 
             // Handle response for opponent (dummy hand)
-            var opponentResponse = new RequestData
+            var opponentResponse = new PlayerRequest
             {
                 type = "duelUpdate",
-                description = request.requestData.requestObject.Equals("t") ? $"{playerName}Mulligan" : $"{playerName}NoMulligan",
+                description = request.requestObject.Equals("t") ? $"{playerName}Mulligan" : $"{playerName}NoMulligan",
                 requestObject = JsonSerializer.Serialize(drawDummy)  // Opponent gets the dummy hand
             };
 

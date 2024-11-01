@@ -5,7 +5,7 @@ using System.Security.Policy;
 using System.Text.Json.Serialization;
 using static System.Net.Mime.MediaTypeNames;
 
-namespace hololive_oficial_cardgame_server;
+namespace hololive_oficial_cardgame_server.SerializableObjects;
 
 [Serializable]
 public class Card
@@ -90,7 +90,8 @@ public class Card
                 life = record.Life;
 
                 List<string> words = arts.Split(';').ToList();
-                foreach (string art in words) {
+                foreach (string art in words)
+                {
                     Arts.Add(Art.ParseArtFromString(art));
                 }
             }
@@ -102,18 +103,18 @@ public class CardEffect
 {
     internal int listIndex;
 
-    public int playerWhoUsedTheEffect { get; set; } = 0;
-    public int playerWhoIsTheTargetOfEffect { get; set; } = 0;
-    public string cardNumber { get; set; } = "";
-    public string artName { get; set; } = "";
-    public string zoneTarget { get; set; } = "";
-    public string cardTarget { get; set; } = "";
-    public CardEffectType type { get; set; } = 0;
-    public int Damage { get; set; } = 0;
-    public int damageType { get; set; } = 0;
-    public string nameMatch { get; set; } = "";
+    public string playerWhoUsedTheEffect { get; set; }
+    public string playerWhoIsTheTargetOfEffect { get; set; }
+    public string cardNumber { get; set; }
+    public string artName { get; set; } 
+    public string zoneTarget { get; set; }
+    public string cardTarget { get; set; }
+    public CardEffectType type { get; set; }
+    public int Damage { get; set; }
+    public int damageType { get; set; }
+    public string nameMatch { get; set; }
     //BuffThisCardDamageExistXAtZone
-    public string ExistXAtZone_Name { get; set; } = "";
+    public string ExistXAtZone_Name { get; set; }
 }
 
 [Flags]
