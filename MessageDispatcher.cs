@@ -67,15 +67,15 @@ namespace hololive_oficial_cardgame_server
                     if (!(playerRequest.playerID != cMatchRoom.currentPlayerTurn))
                         break;
 
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
                     break;
                 case "MainStartRequest":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                         break;
 
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
                     break;
                 case "MainDoActionRequest":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
@@ -131,8 +131,8 @@ namespace hololive_oficial_cardgame_server
 
                     Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
 
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "Endturn", requestObject = "" });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "GamePhase", description = "Endturn", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
+                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
 
                     cMatchRoom.currentGameHigh++;
                     break;
@@ -149,14 +149,6 @@ namespace hololive_oficial_cardgame_server
                     var handler15 = new SuporteEffectAttachEnergyIfResponseHandler(playerConnections, _MatchRooms);
                     await handler15.SuporteEffectAttachEnergyHandleAsync(playerRequest, webSocket);
                     break;
-                case "MainConditionedSummomResponse":
-                    var handler16 = new MainConditionedSummomResponseHandler(playerConnections, _MatchRooms);
-                    await handler16.MainConditionedSummomResponseHandleAsync(playerRequest, webSocket);
-                    break;
-                case "MainConditionedDrawResponse":
-                    var handler17 = new MainConditionedDrawResponseHandler(playerConnections, _MatchRooms);
-                    await handler17.MainConditionedDrawResponseHandleAsync(playerRequest, webSocket);
-                    break;
                 case "ResolveOnCollabEffect":
                     CollabEffects.OnCollabEffectResolutionAsync(playerConnections, _MatchRooms, playerRequest, webSocket);
                     break;
@@ -165,7 +157,7 @@ namespace hololive_oficial_cardgame_server
                     break;
                 case "ResolveOnSupportEffect":
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
-                    SupportEffects.OnSupportEffects(_DuelAction, cMatchRoom, playerRequest, webSocket);
+                    SupportEffects.OnSupportEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket);
                     break;
                     
             }

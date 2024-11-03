@@ -32,10 +32,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
             {
                 FirstGameBoardSetup(_duelFieldData, playerRequest.playerID, cMatchRoom, MessageDispatcher.CardList, _duelFieldData.playerAStage, _duelFieldData.playerABackPosition);
+                cMatchRoom.StopTimer(playerRequest.playerID);
             }
             else
             {
                 FirstGameBoardSetup(_duelFieldData, playerRequest.playerID, cMatchRoom, MessageDispatcher.CardList, _duelFieldData.playerBStage, _duelFieldData.playerBBackPosition);
+                cMatchRoom.StopTimer(playerRequest.playerID);
             }
 
             if (!(cMatchRoom.playerAInicialBoardSetup && cMatchRoom.playerBInicialBoardSetup))
@@ -68,10 +70,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
             //since we were able to update the users table to lock the match, send both players to the match
-            pReturnData = new PlayerRequest { type = "BoardReadyToPlay", description = "BoardReadyToPlay", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) };
+            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DuelUpdate", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
 
-            pReturnData = new PlayerRequest { type = "BoardReadyToPlay", description = "BoardReadyToPlay", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) }; 
+            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DuelUpdate", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) }; 
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
             //update the room phase, so the server can take it automaticaly from here
@@ -79,7 +81,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             cMatchRoom.currentGameHigh = 7;
             //devolver um synchigh com informações de quem vai comprar
 
-            cMatchRoom.StopTimer(MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn));
             cMatchRoom.StartOrResetTimer(cMatchRoom.currentPlayerTurn.ToString(), enduel => Lib.EndDuelAsync(cMatchRoom, MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)));
         }
 

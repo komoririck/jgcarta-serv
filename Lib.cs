@@ -13,11 +13,11 @@ namespace hololive_oficial_cardgame_server
 {
     public class Lib
     {
-        static public JsonSerializerOptions options = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+        static public JsonSerializerOptions options = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true };
 
         public static void WriteConsoleMessage(string s)
         {
-            Console.WriteLine("\n" + s);
+           Console.WriteLine("\n" + s);
 
         }
         static public int getCardFromDeck(List<Card> deck, List<Card> target, int amount)
@@ -55,37 +55,14 @@ namespace hololive_oficial_cardgame_server
             }
         }
 
-        static public bool HaveSameObjectCounts(List<Card> playedthisturn, List<Card> hand)
-        {
-            // Create a copy of the hand to safely modify it
-            List<Card> handCopy = new List<Card>(hand);
-            int n = 0;
-
-            foreach (Card cardPlayed in playedthisturn)
-            {
-                // Find a match in the copy of the hand
-                Card matchingCard = handCopy.FirstOrDefault(card => card.cardNumber == cardPlayed.cardNumber);
-
-                if (matchingCard != null)
-                {
-                    handCopy.Remove(matchingCard); // Remove the matched card from the copy
-                    n++;
-                }
-                else
-                {
-                    return false; // No match found for this card, return false
-                }
-            }
-
-            // Check if the count matches the number of played cards
-            return n == playedthisturn.Count;
-        }
         */
 
 
 
         static public async Task EndDuelAsync(MatchRoom matchRoom, string pickWinner = "")
         {
+            //just for safety, lets get the id room to remove again in the bottom, we got a problem that when a exception occours, the room wanst being removed from the list
+            int matchnumber = MatchRoom.FindPlayerMatchRoom(MessageDispatcher._MatchRooms, matchRoom.firstPlayer);
 
             string currentPlayerTurn = matchRoom.currentPlayerTurn;
             if (string.IsNullOrEmpty(pickWinner))
@@ -96,7 +73,7 @@ namespace hololive_oficial_cardgame_server
             _duelaction.actionType = "Victory";
             _duelaction.playerID = currentPlayerTurn.ToString();
 
-            PlayerRequest _ReturnData = new PlayerRequest { type = "GamePhase", description = "Endduel", requestObject = JsonSerializer.Serialize(_duelaction, options) };
+            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "Endduel", requestObject = JsonSerializer.Serialize(_duelaction, options) };
 
 
             await SendMessage(MessageDispatcher.playerConnections[currentPlayerTurn.ToString()], _ReturnData);
@@ -111,7 +88,12 @@ namespace hololive_oficial_cardgame_server
             //continue to remove players from the websocketlist
             try
             {
-                MessageDispatcher._MatchRooms.Remove(matchRoom);
+                if (matchnumber > -1)
+                {
+                    MessageDispatcher._MatchRooms[matchnumber].StopTimer(MessageDispatcher._MatchRooms[matchnumber].firstPlayer);
+                    MessageDispatcher._MatchRooms[matchnumber].StopTimer(MessageDispatcher._MatchRooms[matchnumber].secondPlayer);
+                    MessageDispatcher._MatchRooms.RemoveAt(matchnumber);
+                }
 
                 if (MessageDispatcher.playerConnections.TryGetValue(currentPlayerTurn.ToString(), out var currentPlayerConnection))
                 {
@@ -375,7 +357,7 @@ namespace hololive_oficial_cardgame_server
                 }
             }
 
-            PlayerRequest _ReturnData = new PlayerRequest { type = "GamePhase", description = "DefeatedHoloMember", requestObject = JsonSerializer.Serialize(_duelaction, options) }; /// mudei o targeto aqui de _DuelAction para duelaction, conferir dps
+            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DefeatedHoloMember", requestObject = JsonSerializer.Serialize(_duelaction, options) }; /// mudei o targeto aqui de _DuelAction para duelaction, conferir dps
 
             cMatchRoom.currentGamePhase = GAMEPHASE.HolomemDefeated;
 
@@ -479,7 +461,7 @@ namespace hololive_oficial_cardgame_server
                 duelAction.usedCard.cardPosition = locall;
                 currentCollabCardd = null;
 
-                PlayerRequest _ReturnData = new() { type = "GamePhase", description = "UnDoCollab", requestObject = JsonSerializer.Serialize(duelAction, options) };
+                PlayerRequest _ReturnData = new() { type = "DuelUpdate", description = "UnDoCollab", requestObject = JsonSerializer.Serialize(duelAction, options) };
                 SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
                 SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
             }
@@ -526,6 +508,22 @@ namespace hololive_oficial_cardgame_server
             foreach (Card inHand in playerHand)
             {
                 if (inHand.cardNumber.Equals(UsedCard))
+                {
+                    handPos = handPosCounter;
+                    break;
+                }
+                handPosCounter++;
+            }
+            return handPos;
+        }
+        static public int CheckIfCardExistInPlayerBackStage(MatchRoom cMatchRoom, string playerId, Card card)
+        {
+            List<Card> playerBackStage = playerId.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
+            int handPos = -1;
+            int handPosCounter = 0;
+            foreach (Card inBackStage in playerBackStage)
+            {
+                if (inBackStage.cardNumber.Equals(card.cardNumber) && inBackStage.cardPosition.Equals(card.cardPosition))
                 {
                     handPos = handPosCounter;
                     break;
@@ -584,7 +582,7 @@ namespace hololive_oficial_cardgame_server
                     playerID = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn),
                     usedCard = new() { cardNumber = seletectedCard.attachedEnergy[removePos].cardNumber },
                 };
-                PlayerRequest pReturnData = new PlayerRequest { type = "GamePhase", description = "DisposeUsedSupport", requestObject = JsonSerializer.Serialize(_DisposeAction, options) };
+                PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DisposeUsedSupport", requestObject = JsonSerializer.Serialize(_DisposeAction, options) };
                 SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
 
 

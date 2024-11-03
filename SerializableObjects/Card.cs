@@ -54,6 +54,8 @@ public class Card
     [JsonIgnore]
     public string life { get; set; }
     [JsonIgnore]
+    public string cardTag { get; set; }
+    [JsonIgnore]
     public List<CardEffect> cardEffects { get; set; } = new List<CardEffect>();
     [JsonIgnore]
     public List<Card> attachedEnergy { get; set; } = new List<Card>();
@@ -88,6 +90,7 @@ public class Card
                 abilityText = record.AbilityText;
                 illustrator = record.Illustrator;
                 life = record.Life;
+                cardTag = record.Tag;
 
                 List<string> words = arts.Split(';').ToList();
                 foreach (string art in words)

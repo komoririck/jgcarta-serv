@@ -36,7 +36,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     stage.GetCardInfo(stage.cardNumber);
                     if (stage.name.Equals("ときのそら"))
                     {
-                        PlayerRequest ReturnData = new PlayerRequest { type = "GamePhase", description = "DrawCollabEffect", requestObject = "" };
+                        PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DrawCollabEffect", requestObject = "" };
                         if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
                         {
                             Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
@@ -63,7 +63,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         //send the info to the currentplayer so he can pick the card
                         _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
-                        pReturnData = new PlayerRequest { type = "GamePhase", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                         Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
                         Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
 
@@ -77,7 +77,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     var handler190 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
                     if (_DuelAction.usedCard.cardPosition.Equals("Stage"))
                     {
-                        await handler190.AttachTopCheerEnergyHandleAsync(playerRequest, webSocket, true, false, false, 1);
+                        await handler190.AttachCheerEnergyHandleAsync(playerRequest, webSocket, stage: true, collab: false, back: false, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 1);
                     }
                     ResetResolution();
                     break;
@@ -100,7 +100,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     holoPowerList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAHoloPower : cMatchRoom.playerBHoloPower;
                     //send the info to the currentplayer so he can pick the card
                     _DuelAction.actionObject = JsonSerializer.Serialize(holoPowerList, Lib.options);
-                    pReturnData = new PlayerRequest { type = "GamePhase", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
                     cMatchRoom.currentCardResolvingStage = "1";
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
@@ -145,14 +145,14 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     }
                     //send the info to the currentplayer so he can pick the card
                     _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
-                    pReturnData = new PlayerRequest { type = "GamePhase", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
                     Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
                     break;
                 case "hSD01-0091":
                     cMatchRoom.currentCardResolvingStage = "2";
                     var handler192 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                    await handler192.AttachTopCheerEnergyHandleAsync(playerRequest, webSocket, false, false, true, 1);
+                    await handler192.AttachCheerEnergyHandleAsync(playerRequest, webSocket, stage: false, collab: false, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 1);
                     break;
                 case "hSD01-0092":
                     if (_DuelAction.actionObject.Equals("Yes") && int.Parse(cMatchRoom.extraInfo[0]) < 2)
@@ -184,7 +184,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                     //send the info to the currentplayer so he can pick the card
                     _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.options);
-                    pReturnData = new PlayerRequest { type = "GamePhase", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
                     Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
                     break;
@@ -257,12 +257,12 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         return;
 
                     var handler2 = new AttachTopCheerEnergyToBackHandler(playerConnections, matchRooms);
-                    await handler2.AttachTopCheerEnergyHandleAsync(playerRequest, webSocket, false, false, true);
+                    await handler2.AttachCheerEnergyHandleAsync(playerRequest, webSocket, stage: false, collab: false, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false);
                     break;
 
                 case "AskAttachTopCheerEnergyToBack":
                     var handler19 = new AttachTopCheerEnergyToBackHandler(playerConnections, matchRooms);
-                    await handler19.AttachTopCheerEnergyHandleAsync(playerRequest, webSocket, false, false, true);
+                    await handler19.AttachCheerEnergyHandleAsync(playerRequest, webSocket, stage: false, collab: false, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false);
                     break;
                     /*case "Retreat":
                         _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.PlayerRequest.extraRequestObject);
@@ -300,7 +300,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             string otherPlayer = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerB.PlayerID : cMatchRoom.playerA.PlayerID;
 
             // Serialize and send data to the current player
-            _ReturnData = new PlayerRequest { type = "GamePhase", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
 
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], _ReturnData);
 
@@ -308,7 +308,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             if (reveal == false)
                 DuelActionResponse.cardList = cMatchRoom.FillCardListWithEmptyCards(DuelActionResponse.cardList);
 
-            _ReturnData = new PlayerRequest { type = "GamePhase", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
             Lib.SendMessage(MessageDispatcher.playerConnections[otherPlayer.ToString()], _ReturnData);
         }
 

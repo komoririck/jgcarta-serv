@@ -141,7 +141,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
-            _ReturnData = new PlayerRequest { type = "GamePhase", description = _DuelAction.actionType, requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = _DuelAction.actionType, requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);

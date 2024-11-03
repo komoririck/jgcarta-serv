@@ -28,17 +28,22 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             string otherPlayer = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn);
 
-            if (playerRequest.playerID.Equals(otherPlayer))
+            if (!playerRequest.playerID.Equals(otherPlayer)) {
+                Lib.WriteConsoleMessage("wrong player calling");
                 return;
+            }
 
             if (cMatchRoom.currentGamePhase != GAMEPHASE.HolomemDefeated)
+            {
+                Lib.WriteConsoleMessage("not right phase");
                 return;
+            }
 
             cardCheerDraw = new DuelAction();
             cardCheerDraw.playerID = otherPlayer;
             cardCheerDraw.zone = "Life";
 
-            ReturnData = new PlayerRequest { type = "GamePhase", description = "HolomemDefatedSoGainCheer", requestObject = "" };
+            ReturnData = new PlayerRequest { type = "DuelUpdate", description = "HolomemDefatedSoGainCheer", requestObject = "" };
 
             if (otherPlayer.Equals(cMatchRoom.firstPlayer))
             {

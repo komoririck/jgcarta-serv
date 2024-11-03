@@ -75,7 +75,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             //validating if player need to ReSet his card at main stage position
-            Card card = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
+            Card card = cMatchRoom.currentPlayerTurn.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
 
             if (card != null)
                 cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
@@ -87,7 +87,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             CollabEffects.currentActivatedTurnEffect.Clear();
             ArtEffects.currentActivatedTurnEffect.Clear();
 
-            _ReturnData = new PlayerRequest { type = "GamePhase", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
+            //string whichStep = cMatchRoom.currentGamePhase == GAMEPHASE.ResetStepReSetStage ? "ReSetStage" : "ResetStep";
+
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);

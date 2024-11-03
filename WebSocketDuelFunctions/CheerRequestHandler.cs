@@ -32,7 +32,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             cardCheerDraw.playerID = cMatchRoom.currentPlayerTurn;
             cardCheerDraw.zone = "CardCheer";
 
-            PlayerRequest ReturnData = new PlayerRequest { type = "GamePhase", description = "CheerStep", requestObject = "" };
+            PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "CheerStep", requestObject = "" };
 
             if (cMatchRoom.currentPlayerTurn.Equals(cMatchRoom.firstPlayer))
             {

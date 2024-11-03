@@ -211,7 +211,7 @@
     "ContainingType": "hololive_oficial_cardgame_server.Controllers.DeckInfoController",
     "Method": "Put",
     "RelativePath": "DeckInfo/GetDeck",
-    "HttpMethod": "PUT",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -227,7 +227,7 @@
     "ContainingType": "hololive_oficial_cardgame_server.Controllers.DeckInfoController",
     "Method": "Post",
     "RelativePath": "DeckInfo/UpdateDeck",
-    "HttpMethod": "POST",
+    "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
     "Parameters": [

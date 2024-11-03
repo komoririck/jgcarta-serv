@@ -121,7 +121,7 @@ public class Record
         }
         if (!string.IsNullOrEmpty(tag))
         {
-            query = query.Where(r => r.CardNumber == tag);
+            query = query.Where(r => r.Tag.Contains($"#{tag}"));
         }
 
         return query.ToList();

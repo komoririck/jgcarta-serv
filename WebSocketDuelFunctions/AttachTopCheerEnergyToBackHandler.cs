@@ -16,7 +16,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             this.matchRooms = matchRooms;
         }
 
-        internal async Task AttachTopCheerEnergyHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, bool stage, bool collab, bool back, int energyIndex = -1)
+        internal async Task AttachCheerEnergyHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, bool stage, bool collab, bool back, bool TOPCHEERDECK, bool FULLCHEERDECK, int energyIndex = -1)
         {
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
@@ -30,9 +30,16 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (_DuelAction.cheerCostCard != null)
                 _DuelAction.cheerCostCard.GetCardInfo(_DuelAction.cheerCostCard.cardNumber);
 
-            List<string> objects = JsonSerializer.Deserialize<List<string>>(_DuelAction.actionObject);
-            string topCheerEnergy = objects[energyIndex];
-
+            //since sometimes we call this function passing a string instead of a list, we try to parse the json, if not able, we just assign
+            string SelectedCheer = "";
+            try { 
+               List<string> objects = JsonSerializer.Deserialize<List<string>>(_DuelAction.actionObject);
+               SelectedCheer = objects[energyIndex];
+            }
+            catch (JsonException)
+            {
+                SelectedCheer = _DuelAction.actionObject.ToString();
+            }
 
             //temphand
             List<Card> playertemphand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
@@ -41,7 +48,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 Lib.WriteConsoleMessage("temp hand null -- RISK PLAY");
                 return;
             }
-            if (!topCheerEnergy.Equals(playertemphand[0].cardNumber) || !playertemphand[0].playedFrom.Equals("CardCheer"))
+            if (!SelectedCheer.Equals(playertemphand[0].cardNumber) || !playertemphand[0].playedFrom.Equals("CardCheer"))
             {
                 // if neither of the matches are valid, something is wrong with the play the player send the information
                 Lib.WriteConsoleMessage("card didnt match temphand -- RISK PLAY");
@@ -50,16 +57,32 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             //energy list
             List<Card> playerCheerDeck = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
-
-            if (!topCheerEnergy.Equals(playerCheerDeck[playerCheerDeck.Count - 1].cardNumber)) {
-                Lib.WriteConsoleMessage("Card didnt match the last position of the cheer");
-                return;
+            if (TOPCHEERDECK) 
+            {
+                if (!SelectedCheer.Equals(playerCheerDeck[playerCheerDeck.Count - 1].cardNumber)) {
+                    Lib.WriteConsoleMessage("Card didnt match the last position of the cheer");
+                    return;
+                }
+                //since pass the valition remove last pos
+                playerCheerDeck.RemoveAt(playerCheerDeck.Count - 1);
+            }
+            else if (FULLCHEERDECK)
+            {
+                int n = -1;
+                for (int j = 0; j < playerCheerDeck.Count; j++) {
+                    if (playerCheerDeck[j].cardNumber.Equals(SelectedCheer)) {
+                        n = j;
+                        break;
+                    }
+                }
+                if(n == -1)
+                {
+                    Lib.WriteConsoleMessage("Card didnt match one of the cheer");
+                    return;
+                }
+                playerCheerDeck.RemoveAt(n);
             }
 
-            //since pass the valition remove last pos
-            playerCheerDeck.RemoveAt(playerCheerDeck.Count - 1);
-
-        
             //AssignEnergyToZoneAsync checks if the used card is the energy we're trying to attach, só we need to change here for the topCheerEnergy = _DuelAction.actionObject
             //because the client is sending the card of activate the effect as the one who used the effect
             //holding the used card
@@ -90,7 +113,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             _DuelAction.playedFrom = "CardCheer";
 
             //lest send to player AttachEnergyResponse since is generic
-            PlayerRequest _ReturnData = new PlayerRequest { type = "GamePhase", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("hololive-oficial-cardgame-server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e8f5df25e7d1676360c681e20b0794fe2d01e359")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4598e8265a33856a38b7d1a0655e8b2703b6d28a")]
 [assembly: System.Reflection.AssemblyProductAttribute("hololive-oficial-cardgame-server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("hololive-oficial-cardgame-server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

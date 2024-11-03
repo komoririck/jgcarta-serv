@@ -64,7 +64,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 _DuelAction = new();
             }
 
-            _ReturnData = new PlayerRequest { type = "GamePhase", description = "CheerStepEndDefeatedHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "CheerStepEndDefeatedHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);

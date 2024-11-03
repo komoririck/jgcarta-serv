@@ -201,7 +201,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     checkBloomEffect();
                     break;
             }
-            PlayerRequest pReturnData = new PlayerRequest { type = "GamePhase", description = "BloomHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "BloomHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
 

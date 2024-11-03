@@ -2,6 +2,7 @@
 using Org.BouncyCastle.Asn1.X509;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using System.Security.Policy;
 using System.Text.Json;
 
 
@@ -41,8 +42,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             List<Card> holoPowerList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAHoloPower : cMatchRoom.playerBHoloPower;
             int n = -1;
             int m = 0;
-            foreach (Card card in holoPowerList) {
-                if (card.cardNumber.Equals(returnedCardList[0])) 
+            foreach (Card card in holoPowerList)
+            {
+                if (card.cardNumber.Equals(returnedCardList[0]))
                 {
                     n = m;
                     break;
@@ -50,7 +52,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 m++;
             }
 
-            if (n == -1) {
+            if (n == -1)
+            {
                 Lib.WriteConsoleMessage("Invalid card picked from holopower");
                 return;
             }
@@ -66,7 +69,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //checking if the card to return to the holopower is valid
             n = -1;
             m = 0;
-            foreach (Card card in playerHandList) {
+            foreach (Card card in playerHandList)
+            {
                 if (card.cardNumber.Equals(returnedCardList[1]))
                 {
                     n = m;
@@ -87,24 +91,18 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             //creating data to send the player
             _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
-            _DuelAction.usedCard = new() {cardNumber = cMatchRoom.currentCardResolving};
-            _DuelAction.targetCard = new() { cardNumber = returnedCardList[1]};
+            _DuelAction.usedCard = new() { cardNumber = cMatchRoom.currentCardResolving };
+            _DuelAction.targetCard = new() { cardNumber = returnedCardList[1] };
+            _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
+            _DuelAction.suffle = false;
+            _DuelAction.zone = "HoloPower";
+            _DuelAction.cardList = new List<Card>() { new Card() { cardNumber = returnedCardList[0] } };
+            _DuelAction.targetCard = new() { cardNumber = returnedCardList[1] };
 
             //remove card from resolving
             cMatchRoom.currentCardResolving = "";
 
-            DuelAction _Draw = new DuelAction()
-            {
-                playerID = cMatchRoom.currentPlayerTurn,
-                suffle = false,
-                zone = "HoloPower",
-                cardList = new List<Card>() { new Card () { cardNumber = returnedCardList[0] } }
-            };
-
-            _DuelAction.targetCard = new() { cardNumber = returnedCardList[1]};
-            _DuelAction.actionObject = JsonSerializer.Serialize(_Draw, Lib.options);
-
-            pReturnData = new PlayerRequest { type = "GamePhase", description = "PickFromListThenGiveBacKFromHandDone", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PickFromListThenGiveBacKFromHandDone", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
             Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
 

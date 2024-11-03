@@ -202,7 +202,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 zone = "Deck",
                 cardList = AddToHand
             };
-            _ReturnData = new PlayerRequest { type = "GamePhase", description = "SuporteEffectDrawXAddIfDone", requestObject = JsonSerializer.Serialize(DrawReturn, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "SuporteEffectDrawXAddIfDone", requestObject = JsonSerializer.Serialize(DrawReturn, Lib.options) };
 
             if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
             {

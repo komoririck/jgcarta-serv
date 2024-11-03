@@ -66,7 +66,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 // we dont need to pass anything to the client if the user doesnt have energy, but lets just send some empty object
                 _DuelAction = new();
             }
-            _ReturnData = new PlayerRequest { type = "GamePhase", description = "CheerStepEnd", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "CheerStepEnd", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);

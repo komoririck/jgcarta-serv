@@ -1263,7 +1263,7 @@ namespace hololive_oficial_cardgame_server
             }
         }
 
-        public List<List<Card>> GetMatchPlayersDeck(string p1, string p2)
+        public List<List<Card>> GetMatchPlayersDeck(string p1)
         {
             string PlayerIDSQL = "";
 
@@ -1276,10 +1276,9 @@ namespace hololive_oficial_cardgame_server
                     try
                     {
                         var dataTable = new DataTable();
-                        using (MySqlCommand updateCommand = new MySqlCommand("SELECT * FROM `playerdeck` WHERE PlayerID IN (@p1, @p2) AND Status = 'A' LIMIT 2;", connection, transaction))
+                        using (MySqlCommand updateCommand = new MySqlCommand("SELECT * FROM `playerdeck` WHERE PlayerID IN (@p1) AND Status = 'A' LIMIT 2;", connection, transaction))
                         {
                             updateCommand.Parameters.AddWithValue("@p1", p1);
-                            updateCommand.Parameters.AddWithValue("@p2", p2);
 
                             if (DebugVatiable)
                                 Lib.WriteConsoleMessage(GetQueryWithParameters(updateCommand));
@@ -1300,28 +1299,11 @@ namespace hololive_oficial_cardgame_server
                         List<Card> OshiP1 = new List<Card>();
                         OshiP1.Add(new Card() { cardNumber = dataTable.Rows[0].Field<string>("OshiCard") });
 
-                        List<Card> DeckP2 = new List<Card>();
-                        foreach (string s in dataTable.Rows[1].Field<string>("MainDeck").Split(','))
-                        {
-                            DeckP2.Add(new Card() { cardNumber = s });
-                        }
-                        List<Card> CheerDeckP2 = new List<Card>();
-                        foreach (string s in dataTable.Rows[1].Field<string>("CheerDeck").Split(','))
-                        {
-                            CheerDeckP2.Add(new Card() { cardNumber = s });
-                        }
-
-                        List<Card> OshiP2 = new List<Card>();
-                        OshiP2.Add(new Card() { cardNumber = dataTable.Rows[1].Field<string>("OshiCard") });
-
                         transaction.Commit();
                         List<List<Card>> ret = new List<List<Card>>();
                         ret.Add(DeckP1);
-                        ret.Add(CheerDeckP1);
+                        ret.Add(CheerDeckP1); 
                         ret.Add(OshiP1);
-                        ret.Add(DeckP2);
-                        ret.Add(CheerDeckP2);
-                        ret.Add(OshiP2);
                         return ret;
                     }
                     catch (Exception ex)

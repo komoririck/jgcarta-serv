@@ -7,7 +7,7 @@ public class MatchRoom
 {
 
     private readonly ConcurrentDictionary<string, Timer> playerTimers = new ConcurrentDictionary<string, Timer>();
-    private int turnDurationSeconds = 120;
+    private int turnDurationSeconds = 123 + 1000;
 
     public bool centerStageArtUsed = false;
     public bool collabStageArtUsed = false;
@@ -131,6 +131,10 @@ public class MatchRoom
     public List<Card> FillCardListWithEmptyCards(List<Card> cards)
     {
         List<Card> returnCards = new List<Card>();
+
+        if (cards == null)
+            return returnCards;
+
         foreach (Card c in cards)
         {
             Card newCard = new Card();

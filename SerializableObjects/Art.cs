@@ -26,25 +26,22 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
 
             // Parse costs (example: "1x無色1x白")
             string costString = parts[0];
-            for (int i = 0; i < costString.Length; i++)
+            var splitedCosts = costString.Split('*');
+
+            foreach (string cost in splitedCosts)
             {
-                if (char.IsDigit(costString[i]))
+                var splitedcostString = cost.Split('x');
+                // Ensure we have two parts
+                if (splitedcostString.Length == 2)
                 {
-                    // Extract the amount
-                    int amount = int.Parse(costString[i].ToString());
-                    i++;
-                    // Extract the color
-                    string color = costString[i].ToString();
-                    while (i + 1 < costString.Length && !char.IsDigit(costString[i + 1]))
+                    // Try to parse the first part as an integer
+                    if (int.TryParse(splitedcostString[0], out int number))
                     {
-                        i++;
-                        color += costString[i];
+                        string text = splitedcostString[1]; // Get the string part
+                        art.Cost.Add((text, number));
                     }
-                    // Add to the cost list
-                    art.Cost.Add((color.Substring(1), amount));
                 }
             }
-
             art.Name = parts[1];
 
             // Parse damage (example: "50x1白")

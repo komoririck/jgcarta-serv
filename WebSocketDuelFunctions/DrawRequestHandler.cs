@@ -23,14 +23,19 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             MatchRoom cMatchRoom = matchRooms[matchnumber];
 
 
-            if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
+            if (playerRequest.playerID != cMatchRoom.currentPlayerTurn) 
+            {
+                Lib.WriteConsoleMessage("Wrong player calling");
                 return;
-
+            }
             if (cMatchRoom.currentGamePhase != GAMEPHASE.DrawStep)
+            {
+                Lib.WriteConsoleMessage("Called at wrong phase");
                 return;
+            }
 
 
-            PlayerRequest ReturnData = new PlayerRequest { type = "GamePhase", description = "DrawPhase", requestObject = "" };
+            PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DrawPhase", requestObject = "" };
             if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
             {
                 if (cMatchRoom.playerADeck.Count == 0)

@@ -115,7 +115,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     Random random = new Random();
                     int randomNumber = random.Next(1, 7);
 
-                    _ReturnData = new PlayerRequest { type = "GamePhase", description = "RollDice", requestObject = randomNumber.ToString() };
+                    _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "RollDice", requestObject = randomNumber.ToString() };
                     Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
                     Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
 
@@ -266,7 +266,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             // Serialize and send data to the current player
             DuelActionResponse.actionObject = JsonSerializer.Serialize(_Draw);
-            _ReturnData = new PlayerRequest { type = "GamePhase", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
 
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], _ReturnData);
 
@@ -277,7 +277,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 DuelActionResponse.actionObject = JsonSerializer.Serialize(_Draw);
             }
 
-            _ReturnData = new PlayerRequest { type = "GamePhase", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
             Lib.SendMessage(MessageDispatcher.playerConnections[otherPlayer.ToString()], _ReturnData);
 
             // Update the limit card played for the appropriate player
@@ -345,43 +345,5 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             return false;
         }
-        bool UseCardEffectToSummom(MatchRoom cMatchRoom, int playerA, int playerB, string zone, string cUsedNumber, bool result, string bloomLevel)
-        {
-
-            List<Card> query = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerADeck : cMatchRoom.playerBDeck;
-
-            foreach (var card in query)
-                card.GetCardInfo(card.cardNumber); // Assuming this method fills card info, including bloomLevel
-
-            query = query.Where(r => r.bloomLevel == bloomLevel).ToList();
-
-            DuelAction _Draw = new DuelAction()
-            {
-                playerID = cMatchRoom.currentPlayerTurn,
-                suffle = false,
-                zone = "Deck",
-                cardList = query
-            };
-
-            DuelAction DuelActionResponse = new DuelAction()
-            {
-                playerID = cMatchRoom.currentPlayerTurn,
-                actionType = "conditionedSummom",
-                usedCard = new Card() { cardNumber = cUsedNumber }
-                //,
-                //targetCard = new Card() { cardNumber = costCardnumber, cardPosition = zone }
-            };
-
-            cMatchRoom.currentCardResolving = cUsedNumber;
-            //cMatchRoom.currentGamePhase = GAMEPHASE.ConditionedSummom;
-
-            SendPlayerData(cMatchRoom, true, _Draw, DuelActionResponse, "SuporteEffectSummomIf", false, cUsedNumber, result);
-            return true;
-
-
-        }
-
-
-
     }
 }
