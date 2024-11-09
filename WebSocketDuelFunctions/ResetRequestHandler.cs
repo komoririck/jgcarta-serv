@@ -53,7 +53,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
                 currentCollabCardd.suspended = true;
 
-                string locall = AssignCardToBackStage(places, currentBackStageCardd, currentCollabCardd);
+                string locall = AssignCardToBackStage(places, cMatchRoom);
                 if (locall.Equals("failToAssignToBackStage")) {
                     WriteConsoleMessage("Error assign the card to the backposition");
                     return;
@@ -84,8 +84,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
             //cleaning effects that should end at the end of the turn
-            CollabEffects.currentActivatedTurnEffect.Clear();
-            ArtEffects.currentActivatedTurnEffect.Clear();
+            cMatchRoom.ActiveTurnEffects.Clear();
 
             //string whichStep = cMatchRoom.currentGamePhase == GAMEPHASE.ResetStepReSetStage ? "ReSetStage" : "ResetStep";
 

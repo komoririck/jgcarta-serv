@@ -24,11 +24,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
+                _DuelAction.targetCard.GetCardInfo();
             if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo(_DuelAction.usedCard.cardNumber);
-            if (_DuelAction.cheerCostCard != null)
-                _DuelAction.cheerCostCard.GetCardInfo(_DuelAction.cheerCostCard.cardNumber);
+                _DuelAction.usedCard.GetCardInfo();
 
 
             bool canContinueBloomHolomem = false;
@@ -132,14 +130,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 return;
             }
 
-            //since we pass all the validation, lets just assign the new card
-            void bloomCard(Card cardToBloom, Card cardWithBloomInfo)
-            {
-                cardToBloom.bloomChild.Add(new Card() { cardNumber = cardToBloom.cardNumber });
-                cardToBloom.cardNumber = cardWithBloomInfo.cardNumber;
-                cardToBloom.GetCardInfo(cardToBloom.cardNumber);
-            }
-
             switch (_DuelAction.local)
             {
                 case "Stage":
@@ -201,6 +191,16 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     checkBloomEffect();
                     break;
             }
+
+            //since we pass all the validation, lets just assign the new card
+            void bloomCard(Card cardToBloom, Card cardWithBloomInfo)
+            {
+                cardToBloom.bloomChild.Add(new Card(cardToBloom.cardNumber));
+                cardToBloom.cardNumber = cardWithBloomInfo.cardNumber;
+                cardToBloom.GetCardInfo(true);
+                cardToBloom.playedThisTurn = true;
+            }
+
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "BloomHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);

@@ -25,11 +25,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
+                _DuelAction.targetCard.GetCardInfo();
             if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo(_DuelAction.usedCard.cardNumber);
+                _DuelAction.usedCard.GetCardInfo();
             if (_DuelAction.cheerCostCard != null)
-                _DuelAction.cheerCostCard.GetCardInfo(_DuelAction.cheerCostCard.cardNumber);
+                _DuelAction.cheerCostCard.GetCardInfo();
 
             //temphand
             List<Card> playertemphand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;

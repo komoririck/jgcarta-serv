@@ -49,7 +49,7 @@ namespace hololive_oficial_cardgame_server
 
                         transaction.Commit();
                         _CreateAccount.password = hash;
-                        _CreateAccount.playerID =  lastInsertId.ToString();
+                        _CreateAccount.playerID = lastInsertId.ToString();
                         return _CreateAccount;
                     }
                     catch (Exception ex)
@@ -76,7 +76,7 @@ namespace hololive_oficial_cardgame_server
                     try
                     {
                         string insertQuery = "SELECT * FROM player WHERE PlayerID=@playerid AND Password=@playerpassword LIMIT 1;";
-                       
+
                         using (MySqlCommand insertCommand = new MySqlCommand(insertQuery, connection, transaction))
                         {
                             insertCommand.Parameters.AddWithValue("@playerid", playerid);
@@ -326,13 +326,15 @@ namespace hololive_oficial_cardgame_server
                             Lib.WriteConsoleMessage(GetQueryWithParameters(idCommand));
                             dataTable.Load(idCommand.ExecuteReader());
 
-                            foreach (DataRow r in dataTable.Rows) {
-                                if (r[1].Equals("D")) {
+                            foreach (DataRow r in dataTable.Rows)
+                            {
+                                if (r[1].Equals("D"))
+                                {
                                     throw new Exception("Player already in a match");
                                 }
                             }
 
-                            if(dataTable.Rows.Count > 0)
+                            if (dataTable.Rows.Count > 0)
                             {
                                 using (MySqlCommand updateCommand = new MySqlCommand("DELETE FROM matchpool WHERE playerID=( SELECT PlayerID FROM `hololive-official-cardgame`.`player` WHERE PlayerID =@playerid AND Password =@password ) AND Status='A'; UPDATE matchroompool SET Status='A', Board = '0', Chair='0' WHERE playerID=( SELECT PlayerID FROM `hololive-official-cardgame`.`player` WHERE PlayerID =@playerid AND Password =@password ) AND Status != 'I' ", connection, transaction))
                                 {
@@ -425,7 +427,8 @@ namespace hololive_oficial_cardgame_server
                         int code = random.Next(100000, 1000000);
                         string uuidv7 = "UUID()"; // GenerateUuidV7();
                         // if not has a room, check if player is active in another queue
-                        if (dataT.Rows.Count == 0) {
+                        if (dataT.Rows.Count == 0)
+                        {
 
                             using (MySqlCommand idCommand = new MySqlCommand("SELECT PlayerID, Status FROM `hololive-official-cardgame`.`matchpool` WHERE PlayerID = ( SELECT PlayerID FROM `hololive-official-cardgame`.`player` WHERE PlayerID =@playerid AND Password =@password ) AND Status = 'A' UNION SELECT  PlayerID, Status  FROM `hololive-official-cardgame`.`matchroompool` WHERE PlayerID = ( SELECT PlayerID FROM `hololive-official-cardgame`.`player` WHERE PlayerID = @playerid AND Password = @password ) AND Status = 'D';", connection, transaction))
                             {
@@ -659,7 +662,7 @@ namespace hololive_oficial_cardgame_server
                             idCommand.Parameters.AddWithValue("@password", _PlayerRequest.password);
 
                             dataT.Load(idCommand.ExecuteReader());
-                            
+
                             //checking if there's someone else in the room to become the owner
                             if (dataT.Rows.Count > 0)
                             {
@@ -1287,22 +1290,23 @@ namespace hololive_oficial_cardgame_server
                         }
 
                         List<Card> DeckP1 = new List<Card>();
-                        foreach (string s in dataTable.Rows[0].Field<string>("MainDeck").Split(',')) {
-                            DeckP1.Add(new Card() { cardNumber = s });
+                        foreach (string s in dataTable.Rows[0].Field<string>("MainDeck").Split(','))
+                        {
+                            DeckP1.Add(new Card(s));
                         }
                         List<Card> CheerDeckP1 = new List<Card>();
                         foreach (string s in dataTable.Rows[0].Field<string>("CheerDeck").Split(','))
                         {
-                            CheerDeckP1.Add(new Card() { cardNumber = s });
+                            CheerDeckP1.Add(new Card(s));
                         }
 
                         List<Card> OshiP1 = new List<Card>();
-                        OshiP1.Add(new Card() { cardNumber = dataTable.Rows[0].Field<string>("OshiCard") });
+                        OshiP1.Add(new Card(dataTable.Rows[0].Field<string>("OshiCard")));
 
                         transaction.Commit();
                         List<List<Card>> ret = new List<List<Card>>();
                         ret.Add(DeckP1);
-                        ret.Add(CheerDeckP1); 
+                        ret.Add(CheerDeckP1);
                         ret.Add(OshiP1);
                         return ret;
                     }
@@ -1378,7 +1382,32 @@ namespace hololive_oficial_cardgame_server
                             var dataTable = new DataTable();
                             dataTable.Load(result);
 
-                            deckData = new DeckData() { 
+                            if (dataTable.Rows.Count == 0)
+                            {
+                                string hash = QuickHash();
+
+                                using (MySqlCommand updateCommand = new MySqlCommand("INSERT INTO `playerdeck` (`DeckID`, `PlayerID`, `Name`, `MainDeck`, `CheerDeck`, `OshiCard`, `Status`) VALUES (@hash, ( SELECT PlayerID FROM `hololive-official-cardgame`.`player` WHERE PlayerID =@playerid AND Password =@password ), 'Deck', 'hSD01-003,hSD01-003,hSD01-003,hSD01-003,hSD01-004,hSD01-004,hSD01-004,hSD01-005,hSD01-005,hSD01-005,hSD01-006,hSD01-006,hSD01-007,hSD01-007,hSD01-008,hSD01-008,hSD01-008,hSD01-008,hSD01-009,hSD01-009,hSD01-009,hSD01-010,hSD01-010,hSD01-010,hSD01-011,hSD01-011,hSD01-012,hSD01-012,hSD01-013,hSD01-013,hSD01-014,hSD01-014,hSD01-015,hSD01-015,hSD01-018,hSD01-018,hSD01-018,hSD01-019,hSD01-019,hSD01-019,hBP01-106,hBP01-106,hBP01-108,hBP01-108,hSD01-020,hSD01-020,hSD01-020,hSD01-019,hSD01-016,hSD01-017', 'hY01-001,hY01-001,hY01-001,hY01-001,hY01-001,hY01-001,hY01-001,hY01-001,hY01-001,hY01-001,hY02-001,hY02-001,hY02-001,hY02-001,hY02-001,hY02-001,hY02-001,hY02-001,hY02-001,hY02-001', 'hSD01-001', 'A')", connection, transaction))
+                                {
+                                    updateCommand.Parameters.AddWithValue("@playerid", PlayerInfo.playerID);
+                                    updateCommand.Parameters.AddWithValue("@password", PlayerInfo.password);
+                                    updateCommand.Parameters.AddWithValue("@hash", hash);
+                                    updateCommand.ExecuteNonQuery();
+
+
+                                }
+                                using (MySqlCommand GetCommandTwo = new MySqlCommand(insertQuery, connection, transaction))
+                                {
+                                    GetCommandTwo.Parameters.AddWithValue("@playerid", PlayerInfo.playerID);
+                                    GetCommandTwo.Parameters.AddWithValue("@password", PlayerInfo.password);
+                                    result = GetCommandTwo.ExecuteReader();
+
+                                    dataTable = new DataTable();
+                                    dataTable.Load(result);
+                                }
+                            }
+
+                            deckData = new DeckData()
+                            {
                                 deckName = dataTable.Rows[0].Field<string>("Name"),
                                 main = dataTable.Rows[0].Field<string>("MainDeck"),
                                 energy = dataTable.Rows[0].Field<string>("CheerDeck"),
@@ -1552,8 +1581,8 @@ namespace hololive_oficial_cardgame_server
             string pattern = @"^[a-zA-Z0-9\s\.,_-]+$";
             bool isValid = Regex.IsMatch(input, pattern);
 
-            if (isValid){ return input;}
-            else { return "error";}
+            if (isValid) { return input; }
+            else { return "error"; }
         }
         static void ThrowException(string error)
         {

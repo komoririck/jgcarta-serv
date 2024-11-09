@@ -1,3 +1,4 @@
+﻿using Microsoft.AspNetCore.Mvc.Formatters;
 using System.Collections.Concurrent;
 using System.Text;
 
@@ -5,12 +6,19 @@ namespace hololive_oficial_cardgame_server.SerializableObjects;
 
 public class MatchRoom
 {
+    public List<CardEffect> ActiveTurnEffects = new();
+    public List<CardEffect> ActiveTillNextUsageEffects = new();
 
     private readonly ConcurrentDictionary<string, Timer> playerTimers = new ConcurrentDictionary<string, Timer>();
     private int turnDurationSeconds = 123 + 1000;
 
     public bool centerStageArtUsed = false;
     public bool collabStageArtUsed = false;
+
+    public bool usedSPOshiSkillPlayerA = false;
+    public bool usedOshiSkillPlayerA = false;
+    public bool usedSPOshiSkillPlayerB = false;
+    public bool usedOshiSkillPlayerB = false;
 
     public PlayerInfo playerA;
     public PlayerInfo playerB;
@@ -81,10 +89,14 @@ public class MatchRoom
     public Art currentArtResolving = null;
     internal int cheersAssignedThisChainAmount;
     internal int cheersAssignedThisChainTotal = 1;
-    internal List<string> extraInfo = new();
+    internal List<object> extraInfo = new();
     internal string currentCardResolvingStage = "";
     internal int currentArtDamage;
     internal List<DuelAction> currentDuelActionResolvingRecieved = new();
+    internal int playerAFixedRoll;
+    internal int playerBFixedRoll;
+    internal List<int> playerADiceRollList = new();
+    internal List<int> playerBDiceRollList = new();
 
     [Flags]
     public enum GAMEPHASE : byte
@@ -104,7 +116,8 @@ public class MatchRoom
         ConditionedSummom = 102,
         HolomemDefeated = 103,
         HolomemDefeatedCheerChoose = 104,
-        HolomemDefeatedCheerChoosed = 105
+        HolomemDefeatedCheerChoosed = 105,
+        ResolvingDamage = 106
     }
 
     public void suffleHandToTheDeck(List<Card> deck, List<Card> hand)
@@ -137,9 +150,7 @@ public class MatchRoom
 
         foreach (Card c in cards)
         {
-            Card newCard = new Card();
-            newCard.cardNumber = "";
-            returnCards.Add(newCard);
+            returnCards.Add(new Card());
         }
         cards = new List<Card>();
         return returnCards;
@@ -209,6 +220,31 @@ public class MatchRoom
     {
         StopTimer(playerId); // Clean up the timer
         onTimeout?.Invoke(playerId); // Trigger the timeout action
+    }
+
+    public void GenerateArtEffectData(EFFECTTYPE type)
+    {
+        if (type == EFFECTTYPE.Turn) { 
+            //hSD01-006
+            ActiveTurnEffects.Add(new CardEffect()
+            {
+                artName = "SorAZ シンパシー",
+                cardNumber = "hSD01-006",
+                zoneTarget = "Stage",
+                ExistXAtZone_Name = "AZKi",
+                type = CardEffectType.BuffThisCardDamageExistXAtZone,
+                Damage = 50,
+                listIndex = 0
+            });
+        }
+    }
+
+    [Flags]
+    public enum EFFECTTYPE : byte
+    {
+        Turn = 0,
+        Match = 1,
+        Continuous = 2
     }
 
 }

@@ -64,7 +64,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 }
                 else
                 {
-                    cardCheerDraw.cardList = new List<Card>() { new Card() { cardNumber = "Empty" } };
+                    cardCheerDraw.cardList = new List<Card>() { new Card("Empty") };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
                     Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
                     Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
@@ -89,7 +89,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 }
                 else
                 {
-                    cardCheerDraw.cardList = new List<Card>() { new Card() { cardNumber = "Empty" } };
+                    cardCheerDraw.cardList = new List<Card>() { new Card("Empty") };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
                     Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
                     Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);

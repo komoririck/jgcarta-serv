@@ -63,8 +63,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //adding selected card to the hand
             List<Card> playerHandList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
 
-            playerHandList.Add(new() { cardNumber = returnedCardList[0] });
-            holoPowerList.Add(new() { cardNumber = returnedCardList[1] });
+            playerHandList.Add(new(returnedCardList[0]));
+            holoPowerList.Add(new(returnedCardList[1]));
 
             //checking if the card to return to the holopower is valid
             n = -1;
@@ -91,13 +91,13 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             //creating data to send the player
             _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
-            _DuelAction.usedCard = new() { cardNumber = cMatchRoom.currentCardResolving };
-            _DuelAction.targetCard = new() { cardNumber = returnedCardList[1] };
+            _DuelAction.usedCard = new(cMatchRoom.currentCardResolving);
+            _DuelAction.targetCard = new(returnedCardList[1]);
             _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
             _DuelAction.suffle = false;
             _DuelAction.zone = "HoloPower";
-            _DuelAction.cardList = new List<Card>() { new Card() { cardNumber = returnedCardList[0] } };
-            _DuelAction.targetCard = new() { cardNumber = returnedCardList[1] };
+            _DuelAction.cardList = new List<Card>() { new Card(returnedCardList[0]) };
+            _DuelAction.targetCard = new(returnedCardList[1]);
 
             //remove card from resolving
             cMatchRoom.currentCardResolving = "";

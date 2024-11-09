@@ -16,19 +16,15 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             this.matchRooms = matchRooms;
         }
 
-        internal async Task AttachCheerEnergyHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, bool stage, bool collab, bool back, bool TOPCHEERDECK, bool FULLCHEERDECK, int energyIndex = -1)
+        internal async Task AttachCheerEnergyHandleAsync(DuelAction _DuelAction, MatchRoom cMatchRoom, bool stage, bool collab, bool back, bool TOPCHEERDECK, bool FULLCHEERDECK, int energyIndex = -1, bool ARQUIVEFULLDECK = false)
         {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
-            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
+                _DuelAction.targetCard.GetCardInfo();
             if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo(_DuelAction.usedCard.cardNumber);
+                _DuelAction.usedCard.GetCardInfo();
             if (_DuelAction.cheerCostCard != null)
-                _DuelAction.cheerCostCard.GetCardInfo(_DuelAction.cheerCostCard.cardNumber);
+                _DuelAction.cheerCostCard.GetCardInfo();
 
             //since sometimes we call this function passing a string instead of a list, we try to parse the json, if not able, we just assign
             string SelectedCheer = "";
@@ -48,16 +44,55 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 Lib.WriteConsoleMessage("temp hand null -- RISK PLAY");
                 return;
             }
-            if (!SelectedCheer.Equals(playertemphand[0].cardNumber) || !playertemphand[0].playedFrom.Equals("CardCheer"))
+
+            if (!SelectedCheer.Equals(playertemphand[0].cardNumber))
             {
+                if (TOPCHEERDECK || FULLCHEERDECK)
+                {
+                    if (!playertemphand[0].playedFrom.Equals("CardCheer")) { 
+                    
+                    }
+                }
+                else if (ARQUIVEFULLDECK)
+                {
+                    if (!playertemphand[0].playedFrom.Equals("Arquive"))
+                    {
+
+                    }
+                }
                 // if neither of the matches are valid, something is wrong with the play the player send the information
                 Lib.WriteConsoleMessage("card didnt match temphand -- RISK PLAY");
                 return;
             }
 
+            
+            if (ARQUIVEFULLDECK)
+            {
+                List<Card> playerArquiveDeck = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
+                int n = -1;
+                for (int j = 0; j < playerArquiveDeck.Count; j++)
+                {
+                    if (playerArquiveDeck[j].cardNumber.Equals(SelectedCheer))
+                    {
+                        n = j;
+                        break;
+                    }
+                }
+                if (n == -1)
+                {
+                    Lib.WriteConsoleMessage("Card didnt match one of the cheer");
+                    return;
+                }
+                DuelAction da = new(){playerID = _DuelAction.playerID, usedCard = new(_DuelAction.usedCard.cardNumber, "Arquive")};
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyFrom", requestObject = JsonSerializer.Serialize(da, Lib.options) });
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyFrom", requestObject = JsonSerializer.Serialize(da, Lib.options) });
+                playerArquiveDeck.RemoveAt(n);
+            }
+            else 
+            {
             //energy list
             List<Card> playerCheerDeck = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
-            if (TOPCHEERDECK) 
+            if (TOPCHEERDECK)
             {
                 if (!SelectedCheer.Equals(playerCheerDeck[playerCheerDeck.Count - 1].cardNumber)) {
                     Lib.WriteConsoleMessage("Card didnt match the last position of the cheer");
@@ -75,12 +110,14 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                         break;
                     }
                 }
-                if(n == -1)
+                if (n == -1)
                 {
                     Lib.WriteConsoleMessage("Card didnt match one of the cheer");
                     return;
                 }
                 playerCheerDeck.RemoveAt(n);
+            }
+            
             }
 
             //AssignEnergyToZoneAsync checks if the used card is the energy we're trying to attach, só we need to change here for the topCheerEnergy = _DuelAction.actionObject
@@ -89,10 +126,14 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             Card tempUsedCard = _DuelAction.usedCard;
             //changing for the energy
             _DuelAction.usedCard = playertemphand[0];
-            
-            bool assinged;
 
+            if (FULLCHEERDECK || TOPCHEERDECK)
+            {
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyFrom", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) });
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyFrom", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) });
+            }
 
+                bool assinged;
             if (cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID)
                 assinged = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, (stage == true ? cMatchRoom.playerAStage : null), (collab == true ? cMatchRoom.playerACollaboration : null), (back == true ? cMatchRoom.playerABackPosition : null));
             else

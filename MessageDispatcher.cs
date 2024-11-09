@@ -77,35 +77,36 @@ namespace hololive_oficial_cardgame_server
                     Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
                     Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
                     break;
-                case "MainDoActionRequest":
+                case "PlayHolomem":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
                         return;
-
                     DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
-                    switch (_DuelAction.actionType)
-                    {
-                        case "doArt":
-                            var handler901 = new MainDoActionRequestDoArtHandler(playerConnections, _MatchRooms);
-                            await handler901.MainDoActionRequestDoArtHandleAsync(playerRequest, webSocket);
-                            break;
-                        case "PlayHolomem":
-                            var handler902 = new PlayHolomemHandler(playerConnections, _MatchRooms);
-                            await handler902.MainDoActionRequestPlayHolomemHandleAsync(playerRequest, webSocket);
-                            break;
-                        case "BloomHolomemWithEffect":
-                        case "BloomHolomem":
-                            var handler903 = new BloomHolomemHandler(playerConnections, _MatchRooms);
-                            await handler903.MainDoActionRequestBloomHolomemHandleAsync(playerRequest, webSocket);
-                            break;
-                        case "DoCollab":
-                            var handler904 = new DoCollabHandler(playerConnections, _MatchRooms);
-                            await handler904.DoCollabHandleAsync(playerRequest, webSocket);
-                            break;
-                        case "UseSuportStaffMember":
-                            var handler906 = new UseSuportStaffMemberHandler(playerConnections, _MatchRooms);
-                            await handler906.MainDoActionRequestUseSuportStaffMemberHandleAsync(playerRequest, webSocket);
-                            break;
-                    }
+                    var handler902 = new PlayHolomemHandler(playerConnections, _MatchRooms);
+                    await handler902.MainDoActionRequestPlayHolomemHandleAsync(playerRequest, webSocket);
+                    break;
+                case "BloomHolomemWithEffect":
+                    if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
+                        return;
+                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+                    break;
+                case "BloomHolomem":
+                    if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
+                        return;
+                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+                    var handler903 = new BloomHolomemHandler(playerConnections, _MatchRooms);
+                    await handler903.MainDoActionRequestBloomHolomemHandleAsync(playerRequest, webSocket);
+                    break;
+                case "DoCollab":
+                    var handler904 = new DoCollabHandler(playerConnections, _MatchRooms);
+                    await handler904.DoCollabHandleAsync(playerRequest, webSocket);
+                    break;
+                case "doArt":
+                    var handler901 = new MainDoActionRequestDoArtHandler(playerConnections, _MatchRooms);
+                    await handler901.MainDoActionRequestDoArtHandleAsync(playerRequest, webSocket);
+                    break;
+                case "ResolveDamageToHolomem":
+                    var handler910 = new ResolveArtDamageHandler(playerConnections, _MatchRooms);
+                    await handler910.ResolveArtDamageHandleAsync(playerRequest, webSocket);
                     break;
                 case "MainPerformanceRequest":
                     cMatchRoom.currentGamePhase = GAMEPHASE.PerformanceStep;
@@ -118,19 +119,24 @@ namespace hololive_oficial_cardgame_server
                         break;
 
                     if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
+                    {
                         cMatchRoom.playerALimiteCardPlayed.Clear();
-                    else
+                        cMatchRoom.usedOshiSkillPlayerA = false;
+                    }
+                    else { 
                         cMatchRoom.playerBLimiteCardPlayed.Clear();
+                        cMatchRoom.usedOshiSkillPlayerB = false;
+                    }
 
                     cMatchRoom.currentPlayerTurn = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.secondPlayer : cMatchRoom.firstPlayer;
                     cMatchRoom.currentGamePhase = GAMEPHASE.ResetStep;
                     cMatchRoom.centerStageArtUsed = false;
                     cMatchRoom.collabStageArtUsed = false;
 
-                    CollabEffects.currentActivatedTurnEffect.Clear();
+                    cMatchRoom.ActiveTurnEffects.Clear();
+                    cMatchRoom.GenerateArtEffectData(EFFECTTYPE.Turn);
 
                     Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
-
                     Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
                     Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
 
@@ -143,6 +149,10 @@ namespace hololive_oficial_cardgame_server
                 case "ReSetCardAtStage":
                     var handler905 = new ReSetCardAtStageHandler(playerConnections, _MatchRooms);
                     await handler905.MainDoActionRequestReSetCardAtStageHandleAsync(playerRequest, webSocket);
+                    break;
+                case "AttachEquipamentToHolomem":
+                    var handler151 = new AttachEquipamentToHolomemHandler(playerConnections, _MatchRooms);
+                    await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest, webSocket);
                     break;
                 case "AskAttachEnergy":
                     //call to attach energy
@@ -159,7 +169,51 @@ namespace hololive_oficial_cardgame_server
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
                     SupportEffects.OnSupportEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket);
                     break;
-                    
+                case "ResolveOnOshiSPEffect":
+                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+                    OshiEffects.OnOshiEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket, SPSKILL:true);
+                    break;
+                case "ResolveOnOshiEffect":
+                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+                    OshiEffects.OnOshiEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket);
+                    break;
+                case "Retreat":
+                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+
+                    if (!(_DuelAction.targetCard.cardPosition.Equals("BackStage1") || _DuelAction.targetCard.cardPosition.Equals("BackStage2") || _DuelAction.targetCard.cardPosition.Equals("BackStage3") ||
+                        _DuelAction.targetCard.cardPosition.Equals("BackStage4") || _DuelAction.targetCard.cardPosition.Equals("BackStage5")))
+                    {
+                        Lib.WriteConsoleMessage("Invalid target position");
+                        return;
+                    }
+                    //paying the cost for retrat
+                    bool energyPaid = Lib.PayCardEffectCheerFieldCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
+                    if (!energyPaid)
+                        break;
+                   /*
+                    * this is comented, but in the future we may need to implement a counter to be able to charge more than 1 energy for retrat depending of the card
+                   energyPaid = Lib.PayCardEffectCheerFieldCost(cMatchRoom, _DuelAction.cardList[1].cardPosition, _DuelAction.cardList[1].cardNumber);
+                    if (!energyPaid)
+                        break;
+                   */
+
+                    //since retreated, cannot use art anymore
+                    cMatchRoom.centerStageArtUsed = true;
+
+                    Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, playerRequest.playerID, _DuelAction.targetCard);
+
+                    _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "SwitchStageCardByRetreat", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+
+                    break;
+                case "ResolveRerollEffect":
+                    //random dice number
+                    int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
+                    break;
+
+
             }
         }
     }

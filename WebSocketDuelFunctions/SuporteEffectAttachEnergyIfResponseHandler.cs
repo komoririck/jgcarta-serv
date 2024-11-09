@@ -58,7 +58,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             //getting the information for the energy at the cheer list position
-            playerCheerDeck[jcounter].GetCardInfo(playerCheerDeck[jcounter].cardNumber);
+            playerCheerDeck[jcounter].GetCardInfo();
 
             //special scenario for the card "hBP01-105" which needs to match colors
             if (tempHandd[0].cardNumber.Equals("hBP01-105")) //tempHandd[0] used card
@@ -73,8 +73,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             {
                 //Add the energy from the json here, since has empty, we can do this because the checks are already done
                 //sometimes temphand[1] is null, so we need to assign the value before sending back to player
-                tempHandd[1] = new Card();
-                tempHandd[1].cardNumber = selectEnergyToAttach;
+                tempHandd[1] = new Card(selectEnergyToAttach);
             }
 
             //creating the action to send to the player

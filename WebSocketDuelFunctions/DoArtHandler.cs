@@ -65,11 +65,13 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 currentOponnentCard = currentStageOponnentCard;
                 validCard = true;
             }
-            else
-            if (currentCollabOponnentCard.cardNumber.Equals(_DuelAction.targetCard.cardNumber))
+            else if (currentCollabOponnentCard != null)
             {
-                currentOponnentCard = currentCollabOponnentCard;
-                validCard = true;
+                if (currentCollabOponnentCard.cardNumber.Equals(_DuelAction.targetCard.cardNumber))
+                {
+                    currentOponnentCard = currentCollabOponnentCard;
+                    validCard = true;
+                }
             }
 
 
@@ -78,8 +80,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             Art usedArt = new();
 
-            _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
-            _DuelAction.usedCard.GetCardInfo(_DuelAction.usedCard.cardNumber);
+            _DuelAction.targetCard.GetCardInfo();
+            _DuelAction.usedCard.GetCardInfo();
 
             foreach (Art art in _DuelAction.usedCard.Arts)
             {

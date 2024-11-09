@@ -160,8 +160,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (!canProguess)
                 return;
 
-            List<Card> AddToHand = new List<Card>() { new Card() { cardNumber = ChosedCardList[0] } };
-            AddToHand[0].GetCardInfo(AddToHand[0].cardNumber);
+            List<Card> AddToHand = new List<Card>() { new Card(ChosedCardList[0]) };
             List<Card> ReturnToDeck = new();
 
             if (shouldUseTempHandValidation)
@@ -173,7 +172,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 for (int i = 0; i < TempHand.Count(); i++)
                 {
                     string name = "";
-                    TempHand[i].GetCardInfo(TempHand[i].cardNumber);
+                    TempHand[i].GetCardInfo();
 
 
                     if (shouldUseToCompareWithTempHand.Equals("name"))

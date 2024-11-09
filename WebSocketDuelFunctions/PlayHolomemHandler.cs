@@ -26,11 +26,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
             
             if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo(_DuelAction.targetCard.cardNumber);
+                _DuelAction.targetCard.GetCardInfo();
             if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo(_DuelAction.usedCard.cardNumber);
+                _DuelAction.usedCard.GetCardInfo();
             if (_DuelAction.cheerCostCard != null)
-                _DuelAction.cheerCostCard.GetCardInfo(_DuelAction.cheerCostCard.cardNumber);
+                _DuelAction.cheerCostCard.GetCardInfo();
 
             List<Record> avaliableCards = FileReader.QueryRecords(null, null, null, _DuelAction.usedCard.cardNumber);
 
@@ -67,7 +67,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             //getting card info
-            playerHand[handPos].GetCardInfo(playerHand[handPos].cardNumber);
+            playerHand[handPos].GetCardInfo();
             bool canContinue = false;
 
             if (playerHand[handPos].bloomLevel.Equals("Debut") || playerHand[handPos].bloomLevel.Equals("Spot"))
@@ -141,12 +141,17 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
-            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = _DuelAction.actionType, requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
             Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
 
             cMatchRoom.currentGameHigh++;
+        }
+
+        internal async Task ResolveArtDamageHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
+        {
+            throw new NotImplementedException();
         }
     }
 }

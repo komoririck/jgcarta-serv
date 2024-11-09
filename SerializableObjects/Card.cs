@@ -62,19 +62,33 @@ public class Card
     [JsonIgnore]
     public List<Card> bloomChild { get; set; } = new List<Card>();
     [JsonIgnore]
+    public List<Card> attachedEquipe = new();
+    [JsonIgnore]
     public List<Art> Arts = new List<Art>();
+    [JsonIgnore]
+    public List<CardEffect> OnAttackEffects = new();
 
-    public void GetCardInfo(string cardNumber)
+    public Card(string cardNumber = "", string cardPosition = "")
     {
-        if (string.IsNullOrEmpty(cardNumber))
-            return;
+        this.cardNumber = cardNumber;
+        if (!string.IsNullOrEmpty(cardPosition))
+            this.cardPosition = cardPosition;
+        if (!string.IsNullOrEmpty(this.cardNumber))
+            GetCardInfo();
+    }
 
-        if (cardNumber.Equals("0"))
-            return;
+    public Card GetCardInfo(bool forceUpdate = false)
+    {
+
+        if (!string.IsNullOrEmpty(cardType) && !forceUpdate)
+            return null;
+
+        if (cardNumber.Equals("0") || string.IsNullOrEmpty(cardNumber))
+            return null;
 
         foreach (Record record in FileReader.result)
         {
-            if (record.CardNumber == cardNumber)
+            if (record.CardNumber == this.cardNumber)
             {
                 cardNumber = record.CardNumber;
                 name = record.Name;
@@ -99,12 +113,58 @@ public class Card
                 }
             }
         }
+        return this;
     }
+    public Card SetCardNumber(string numnber)
+    {
+        this.cardNumber = numnber;
+        return this;
+    }
+    public Card CloneCard(Card originalCard)
+    {
+        if (originalCard == null)
+        {
+            return null;
+        }
+
+        Card clonedCard = new Card
+        {
+            cardNumber = originalCard.cardNumber,
+            currentHp = originalCard.currentHp,
+            effectDamageRecieved = originalCard.effectDamageRecieved,
+            normalDamageRecieved = originalCard.normalDamageRecieved,
+            cardLimit = originalCard.cardLimit,
+            playedFrom = originalCard.playedFrom,
+            cardPosition = originalCard.cardPosition,
+            playedThisTurn = originalCard.playedThisTurn,
+            suspended = originalCard.suspended,
+            name = originalCard.name,
+            cardType = originalCard.cardType,
+            rarity = originalCard.rarity,
+            product = originalCard.product,
+            color = originalCard.color,
+            hp = originalCard.hp,
+            bloomLevel = originalCard.bloomLevel,
+            arts = originalCard.arts,
+            oshiSkill = originalCard.oshiSkill,
+            spOshiSkill = originalCard.spOshiSkill,
+            abilityText = originalCard.abilityText,
+            illustrator = originalCard.illustrator,
+            life = originalCard.life,
+            cardTag = originalCard.cardTag,
+            attachedEnergy = originalCard.attachedEnergy.Select(card => CloneCard(card)).ToList(),
+            bloomChild = originalCard.bloomChild.Select(card => CloneCard(card)).ToList()
+        };
+
+        return clonedCard;
+    }
+
 }
 [Serializable]
 public class CardEffect
 {
     internal int listIndex;
+    internal int diceRollValue;
 
     public string playerWhoUsedTheEffect { get; set; }
     public string playerWhoIsTheTargetOfEffect { get; set; }
@@ -118,6 +178,7 @@ public class CardEffect
     public string nameMatch { get; set; }
     //BuffThisCardDamageExistXAtZone
     public string ExistXAtZone_Name { get; set; }
+    public string ExistXAtZone_Color { get; set; }
 }
 
 [Flags]
@@ -126,5 +187,8 @@ public enum CardEffectType : byte
     None = 0,
     BuffDamageToCardAtZone = 1,
     BuffThisCardDamageExistXAtZone = 2,
-    BuffThisCardDamage = 3
+    BuffThisCardDamage = 3,
+    BuffThisCardDamageExistXCOLORAtZone,
+    FixedDiceRoll,
+    BuffZoneCardDamageExistXCOLORAtZone
 }

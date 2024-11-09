@@ -44,8 +44,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 return;
 
 
-            cMatchRoom.playerAOshi.GetCardInfo(cMatchRoom.playerAOshi.cardNumber);
-            cMatchRoom.playerBOshi.GetCardInfo(cMatchRoom.playerBOshi.cardNumber);
+            cMatchRoom.playerAOshi.GetCardInfo();
+            cMatchRoom.playerBOshi.GetCardInfo();
 
             Lib.getCardFromDeck(cMatchRoom.playerACardCheer, cMatchRoom.playerALife, int.Parse(cMatchRoom.playerAOshi.life));
             Lib.getCardFromDeck(cMatchRoom.playerBCardCheer, cMatchRoom.playerBLife, int.Parse(cMatchRoom.playerBOshi.life));

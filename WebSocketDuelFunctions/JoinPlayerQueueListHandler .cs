@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
@@ -83,6 +84,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
             var matchRoom = CreateMatchRoom(pList);
+            matchRoom.GenerateArtEffectData(EFFECTTYPE.Match);
             _MatchRooms.Add(matchRoom);
 
             await NotifyPlayersOfMatch(pList, matchRoom);
