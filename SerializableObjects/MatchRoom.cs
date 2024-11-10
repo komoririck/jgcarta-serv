@@ -97,6 +97,7 @@ public class MatchRoom
     internal int playerBFixedRoll;
     internal List<int> playerADiceRollList = new();
     internal List<int> playerBDiceRollList = new();
+    internal bool currentCardResolvingProtectLife = false;
 
     [Flags]
     public enum GAMEPHASE : byte

@@ -54,11 +54,49 @@ namespace hololive_oficial_cardgame_server
             List<Card> backStage = ISFIRSTPLAYER ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
             Card stage = ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
             Card collab = ISFIRSTPLAYER ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
-            
+
+
+            bool hasAttached = false;
+            switch (_DuelAction.usedCard.cardNumber) {
+                case "hBP01-123":
+                    if (_DuelAction.targetCard.name.Equals("兎田ぺこら"))
+                        hasAttached = true;
+                    break;
+                case "hBP01-122":
+                    if (_DuelAction.targetCard.name.Equals("アキ・ローゼンタール"))
+                        hasAttached = true;
+                    break;
+                case "hBP01-126":
+                    if (_DuelAction.targetCard.name.Equals("尾丸ポルカ"))
+                        hasAttached = true;
+                    break;
+                case "hBP01-125":
+                    if (_DuelAction.targetCard.name.Equals("小鳥遊キアラ"))
+                        hasAttached = true;
+                    break;
+                case "hBP01-124":
+                    if (_DuelAction.targetCard.name.Equals("AZKi") || _DuelAction.targetCard.name.Equals("SorAZ"))
+                        hasAttached = true;
+                    break;
+                case "hBP01-121":
+                case "hBP01-120":
+                case "hBP01-119":
+                case "hBP01-118":
+                case "hBP01-117":
+                case "hBP01-115":
+                case "hBP01-114":
+                case "hBP01-116":
+                    hasAttached = !AlreadyAttachToThisHolomem(cMatchRoom, _DuelAction.usedCard.cardNumber, _DuelAction.usedCard.cardPosition);
+                    break;
+            }
+
+            if (!hasAttached)
+            {
+                Lib.WriteConsoleMessage("didnt match the criteria");
+                return;
+            }
 
             //checking if can attach
-            bool hasAttached = false;
-
             if (stage != null)
                 if (_DuelAction.targetCard.cardNumber.Equals(stage.cardNumber) && _DuelAction.targetCard.cardPosition.Equals("Stage"))
                 {
@@ -98,6 +136,38 @@ namespace hololive_oficial_cardgame_server
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer], _ReturnData);
 
+        }
+
+        private bool AlreadyAttachToThisHolomem(MatchRoom cMatchRoom, string cardNumber, string cardPosition)
+        {
+            bool ISFIRSTPLAYER = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer;
+
+            List<Card> backStage = ISFIRSTPLAYER ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
+            Card stage = ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
+            Card collab = ISFIRSTPLAYER ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
+
+            if (cardPosition.Equals("Stage")) {
+                foreach (Card card in stage.attachedEquipe) {
+                    if (card.cardNumber.Equals(cardNumber))
+                        return true; 
+                }
+            }
+            else if (cardPosition.Equals("Collaboration"))
+            {
+                foreach (Card card in collab.attachedEquipe)
+                {
+                    if (card.cardNumber.Equals(cardNumber))
+                        return true;
+                }
+            }
+            else { 
+                foreach (Card cardBs in backStage) { 
+                    foreach(Card card in cardBs.attachedEquipe)
+                        if (card.cardNumber.Equals(cardNumber))
+                            return true;
+                }
+            }
+            return false;
         }
     }
 }

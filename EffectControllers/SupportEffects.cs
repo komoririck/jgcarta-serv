@@ -74,7 +74,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 {
                     case "hBP01-103":
 
-                        energyPaid = Lib.PayCardEffectCheerFieldCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
+                        energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
 
                         if (!energyPaid)
                             break;
@@ -224,7 +224,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         break;
                     case "hSD01-019":
 
-                        energyPaid = Lib.PayCardEffectCheerFieldCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
+                        energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
 
                         if (!energyPaid)
                             break;
@@ -294,7 +294,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
                         cMatchRoom.currentCardResolvingStage = "1";
 
-                        Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: false);
+                        Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
                         break;
                     case "hSD01-0201":
                         diceValue = diceList.Last();
@@ -386,7 +386,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         ResetResolution();
                         break;
                     case "hBP01-105":
-                        energyPaid = Lib.PayCardEffectCheerFieldCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
+                        energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
 
                         if (!energyPaid)
                             break;
@@ -652,24 +652,14 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             targetCard = tempOpponentBackStage[n],
                         };
 
-                        if (int.Parse(tempOpponentBackStage[n].hp) <= -1 * tempOpponentBackStage[n].currentHp)
-                        {
-                            List<Card> arquive = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
-                            //adding cards from the deafeat holomem to the arquive
-                            arquive.AddRange(tempOpponentBackStage[n].attachedEnergy);
-                            arquive.AddRange(tempOpponentBackStage[n].bloomChild);
-                            arquive.Add(tempOpponentBackStage[n]);
-                            SendPlayerData(cMatchRoom, reveal: true, _DuelAction, "DefeatedHoloMemberByEffect");
-                        }
-                        else
-                        {
-                            _DuelAction.actionObject = "20";
-                            _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
-                            // Serialize and send data to the current player
-                            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
-                            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
-                        }
+                        cMatchRoom.currentCardResolvingProtectLife = true;
+
+                        _DuelAction.actionObject = "20";
+                        _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
+                        // Serialize and send data to the current player
+                        PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
+                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
 
                         ResetResolution();
                         break;

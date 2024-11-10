@@ -187,7 +187,7 @@ namespace hololive_oficial_cardgame_server
                         return;
                     }
                     //paying the cost for retrat
-                    bool energyPaid = Lib.PayCardEffectCheerFieldCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
+                    bool energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
                     if (!energyPaid)
                         break;
                    /*
@@ -209,8 +209,15 @@ namespace hololive_oficial_cardgame_server
                     break;
                 case "ResolveRerollEffect":
                     //random dice number
-                    int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
-                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
+
+                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+                    bool canContinue = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, ENERGY: false);
+
+                    if (canContinue)
+                    {
+                        int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                        Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
+                    }
                     break;
 
 

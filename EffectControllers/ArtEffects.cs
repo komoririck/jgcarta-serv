@@ -54,11 +54,12 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             cMatchRoom.currentDuelActionResolvingRecieved.Add(_DuelAction);
 
             List<Card> tempHandList = new();
-            List<Card> holoPowerList = new();
+            List<Card> EnergyList = new();
             List<Card> backPos = new();
             List<string> returnToclient = new();
 
-            holoPowerList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
+            Card stage = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
+            EnergyList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
             tempHandList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
             backPos = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
             List<int> diceList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerADiceRollList : cMatchRoom.playerBDiceRollList;
@@ -76,7 +77,9 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     //random dice number
                     int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
                     cMatchRoom.currentCardResolvingStage = "1";
-                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: false);
+                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
                     break;
                 case "hSD01-0131-越えたい未来":
                     cMatchRoom.extraInfo.Add(JsonSerializer.Serialize(_DuelAction, Lib.options));
@@ -84,20 +87,20 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                     if (diceValue == 1 || diceValue == 3 || diceValue == 5)
                     {
+                        tempHandList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
                         //add to temp hand so we can get latter
-                        tempHandList.Add(holoPowerList[holoPowerList.Count - 1]);
+                        tempHandList.Add(EnergyList[EnergyList.Count - 1]);
                         //just for safety, lets change the position to cheer, so the rotine who is gonna use this know where came from to remove
                         tempHandList[0].playedFrom = "CardCheer";
                         //setup list to send to player
-                        returnToclient = new List<string>() {tempHandList[0].cardNumber};
 
-                        cMatchRoom.currentCardResolvingStage = "2";
+                        var handler191 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
 
-                        //send the info to the currentplayer so he can pick the card
-                        _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
-                        Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
+                        _DuelAction.actionObject = JsonSerializer.Serialize(new List<string>() { tempHandList[0].cardNumber }, Lib.options);
+                        _DuelAction.targetCard = _DuelAction.usedCard;
+
+                        PlayerRequest _playerRequest = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                        await handler191.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: false, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 0);
                     }
                     else
                     {
@@ -112,32 +115,20 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             Lib.getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 1);
                             Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.secondPlayer, cMatchRoom.playerBHand, true, cMatchRoom, ReturnData);
                         }
-                        ResetResolution();
-                    }
-                    break;
-                case "hSD01-0132-越えたい未来":
-                    var handler190 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-
-                    if (_DuelAction.usedCard.cardPosition.Equals("Stage"))
-                    {
-                        await handler190.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: false, back: false, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 1);
-                    }
-                    else
-                    {
-                        await handler190.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: false, collab: true, back: false, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 1);
                     }
                     ResetResolution();
                     break;
                 case "hSD01-011-SorAZ グラビティ":
                     //get the card at stage and see it's a tokino sora
-                    Card stage = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
                     stage.GetCardInfo();
-                    if (!stage.name.Equals("ときのそら"))
-                        return;
                     //get the cheer and see if has more than 0 to be able to assign
                     List<Card> cheerDeck = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
-                    if (cheerDeck.Count < 1)
+
+                    if (!stage.name.Equals("ときのそら") || !stage.name.Equals("SorAZ") || (cheerDeck.Count < 1))
+                    {
+                        ResetResolution();
                         return;
+                    }
 
                     cMatchRoom.extraInfo.Add(JsonSerializer.Serialize(_DuelAction, Lib.options));
 
@@ -155,8 +146,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     //send the info to the currentplayer so he can pick the card
                     _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
                     break;
                 case "hSD01-0111-SorAZ グラビティ":
                     var handler19 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
@@ -168,7 +159,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
                     cMatchRoom.currentCardResolvingStage = "1";
 
-                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: false);
+                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
                     break;
                 case "hSD01-0111-デスティニーソング":
                     diceValue = diceList.Last();
@@ -180,7 +171,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             cardNumber = _DuelAction.usedCard.cardNumber,
                             zoneTarget = JsonSerializer.Deserialize<DuelAction>((string)cMatchRoom.extraInfo[0]).usedCard.cardPosition,
                             type = CardEffectType.BuffThisCardDamage,
-                            Damage = 50,
+                            Damage = (diceValue > 1) ? 50 : 100,
                             playerWhoUsedTheEffect = playerWhoUsedTheEffect,
                             playerWhoIsTheTargetOfEffect = playerWhoUsedTheEffect,
                             listIndex = 1
@@ -236,19 +227,25 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
             if (!validCard)
                 return;
-            
 
-            //end of use art validation
-            string currentPlayer = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
+            Card usedCard = null;
+            Card targetCard = null;
 
+            if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer) {
 
-            Card usedCard = _DuelAction.usedCard.cardPosition.Equals("Stage") ? cMatchRoom.playerAStage : cMatchRoom.playerACollaboration;
-            Card targetCard = _DuelAction.targetCard.cardPosition.Equals("Stage") ? cMatchRoom.playerBStage : cMatchRoom.playerBCollaboration;
+                 usedCard = _DuelAction.usedCard.cardPosition.Equals("Stage") ? cMatchRoom.playerAStage : cMatchRoom.playerACollaboration;
+                 targetCard = _DuelAction.targetCard.cardPosition.Equals("Stage") ? cMatchRoom.playerBStage : cMatchRoom.playerBCollaboration;
+
+            }
+            else {
+                 usedCard = _DuelAction.usedCard.cardPosition.Equals("Stage") ? cMatchRoom.playerBStage : cMatchRoom.playerBCollaboration;
+                 targetCard = _DuelAction.targetCard.cardPosition.Equals("Stage") ? cMatchRoom.playerAStage : cMatchRoom.playerACollaboration;
+            }
 
             if (usedCard.attachedEnergy.Count == 0)
                 return;
 
-            cMatchRoom.currentArtDamage = ArtCalculator.CalculateTotalDamage(cMatchRoom.currentArtResolving, usedCard, targetCard, currentPlayer, MatchRoom.GetOtherPlayer(cMatchRoom, currentPlayer), cMatchRoom);
+            cMatchRoom.currentArtDamage = ArtCalculator.CalculateTotalDamage(cMatchRoom.currentArtResolving, usedCard, targetCard, cMatchRoom.currentPlayerTurn, MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn), cMatchRoom);
 
             if (cMatchRoom.currentArtDamage < -10000)
             {

@@ -11,6 +11,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
         private List<MatchRoom> matchRooms;
         private PlayerRequest _ReturnData;
 
+        bool TESTEMODE = true;
+
         public PlayHolomemHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
         {
             this.playerConnections = playerConnections;
@@ -33,6 +35,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 _DuelAction.cheerCostCard.GetCardInfo();
 
             List<Record> avaliableCards = FileReader.QueryRecords(null, null, null, _DuelAction.usedCard.cardNumber);
+
+            if (TESTEMODE)
+                avaliableCards = FileReader.result;
 
             //if not break
             if (_DuelAction.usedCard.cardPosition.Equals("Collaboration") )
@@ -73,11 +78,13 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (playerHand[handPos].bloomLevel.Equals("Debut") || playerHand[handPos].bloomLevel.Equals("Spot"))
                 canContinue = true;
 
-            if (!canContinue)
-            {
-                Lib.WriteConsoleMessage("this card cannot be played at this point");
-                return;
-            }
+
+            if (!TESTEMODE)
+                if (!canContinue)
+                {
+                    Lib.WriteConsoleMessage("this card cannot be played at this point");
+                    return;
+                }
 
             //checking of the card can be played at the spot
             switch (_DuelAction.local)

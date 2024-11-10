@@ -95,9 +95,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //check the attacking effect
             cMatchRoom.currentArtResolving = usedArt;
             cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
-            cMatchRoom.extraInfo.Add(JsonSerializer.Serialize(_DuelAction, Lib.options));
-            ArtEffects.OnArtEffectResolutionAsync(playerConnections, MessageDispatcher._MatchRooms, playerRequest, webSocket);
 
+            cMatchRoom.extraInfo.Add(JsonSerializer.Serialize(_DuelAction, Lib.options));
+
+            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ActiveArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
 
             cMatchRoom.currentGameHigh++;
             return;

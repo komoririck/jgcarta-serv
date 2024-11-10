@@ -531,7 +531,7 @@ namespace hololive_oficial_cardgame_server
             return handPos;
         }
 
-        static public bool PayCardEffectCheerFieldCost(MatchRoom cMatchRoom, string zone, string cardNumber)
+        static public bool PayCardEffectCheerOrEquipCost(MatchRoom cMatchRoom, string zone, string cardNumber, bool ENERGY = true)
         {
 
             Card seletectedCard = null;
@@ -562,7 +562,16 @@ namespace hololive_oficial_cardgame_server
 
             int removePos = -1;
             int n = 0;
-            foreach (Card energy in seletectedCard.attachedEnergy)
+
+
+            List<Card> ListToDetach = null;
+
+            if (ENERGY)
+                ListToDetach = seletectedCard.attachedEnergy;
+            else
+                ListToDetach = seletectedCard.attachedEquipe;
+
+            foreach (Card energy in ListToDetach)
             {
                 if (energy.cardNumber.Equals(cardNumber))
                 {
@@ -577,17 +586,22 @@ namespace hololive_oficial_cardgame_server
 
                 DuelAction _DisposeAction = new()
                 {
-                    playerID = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn),
-                    usedCard = new(seletectedCard.attachedEnergy[removePos].cardNumber, seletectedCard.cardPosition),
+                    playerID = cMatchRoom.currentPlayerTurn,
+                    usedCard = new(ListToDetach[removePos].cardNumber, seletectedCard.cardPosition),
                 };
-                PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyAtAndSendToArquive", requestObject = JsonSerializer.Serialize(_DisposeAction, options) };
-                SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
+                PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = ENERGY ? "RemoveEnergyAtAndSendToArquive" : "RemoveEquipAtAndSendToArquive", requestObject = JsonSerializer.Serialize(_DisposeAction, options) };
+                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
+                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
 
 
                 //adding the card that should be removed to the arquive, then removing from the player hand
                 List<Card> tempArquive = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
-                tempArquive.Add(seletectedCard.attachedEnergy[removePos]);
-                seletectedCard.attachedEnergy.RemoveAt(removePos);
+                tempArquive.Add(ListToDetach[removePos]);
+
+                if (ENERGY)
+                   seletectedCard.attachedEnergy.RemoveAt(removePos);
+                else
+                   seletectedCard.attachedEquipe.RemoveAt(removePos);
 
                 return true;
             }
@@ -663,8 +677,8 @@ namespace hololive_oficial_cardgame_server
 
                 pReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
                 return true;
             }
             return false;
@@ -791,7 +805,6 @@ namespace hololive_oficial_cardgame_server
                 };
                 PlayerRequest pReturnData = new PlayerRequest
                 {
-                    actionObject = RecoveryAmount.ToString(),
                     type = "DuelUpdate",
                     description = "RecoverHolomem",
                     requestObject = JsonSerializer.Serialize(da, Lib.options)
@@ -810,6 +823,7 @@ namespace hololive_oficial_cardgame_server
 
                     DuelAction da = new()
                     {
+                        actionObject = RecoveryAmount.ToString(),
                         playerID = targetPlayerID,
                         targetCard = position
                     };
