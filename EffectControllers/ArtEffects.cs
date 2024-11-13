@@ -180,7 +180,61 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     }
                     ResetResolution();
                     break;
+                case "hBP01-038-こんぺこー！":
+                    diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
 
+                    cMatchRoom.currentCardResolvingStage = "1";
+
+                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: false);
+
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+                    break;
+                case "hBP01-0381-こんぺこー！":
+                    diceValue = diceList.Last();
+
+                    if (diceValue == 2 || diceValue == 4 || diceValue == 6)
+                    {
+                        _CardEffect = new CardEffect
+                        {
+                            cardNumber = _DuelAction.usedCard.cardNumber,
+                            zoneTarget = _DuelAction.usedCard.cardPosition,
+                            type = CardEffectType.BuffThisCardDamage,
+                            Damage = 20,
+                            playerWhoUsedTheEffect = playerWhoUsedTheEffect,
+                            playerWhoIsTheTargetOfEffect = playerWhoUsedTheEffect,
+                            listIndex = 1
+                        };
+                        currentActivatedTurnEffect.Add(_CardEffect);
+                    }
+                    ResetResolution();
+                    break;
+                case "hBP01-042-きｔらあああ":
+                    diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+
+                    cMatchRoom.currentCardResolvingStage = "1";
+
+                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: false);
+
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+                    break;
+                case "hBP01-0421-きｔらあああ":
+                    diceValue = diceList.Last();
+
+                        _CardEffect = new CardEffect
+                        {
+                            cardNumber = _DuelAction.usedCard.cardNumber,
+                            zoneTarget = _DuelAction.usedCard.cardPosition,
+                            type = CardEffectType.BuffThisCardDamage,
+                            Damage = (10 * diceValue),
+                            playerWhoUsedTheEffect = playerWhoUsedTheEffect,
+                            playerWhoIsTheTargetOfEffect = playerWhoUsedTheEffect,
+                            listIndex = 1
+                        };
+                        currentActivatedTurnEffect.Add(_CardEffect);
+                    ResetResolution();
+                    break;
                 default:
                     ResetResolution();
                     break;
@@ -261,11 +315,38 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             if (_DuelAction.usedCard.cardPosition.Equals("Collaboration"))
                 cMatchRoom.collabStageArtUsed = true;
 
+            OnArtUsedEffects(usedCard, cMatchRoom);
+
             var pReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicArtDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
 
             cMatchRoom.currentGamePhase = MatchRoom.GAMEPHASE.ResolvingDamage;
+        }
+        private static void OnArtUsedEffects(Card attackingCard, MatchRoom cMatchRoom)
+        {
+            foreach (Card card in attackingCard.attachedEquipe)
+            {
+                switch (card.cardNumber)
+                {
+                    case "hBP01-120":
+                        if (attackingCard.cardPosition.Equals("Stage"))
+                        {
+                            PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DrawBloomIncreaseEffect", requestObject = "" };
+                            if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
+                            {
+                                Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
+                                Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.firstPlayer, cMatchRoom.playerAHand, true, cMatchRoom, ReturnData);
+                            }
+                            else
+                            {
+                                Lib.getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 1);
+                                Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.secondPlayer, cMatchRoom.playerBHand, true, cMatchRoom, ReturnData);
+                            }
+                        }
+                        break;
+                }
+            }
         }
 
     }

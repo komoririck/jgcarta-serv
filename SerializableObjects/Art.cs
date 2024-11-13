@@ -1,4 +1,5 @@
 ﻿using hololive_oficial_cardgame_server.EffectControllers;
+using System.Text.Json;
 
 namespace hololive_oficial_cardgame_server.SerializableObjects
 {
@@ -171,6 +172,45 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
 
                     Card cardAtStage = matchRoom.firstPlayer.Equals(playerWhoDeclaredAttack) ? matchRoom.playerAStage : matchRoom.playerBStage;
                     effectExtraDamage += cardeffect.Damage;
+                }
+            }
+
+            //CHECK FOR EQUIPMENTS EFFECTS
+            foreach (Card card in AttackedCard.attachedEquipe) {
+                switch (card.cardNumber)
+                {
+                    case "hBP01-121":
+                        if (AttackedCard.cardPosition.Equals("Stage") || AttackedCard.cardPosition.Equals("Collaboration"))
+                        effectExtraDamage -= 10;
+                        break;
+                    case "hBP01-126":
+                        effectExtraDamage += 10;
+                        break;
+                }            
+            }
+            foreach (Card card in attackingCard.attachedEquipe)
+            {
+                switch (card.cardNumber)
+                {
+                    case "hBP01-120":
+                        effectExtraDamage += 10;
+                        break;
+                    case "hBP01-115":
+                        effectExtraDamage += 10;
+                        break;
+                    case "hBP01-114":
+                        matchRoom.RecoilDuelActions.Add(
+                        new DuelAction ()
+                        {
+                            playerID = matchRoom.currentPlayerTurn,
+                            targetCard = attackingCard,
+                            actionObject = "10"
+                        });
+                        effectExtraDamage += 20;
+                        break;
+                    case "hBP01-116":
+                        effectExtraDamage += 10;
+                        break;
                 }
             }
 

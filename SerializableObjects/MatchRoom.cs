@@ -98,6 +98,10 @@ public class MatchRoom
     internal List<int> playerADiceRollList = new();
     internal List<int> playerBDiceRollList = new();
     internal bool currentCardResolvingProtectLife = false;
+    internal bool playerBUsedSupportThisTurn;
+    internal bool playerAUsedSupportThisTurn;
+
+    public List<DuelAction> RecoilDuelActions { get; internal set; }
 
     [Flags]
     public enum GAMEPHASE : byte
@@ -118,7 +122,8 @@ public class MatchRoom
         HolomemDefeated = 103,
         HolomemDefeatedCheerChoose = 104,
         HolomemDefeatedCheerChoosed = 105,
-        ResolvingDamage = 106
+        ResolvingDamage = 106,
+        RevolingAttachEffect = 107
     }
 
     public void suffleHandToTheDeck(List<Card> deck, List<Card> hand)

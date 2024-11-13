@@ -57,6 +57,7 @@ namespace hololive_oficial_cardgame_server
 
 
             bool hasAttached = false;
+            _DuelAction.targetCard.GetCardInfo();
             switch (_DuelAction.usedCard.cardNumber) {
                 case "hBP01-123":
                     if (_DuelAction.targetCard.name.Equals("兎田ぺこら"))
@@ -89,6 +90,8 @@ namespace hololive_oficial_cardgame_server
                     hasAttached = !AlreadyAttachToThisHolomem(cMatchRoom, _DuelAction.usedCard.cardNumber, _DuelAction.usedCard.cardPosition);
                     break;
             }
+
+            hasAttached = true;
 
             if (!hasAttached)
             {
@@ -136,6 +139,8 @@ namespace hololive_oficial_cardgame_server
             Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer], _ReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer], _ReturnData);
 
+            cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
+            cMatchRoom.currentGamePhase = GAMEPHASE.RevolingAttachEffect;
         }
 
         private bool AlreadyAttachToThisHolomem(MatchRoom cMatchRoom, string cardNumber, string cardPosition)

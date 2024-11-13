@@ -135,25 +135,25 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 case "Stage":
                     if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                     {
-                        bloomCard(cMatchRoom.playerAStage, _DuelAction.usedCard);
+                        bloomCard(cMatchRoom.playerAStage, _DuelAction.usedCard, cMatchRoom);
 
                         cMatchRoom.playerAHand.RemoveAt(handPos);
                     }
                     else
                     {
-                        bloomCard(cMatchRoom.playerBStage, _DuelAction.usedCard);
+                        bloomCard(cMatchRoom.playerBStage, _DuelAction.usedCard, cMatchRoom);
                         cMatchRoom.playerBHand.RemoveAt(handPos);
                     }
                     break;
                 case "Collaboration":
                     if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                     {
-                        bloomCard(cMatchRoom.playerACollaboration, _DuelAction.usedCard);
+                        bloomCard(cMatchRoom.playerACollaboration, _DuelAction.usedCard, cMatchRoom);
                         cMatchRoom.playerAHand.RemoveAt(handPos);
                     }
                     else
                     {
-                        bloomCard(cMatchRoom.playerBCollaboration, _DuelAction.usedCard);
+                        bloomCard(cMatchRoom.playerBCollaboration, _DuelAction.usedCard, cMatchRoom);
                         cMatchRoom.playerBHand.RemoveAt(handPos);
                     }
                     break;
@@ -181,7 +181,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                         y++;
                     }
 
-                    bloomCard(actionCardList[x], _DuelAction.usedCard);
+                    bloomCard(actionCardList[x], _DuelAction.usedCard, cMatchRoom);
 
                     if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
                         cMatchRoom.playerAHand.RemoveAt(handPos);
@@ -193,19 +193,49 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             //since we pass all the validation, lets just assign the new card
-            void bloomCard(Card cardToBloom, Card cardWithBloomInfo)
+            void bloomCard(Card cardToBloom, Card cardWithBloomInfo, MatchRoom matchRoom)
             {
                 cardToBloom.bloomChild.Add(new Card(cardToBloom.cardNumber));
                 cardToBloom.cardNumber = cardWithBloomInfo.cardNumber;
                 cardToBloom.GetCardInfo(true);
                 cardToBloom.playedThisTurn = true;
+
+
+                OnBloomIncreaseEffects(cardToBloom, cMatchRoom);
             }
 
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "BloomHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
             Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
 
+
+
             cMatchRoom.currentGameHigh++;
+        }
+
+        private void OnBloomIncreaseEffects(Card cardToBloom, MatchRoom cMatchRoom)
+        {
+            foreach (Card card in cardToBloom.attachedEquipe) {
+                switch (card.cardNumber) { 
+                    case "hBP01-121":
+
+                        if (cardToBloom.name.Equals("小鳥遊キアラ")) { 
+                            PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DrawBloomIncreaseEffect", requestObject = "" };
+                            if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
+                            {
+                                Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
+                                Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.firstPlayer, cMatchRoom.playerAHand, true, cMatchRoom, ReturnData);
+                            }
+                            else
+                            {
+                                Lib.getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 1);
+                                Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.secondPlayer, cMatchRoom.playerBHand, true, cMatchRoom, ReturnData);
+                            }
+                        }
+                        break;
+                }
+            }
+
         }
 
         private void checkBloomEffect()

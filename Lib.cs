@@ -120,6 +120,23 @@ namespace hololive_oficial_cardgame_server
             }
         }
 
+        public static async Task SendPlayerData(MatchRoom cMatchRoom, bool reveal, DuelAction DuelActionResponse, string description)
+        {
+            PlayerRequest _ReturnData;
+            string otherPlayer = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerB.PlayerID : cMatchRoom.playerA.PlayerID;
+
+            // Serialize and send data to the current player
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
+
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], _ReturnData);
+
+            // Handle reveal logic and send data to the other player
+            if (reveal == false)
+                DuelActionResponse.cardList = cMatchRoom.FillCardListWithEmptyCards(DuelActionResponse.cardList);
+
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
+            Lib.SendMessage(MessageDispatcher.playerConnections[otherPlayer.ToString()], _ReturnData);
+        }
         public static async Task SendMessage(WebSocket webSocket, PlayerRequest data, [CallerMemberName] string callerName = "")
         {
 
@@ -765,7 +782,7 @@ namespace hololive_oficial_cardgame_server
 
         }
 
-        internal static void RecoveryHP(MatchRoom cMatchRoom, bool STAGE, bool COLLAB, bool BACKSTAGE, int RecoveryAmount, string targetPlayerID)
+        internal static void RecoveryHP(MatchRoom cMatchRoom, bool STAGE, bool COLLAB, bool BACKSTAGE, int RecoveryAmount, string targetPlayerID, string cardPosition = "")
         {
             // Determine which player is the target
             bool isFirstPlayer = cMatchRoom.firstPlayer.Equals(targetPlayerID);
@@ -819,6 +836,9 @@ namespace hololive_oficial_cardgame_server
                 var targetBackPositions = isFirstPlayer ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
                 foreach (var position in targetBackPositions)
                 {
+                    if (!string.IsNullOrEmpty(cardPosition))
+                        if (cardPosition.Equals(position.cardPosition))
+
                     position.currentHp = Math.Min(position.currentHp + RecoveryAmount, int.Parse(position.hp));
 
                     DuelAction da = new()

@@ -33,6 +33,16 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
+
+
+            switch (_DuelAction.usedCard.cardNumber)
+            {
+                case "hBP01-009":
+                    if (!_DuelAction.targetCard.cardPosition.Equals("Stage"))
+                        return;
+                    break;
+            }
+
             Card currentStageCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
             Card currentCollabCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
 

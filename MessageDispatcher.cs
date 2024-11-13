@@ -122,10 +122,12 @@ namespace hololive_oficial_cardgame_server
                     {
                         cMatchRoom.playerALimiteCardPlayed.Clear();
                         cMatchRoom.usedOshiSkillPlayerA = false;
+                        cMatchRoom.playerBUsedSupportThisTurn = true;
                     }
                     else { 
                         cMatchRoom.playerBLimiteCardPlayed.Clear();
                         cMatchRoom.usedOshiSkillPlayerB = false;
+                        cMatchRoom.playerBUsedSupportThisTurn = false;
                     }
 
                     cMatchRoom.currentPlayerTurn = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.secondPlayer : cMatchRoom.firstPlayer;
@@ -153,6 +155,7 @@ namespace hololive_oficial_cardgame_server
                 case "AttachEquipamentToHolomem":
                     var handler151 = new AttachEquipamentToHolomemHandler(playerConnections, _MatchRooms);
                     await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest, webSocket);
+             
                     break;
                 case "AskAttachEnergy":
                     //call to attach energy
@@ -176,6 +179,10 @@ namespace hololive_oficial_cardgame_server
                 case "ResolveOnOshiEffect":
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
                     OshiEffects.OnOshiEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket);
+                    break;
+                case "ResolveOnAttachEffect":
+                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+                    AttachEffects.OnAttachEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket);
                     break;
                 case "Retreat":
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);

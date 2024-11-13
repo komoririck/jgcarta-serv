@@ -135,7 +135,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         _DuelAction.cardList.Add(selected);
                         playerHand.Add(selected);
 
-                        SendPlayerData(cMatchRoom, true, _DuelAction, "SupportEffectDraw");
+                        Lib.SendPlayerData(cMatchRoom, true, _DuelAction, "SupportEffectDraw");
 
                         ResetResolution();
                         break;
@@ -193,7 +193,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         _DuelAction.usedCard = new Card("hSD01-017");
                         _DuelAction.suffleBackToDeck = true;
 
-                        SendPlayerData(cMatchRoom, false, _DuelAction, "SupportEffectDraw");
+                        Lib.SendPlayerData(cMatchRoom, false, _DuelAction, "SupportEffectDraw");
                         ResetResolution();
                         break;
                     case "hSD01-018":
@@ -285,7 +285,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         _DuelAction.cardList.Add(selected);
                         playerHand.Add(selected);
 
-                        SendPlayerData(cMatchRoom, true, _DuelAction, "SupportEffectDraw");
+                        Lib.SendPlayerData(cMatchRoom, true, _DuelAction, "SupportEffectDraw");
 
                         ResetResolution();
                         break;
@@ -435,7 +435,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, playerRequest.playerID, _DuelAction.targetCard);
 
-                        SendPlayerData(cMatchRoom, false, _DuelAction, "SwitchStageCard");
+                        Lib.SendPlayerData(cMatchRoom, false, _DuelAction, "SwitchStageCard");
                         ResetResolution();
                         break;
                     case "hBP01-108":
@@ -448,7 +448,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, MatchRoom.GetOtherPlayer(cMatchRoom, playerRequest.playerID), _DuelAction.targetCard);
 
-                        SendPlayerData(cMatchRoom, false, _DuelAction, "SwitchOpponentStageCard");
+                        Lib.SendPlayerData(cMatchRoom, false, _DuelAction, "SwitchOpponentStageCard");
                         ResetResolution();
                         break;
                     case "hBP01-109":
@@ -577,7 +577,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             cardList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand
                         };
 
-                        SendPlayerData(cMatchRoom, true, DuelActionResponse, "ResolveOnSupportEffect");
+                        Lib.SendPlayerData(cMatchRoom, true, DuelActionResponse, "ResolveOnSupportEffect");
                         break;
                     case "hBP01-1071":
                         n = -1;
@@ -607,7 +607,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         }
                         _DuelAction.zone = "Arquive";
 
-                        SendPlayerData(cMatchRoom, reveal: true, _DuelAction, "SupportEffectDraw");
+                        Lib.SendPlayerData(cMatchRoom, reveal: true, _DuelAction, "SupportEffectDraw");
                         ResetResolution();
                         break;
                     case "hBP01-112":
@@ -702,6 +702,12 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         break;
 
                 }
+
+                if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
+                    cMatchRoom.playerAUsedSupportThisTurn = true;
+                else
+                    cMatchRoom.playerBUsedSupportThisTurn = true;
+               
             }
             catch (Exception e)
             {
@@ -760,7 +766,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 cardList = queryy
             };
 
-            SendPlayerData(cMatchRoom, reveal, DuelActionResponse, "ResolveOnSupportEffect");
+            Lib.SendPlayerData(cMatchRoom, reveal, DuelActionResponse, "ResolveOnSupportEffect");
         }
 
         static async Task UseCardEffectDrawXAmountAddAnyIfConditionMatchThenReorderToBottom(MatchRoom cMatchRoom, int cNum, int HandMustHave, bool reveal = false)
@@ -790,7 +796,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 cardList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand
             };
 
-            SendPlayerData(cMatchRoom, reveal, DuelActionResponse, "ResolveOnSupportEffect");
+            Lib.SendPlayerData(cMatchRoom, reveal, DuelActionResponse, "ResolveOnSupportEffect");
         }
 
         static async Task UseCardEffectDrawAnyAsync(MatchRoom cMatchRoom, int cNum, string cUsedNumber)
@@ -810,24 +816,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 cardList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand.GetRange(cMatchRoom.playerAHand.Count() - cNum, cNum) : cMatchRoom.playerBHand.GetRange(cMatchRoom.playerBHand.Count() - cNum, cNum)
             };
 
-            SendPlayerData(cMatchRoom, false, _Draw, "SupportEffectDraw");
-        }
-        static async Task SendPlayerData(MatchRoom cMatchRoom, bool reveal, DuelAction DuelActionResponse, string description)
-        {
-            PlayerRequest _ReturnData;
-            string otherPlayer = cMatchRoom.currentPlayerTurn.Equals(cMatchRoom.playerA.PlayerID) ? cMatchRoom.playerB.PlayerID : cMatchRoom.playerA.PlayerID;
-
-            // Serialize and send data to the current player
-            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
-
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], _ReturnData);
-
-            // Handle reveal logic and send data to the other player
-            if (reveal == false)
-                DuelActionResponse.cardList = cMatchRoom.FillCardListWithEmptyCards(DuelActionResponse.cardList);
-
-            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
-            Lib.SendMessage(MessageDispatcher.playerConnections[otherPlayer.ToString()], _ReturnData);
+            Lib.SendPlayerData(cMatchRoom, false, _Draw, "SupportEffectDraw");
         }
 
         static async Task FromTheListAddFirstToHandThenAddRemainingToBottom(MatchRoom cMatchRoom, List<string> possibleDraw, DuelAction duelaction, bool shouldUseTempHandValidation, int pickedLimit, string shouldUseToCompareWithTempHand = "")
@@ -908,7 +897,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 cMatchRoom.playerBTempHand.Clear();
             }
 
-            SendPlayerData(cMatchRoom, false, DrawReturn, "SupportEffectDraw");
+            Lib.SendPlayerData(cMatchRoom, false, DrawReturn, "SupportEffectDraw");
         }
         internal static async Task MainConditionedSummomResponseHandleAsync(MatchRoom cMatchRoom, string playerid, string cardToSummom)
         {
@@ -973,7 +962,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 cardList = query
             };
 
-            SendPlayerData(cMatchRoom, false, _Draw, "ResolveOnSupportEffect");
+            Lib.SendPlayerData(cMatchRoom, false, _Draw, "ResolveOnSupportEffect");
         }
         static bool MatchCardColors(Card card, Card Target)
         {
