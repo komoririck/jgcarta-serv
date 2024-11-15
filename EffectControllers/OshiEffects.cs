@@ -19,7 +19,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 return;
             }
 
-            if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer) {
+            if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
+            {
                 if (!SPSKILL && cMatchRoom.usedOshiSkillPlayerA)
                     return;
 
@@ -36,7 +37,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             }
 
             if (string.IsNullOrEmpty(cMatchRoom.currentCardResolving))
-                cMatchRoom.currentCardResolving = cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
+                cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
 
             List<Card> tempHololive = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAHoloPower : cMatchRoom.playerBHoloPower;
             var holoPowerCostAmount = HoloPowerCost(_DuelAction.usedCard.cardNumber, SPSKILL);
@@ -87,7 +88,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     {
                         cMatchRoom.usedSPOshiSkillPlayerA = true;
                     }
-                    else {
+                    else
+                    {
                         cMatchRoom.usedSPOshiSkillPlayerB = true;
                     }
                     switch (_DuelAction.usedCard.cardNumber + cMatchRoom.currentCardResolvingStage)
@@ -129,6 +131,19 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                                 playerWhoIsTheTargetOfEffect = cMatchRoom.currentPlayerTurn,
                                 listIndex = 0
                             });
+                            ResetResolution(cMatchRoom, SPSKILL); 
+                            break;
+                        case "hBP01-001":
+                            cMatchRoom.ActiveTurnEffects.Add(new CardEffect
+                            {
+                                cardNumber = _DuelAction.targetCard.cardNumber,
+                                zoneTarget = _DuelAction.targetCard.cardPosition,
+                                type = CardEffectType.BuffDamageToCardAtZone,
+                                Damage = _DuelAction.usedCard.color.Equals("白") ? 100 : 50,
+                                playerWhoUsedTheEffect = cMatchRoom.currentPlayerTurn,
+                                playerWhoIsTheTargetOfEffect = cMatchRoom.currentPlayerTurn,
+                                listIndex = 0
+                            });
                             ResetResolution(cMatchRoom, SPSKILL);
                             break;
                         default:
@@ -141,8 +156,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     if (ISFIRSTPLAYER)
                     {
                         cMatchRoom.usedOshiSkillPlayerA = true;
-                }
-                else
+                    }
+                    else
                     {
                         cMatchRoom.usedOshiSkillPlayerB = true;
 
@@ -158,8 +173,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                                 Lib.WriteConsoleMessage("Invalid target position");
                                 return;
                             }
-                            Card energy = JsonSerializer.Deserialize<Card>(_DuelAction.actionObject); 
-                            bool energyRemoved = Lib.TransferEnergyFromCardAToTarget(cMatchRoom, CardA : (ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage), Energy: energy, _DuelAction);
+                            Card energy = JsonSerializer.Deserialize<Card>(_DuelAction.actionObject);
+                            bool energyRemoved = Lib.TransferEnergyFromCardAToTarget(cMatchRoom, CardA: (ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage), Energy: energy, _DuelAction);
 
                             if (!energyRemoved)
                             {
@@ -170,7 +185,29 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             ResetResolution(cMatchRoom, SPSKILL);
                             break;
                         case "hYS01-002":
-                            Lib.RecoveryHP(cMatchRoom, STAGE: true, COLLAB: true, BACKSTAGE: true, RecoveryAmount: 20, targetPlayerID : cMatchRoom.currentPlayerTurn);
+                            Lib.RecoveryHP(cMatchRoom, STAGE: true, COLLAB: true, BACKSTAGE: true, RecoveryAmount: 20, targetPlayerID: cMatchRoom.currentPlayerTurn);
+                            break;
+                        case "hBP01-001":
+                            Card opsStage = !ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
+                            if (opsStage == null)
+                            {
+                                Lib.WriteConsoleMessage("No avaliable target");
+                                return;
+                            }
+                            if (opsStage.currentHp < 50)
+                            {
+                                Lib.WriteConsoleMessage("Oponnent hp already lower than 50");
+                                return;
+                            }
+                            opsStage.currentHp = 50;
+
+                            DuelAction duelAction = new()
+                            {
+                                playerID = cMatchRoom.currentPlayerTurn,
+                                actionObject = 50.ToString()
+                            };
+                            Lib.SendPlayerData(cMatchRoom, false, duelAction, "SetHPToFixedValue");
+                            ResetResolution(cMatchRoom, SPSKILL);
                             break;
                     }
                 }
@@ -209,7 +246,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     returnToPlayer.Add(cMatchRoom.playerBArquive.Last());
                 }
             }
-            
+
             DuelAction _DuelAction = new DuelAction()
             {
                 playerID = cMatchRoom.currentPlayerTurn,

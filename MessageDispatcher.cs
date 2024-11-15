@@ -2,6 +2,7 @@
 using hololive_oficial_cardgame_server.SerializableObjects;
 using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Text.Json;
 using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
@@ -184,6 +185,9 @@ namespace hololive_oficial_cardgame_server
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
                     AttachEffects.OnAttachEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket);
                     break;
+                case "ResolveOnBloomEffect":
+                    BloomEffects.OnBloomEffectResolutionAsync(playerConnections, _MatchRooms, playerRequest, webSocket);
+                    break;
                 case "Retreat":
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
@@ -197,12 +201,6 @@ namespace hololive_oficial_cardgame_server
                     bool energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
                     if (!energyPaid)
                         break;
-                   /*
-                    * this is comented, but in the future we may need to implement a counter to be able to charge more than 1 energy for retrat depending of the card
-                   energyPaid = Lib.PayCardEffectCheerFieldCost(cMatchRoom, _DuelAction.cardList[1].cardPosition, _DuelAction.cardList[1].cardNumber);
-                    if (!energyPaid)
-                        break;
-                   */
 
                     //since retreated, cannot use art anymore
                     cMatchRoom.centerStageArtUsed = true;
@@ -222,8 +220,11 @@ namespace hololive_oficial_cardgame_server
 
                     if (canContinue)
                     {
-                        int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
-                        Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
+                        List<int> diceRollList = playerRequest.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollList : cMatchRoom.playerBDiceRollList;
+                        int diceRollCount = playerRequest.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollCount : cMatchRoom.playerBDiceRollCount;
+
+                        int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn, diceRollCount);
+                        Lib.SendDiceRoll(cMatchRoom, diceRollList.GetRange(Math.Max(0, diceRollList.Count - 3), Math.Min(3, diceRollList.Count)), COUNTFORRESONSE: true);
                     }
                     break;
 

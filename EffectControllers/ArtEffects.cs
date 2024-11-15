@@ -11,10 +11,6 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 {
     class ArtEffects
     {
-        public static List<CardEffect> currentActivatedTurnEffect = new();
-        List<CardEffect> currentContinuosTurnEffect = new();
-        List<CardEffect> currentDuelLimiteEffect = new();
-
         int Damage = 0;
 
         internal static async Task OnArtEffectResolutionAsync(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms, PlayerRequest playerRequest, WebSocket webSocket)
@@ -70,14 +66,44 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             //we use currentArtResolving to check which art we are resolving for that cardnumber
 
             Lib.WriteConsoleMessage(cMatchRoom.currentCardResolving + cMatchRoom.currentCardResolvingStage + "-" + cMatchRoom.currentArtResolving.Name);
+
             switch (cMatchRoom.currentCardResolving + cMatchRoom.currentCardResolvingStage + "-" + cMatchRoom.currentArtResolving.Name)
             {
+                case "hBP01-043-全人類兎化計画":
+                    //random dice number
+                    int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn, Amount: 3);
+                    cMatchRoom.currentCardResolvingStage = "1";
+                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+                    break;
+                case "hBP01-0431-全人類兎化計画":
+                    List<int> diceRollList = playerRequest.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollList : cMatchRoom.playerBDiceRollList;
+                    int diceRollCount = playerRequest.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollCount : cMatchRoom.playerBDiceRollCount;
+
+                    int totalRoll = diceRollList.Take(diceRollCount).Sum();
+
+                    _CardEffect = new CardEffect
+                        {
+                            cardNumber = _DuelAction.usedCard.cardNumber,
+                            zoneTarget = JsonSerializer.Deserialize<DuelAction>((string)cMatchRoom.extraInfo[0]).usedCard.cardPosition,
+                            type = CardEffectType.BuffThisCardDamage,
+                            Damage = 10 * totalRoll,
+                            playerWhoUsedTheEffect = playerWhoUsedTheEffect,
+                            playerWhoIsTheTargetOfEffect = playerWhoUsedTheEffect,
+                            listIndex = 1
+                        };
+                        cMatchRoom.ActiveTurnEffects.Add(_CardEffect);
+                    
+                    ResetResolution();
+                    break;
+
                 case "hSD01-013-越えたい未来":
 
                     //random dice number
-                    int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                     diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
                     cMatchRoom.currentCardResolvingStage = "1";
-                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
+                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
                     break;
@@ -159,7 +185,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
                     cMatchRoom.currentCardResolvingStage = "1";
 
-                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
+                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
                     break;
                 case "hSD01-0111-デスティニーソング":
                     diceValue = diceList.Last();
@@ -176,7 +202,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             playerWhoIsTheTargetOfEffect = playerWhoUsedTheEffect,
                             listIndex = 1
                         };
-                        currentActivatedTurnEffect.Add(_CardEffect);
+                        cMatchRoom.ActiveTurnEffects.Add(_CardEffect);
                     }
                     ResetResolution();
                     break;
@@ -185,7 +211,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                     cMatchRoom.currentCardResolvingStage = "1";
 
-                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: false);
+                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
 
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
@@ -205,7 +231,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             playerWhoIsTheTargetOfEffect = playerWhoUsedTheEffect,
                             listIndex = 1
                         };
-                        currentActivatedTurnEffect.Add(_CardEffect);
+                        cMatchRoom.ActiveTurnEffects.Add(_CardEffect);
                     }
                     ResetResolution();
                     break;
@@ -214,7 +240,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                     cMatchRoom.currentCardResolvingStage = "1";
 
-                    Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: false);
+                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
 
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
@@ -232,7 +258,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             playerWhoIsTheTargetOfEffect = playerWhoUsedTheEffect,
                             listIndex = 1
                         };
-                        currentActivatedTurnEffect.Add(_CardEffect);
+                        cMatchRoom.ActiveTurnEffects.Add(_CardEffect);
                     ResetResolution();
                     break;
                 default:

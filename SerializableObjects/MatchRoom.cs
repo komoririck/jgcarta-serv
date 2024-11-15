@@ -100,6 +100,8 @@ public class MatchRoom
     internal bool currentCardResolvingProtectLife = false;
     internal bool playerBUsedSupportThisTurn;
     internal bool playerAUsedSupportThisTurn;
+    internal int playerADiceRollCount = 0;
+    internal int playerBDiceRollCount = 0;
 
     public List<DuelAction> RecoilDuelActions { get; internal set; }
 

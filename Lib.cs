@@ -737,44 +737,50 @@ namespace hololive_oficial_cardgame_server
 
         }
 
-        internal static int GetDiceNumber(MatchRoom cMatchRoom, string actingPlayer, int min = 1, int max = 7)
+        internal static int GetDiceNumber(MatchRoom cMatchRoom, string actingPlayer, int min = 1, int max = 7, int Amount = 1)
         {
             Random random = new Random();
             int randomNumber = 0;
             List<int> diceRollList = actingPlayer.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollList : cMatchRoom.playerBDiceRollList;
+            int diceRollCount = actingPlayer.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollCount : cMatchRoom.playerBDiceRollCount;
 
             randomNumber = random.Next(min, max);
 
             CardEffect toRemove = null;
 
-            foreach (CardEffect cardEffect in cMatchRoom.ActiveTillNextUsageEffects)
-            {
-                if (cardEffect.type == CardEffectType.FixedDiceRoll && actingPlayer.Equals(cardEffect.playerWhoUsedTheEffect))
+            for (int j = 0; j < Amount; j++) { 
+
+                foreach (CardEffect cardEffect in cMatchRoom.ActiveTillNextUsageEffects)
                 {
-                    randomNumber = cardEffect.diceRollValue;
-                    toRemove = cardEffect;
+                    if (cardEffect.type == CardEffectType.FixedDiceRoll && actingPlayer.Equals(cardEffect.playerWhoUsedTheEffect))
+                    {
+                        randomNumber = cardEffect.diceRollValue;
+                        toRemove = cardEffect;
+                    }
                 }
-            }
 
-            if (toRemove != null)
-                cMatchRoom.ActiveTillNextUsageEffects.Remove(toRemove);
+                if (toRemove != null)
+                    cMatchRoom.ActiveTillNextUsageEffects.Remove(toRemove);
 
-            foreach (CardEffect cardEffect in cMatchRoom.ActiveTurnEffects)
-            {
-                if (cardEffect.type == CardEffectType.FixedDiceRoll && actingPlayer.Equals(cardEffect.playerWhoUsedTheEffect))
+                foreach (CardEffect cardEffect in cMatchRoom.ActiveTurnEffects)
                 {
-                    randomNumber = cardEffect.diceRollValue;
+                    if (cardEffect.type == CardEffectType.FixedDiceRoll && actingPlayer.Equals(cardEffect.playerWhoUsedTheEffect))
+                    {
+                        randomNumber = cardEffect.diceRollValue;
+                    }
                 }
-            }
 
-            diceRollList.Add(randomNumber);
+                diceRollList.Add(randomNumber);
+                diceRollCount++;
+             }
+
             return randomNumber;
         }
-        internal static void SendDiceRoll(MatchRoom cMatchRoom, int diceValue, bool COUNTFORRESONSE)
+        internal static void SendDiceRoll(MatchRoom cMatchRoom, List<int> diceValue, bool COUNTFORRESONSE)
         {
 
 
-            DuelAction response = new() { actionObject = JsonSerializer.Serialize(new List<int>() { diceValue }, options) };
+            DuelAction response = new() { actionObject = JsonSerializer.Serialize( diceValue , options) };
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = COUNTFORRESONSE ? "RollDice" : "OnlyDiceRoll", requestObject = JsonSerializer.Serialize(response, Lib.options) };
 
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);

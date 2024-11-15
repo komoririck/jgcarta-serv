@@ -107,6 +107,23 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
                         effectExtraDamage += cardeffect.Damage;
                     }
                 }
+                else if (cardeffect.type == CardEffectType.BuffDamageToCardAtZoneIfHaveTag)
+                {
+                    if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
+                        continue;
+
+                    if (!(cardeffect.playerWhoIsTheTargetOfEffect.Equals(playerWhoWasTargeted)))
+                        continue;
+
+                    if (!attackingCard.cardTag.Contains("#promise"))
+                        continue;
+
+                    //if this card is in the zone that the effect is active
+                    if (cardeffect.zoneTarget.Equals(cardZone))
+                    {
+                        effectExtraDamage += cardeffect.Damage;
+                    }
+                }
                 //BuffDamageToCardAtZoneIfNameMatch
                 else if (cardeffect.type == CardEffectType.BuffThisCardDamageExistXAtZone)
                 {

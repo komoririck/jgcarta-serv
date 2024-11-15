@@ -91,6 +91,15 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     }
                 }
             }
+
+            if (_DuelAction.usedCard.cardNumber.Equals("hBP01-045")) {
+                List<Card> playerLife = cMatchRoom.currentPlayerTurn.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerALife : cMatchRoom.playerBLife;
+                if (playerLife.Count < 4) { 
+                validCardToBloom = FileReader.QueryBloomableCard(_DuelAction.targetCard.name, "1st");
+                validCardToBloom.AddRange(FileReader.QueryBloomableCard(_DuelAction.targetCard.name, "2nd"));
+                }
+            }
+
                 
             //if not break possible to bloom, break
             if (validCardToBloom.Count < 1)
@@ -188,7 +197,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     else
                         cMatchRoom.playerBHand.RemoveAt(handPos);
 
-                    checkBloomEffect();
                     break;
             }
 
@@ -236,10 +244,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 }
             }
 
-        }
-
-        private void checkBloomEffect()
-        {
         }
     }
 }

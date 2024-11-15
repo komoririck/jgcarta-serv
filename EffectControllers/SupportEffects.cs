@@ -294,7 +294,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
                         cMatchRoom.currentCardResolvingStage = "1";
 
-                        Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: true);
+                        Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
                         break;
                     case "hSD01-0201":
                         diceValue = diceList.Last();
@@ -614,7 +614,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
                         cMatchRoom.currentCardResolvingStage = "1";
 
-                        Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: false);
+                        Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
                         break;
                     case "hBP01-1121":
                         diceValue = diceList.Last();
@@ -670,7 +670,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
                         cMatchRoom.currentCardResolvingStage = "1";
 
-                        Lib.SendDiceRoll(cMatchRoom, diceValue, COUNTFORRESONSE: false);
+                        Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
                         break;
                     case "hBP01-1101":
                         diceValue = diceList.Last();

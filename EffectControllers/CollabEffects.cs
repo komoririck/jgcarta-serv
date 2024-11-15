@@ -311,25 +311,78 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     UseCardEffectDrawAnyAsync(cMatchRoom, 2, "hBP01-023");
                     ResetResolution();
                     break;
+
+                case "ccc":
+                    EnergyList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
+
+                    if (EnergyList.Count < 1)
+                    {
+                        ResetResolution();
+                        return;
+                    }
+
+                    tempHandList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
+
+                    listToSend = new();
+                    foreach (Card card in EnergyList)
+                    {
+                        card.GetCardInfo();
+                        if (card.color.Equals("白") || card.color.Equals("緑"))
+                            listToSend.Add(card);
+                    }
+
+                    if (listToSend.Count == 0)
+                    {
+                        ResetResolution();
+                        return;
+                    }
+
+                    //hold the card at resolving
+                    cMatchRoom.currentCardResolvingStage = "1";
+                    tempHandList.AddRange(listToSend);
+
+                    //send the info to the currentplayer so he can pick the card
+                    _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.options);
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
+                    //Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
+                    break;
+                case "ccc":
+                    if (!_DuelAction.actionObject.Equals("Yes"))
+                    {
+                        ResetResolution();
+                        return;
+                    }
+
+                    tempHandList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
+
+                    handler191 = new AttachRangeFromCheerEnergyToZoneHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
+                    await handler191.AttachRangeFromCheerEnergyToZoneHandleAsync(playerRequest, webSocket, true, false, false, tempHandList);
+                    ResetResolution();
+                    break;
+                    void ResetResolution()
+                    {
+                        if (cMatchRoom.extraInfo != null)
+                            cMatchRoom.extraInfo.Clear();
+
+                        cMatchRoom.currentCardResolving = "";
+                        cMatchRoom.currentCardResolvingStage = "";
+                        cMatchRoom.currentDuelActionResolvingRecieved.Clear();
+
+                        List<Card> temphand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
+                        temphand.Clear();
+
+                        List<int> diceRollList = cMatchRoom.currentPlayerTurn.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollList : cMatchRoom.playerBDiceRollList;
+                        diceRollList.Clear();
+                    }
                 default:
                     ResetResolution();
                     break;
             }
-            void ResetResolution()
-            {
-                if (cMatchRoom.extraInfo != null)
-                    cMatchRoom.extraInfo.Clear();
 
-                cMatchRoom.currentCardResolving = "";
-                cMatchRoom.currentCardResolvingStage = "";
-                cMatchRoom.currentDuelActionResolvingRecieved.Clear();
 
-                List<Card> temphand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
-                temphand.Clear();
 
-                List<int> diceRollList = cMatchRoom.currentPlayerTurn.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollList : cMatchRoom.playerBDiceRollList;
-                diceRollList.Clear();
-            }
+
         }
         internal static async Task OnCollabEffectResolutionAsync(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms, PlayerRequest playerRequest, WebSocket webSocket)
         {
@@ -347,6 +400,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             if (string.IsNullOrEmpty(cMatchRoom.currentCardResolving))
             {
                 Lib.WriteConsoleMessage("not card are current resolving");
+                return;
             }
 
             OnCollabEffectAsync(_DuelAction, cMatchRoom, playerRequest.playerID, playerRequest, webSocket);

@@ -190,5 +190,6 @@ public enum CardEffectType : byte
     BuffThisCardDamage = 3,
     BuffThisCardDamageExistXCOLORAtZone,
     FixedDiceRoll,
-    BuffZoneCardDamageExistXCOLORAtZone
+    BuffZoneCardDamageExistXCOLORAtZone,
+    BuffDamageToCardAtZoneIfHaveTag
 }
