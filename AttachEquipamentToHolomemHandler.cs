@@ -17,13 +17,15 @@ namespace hololive_oficial_cardgame_server
             this.matchRooms = matchRooms;
         }
 
-        internal async Task AttachEquipamentToHolomemHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
+        internal async Task AttachEquipamentToHolomemHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, string local = "Hand")
         {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
+            MatchRoom cMatchRoom = matchRooms[FindPlayerMatchRoom(matchRooms, playerRequest.playerID)];
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
+            if (Lib.CheckIfCardExistAtList(cMatchRoom, playerRequest.playerID, _DuelAction.usedCard.cardNumber, local) == -1) {
+                Lib.WriteConsoleMessage("Dont have this card to use it");
+                return;
+            }
 
             //validating usedCard
             if (_DuelAction.usedCard == null)
@@ -55,50 +57,13 @@ namespace hololive_oficial_cardgame_server
             Card stage = ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
             Card collab = ISFIRSTPLAYER ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
 
-
-            bool hasAttached = false;
-            _DuelAction.targetCard.GetCardInfo();
-            switch (_DuelAction.usedCard.cardNumber) {
-                case "hBP01-123":
-                    if (_DuelAction.targetCard.name.Equals("兎田ぺこら"))
-                        hasAttached = true;
-                    break;
-                case "hBP01-122":
-                    if (_DuelAction.targetCard.name.Equals("アキ・ローゼンタール"))
-                        hasAttached = true;
-                    break;
-                case "hBP01-126":
-                    if (_DuelAction.targetCard.name.Equals("尾丸ポルカ"))
-                        hasAttached = true;
-                    break;
-                case "hBP01-125":
-                    if (_DuelAction.targetCard.name.Equals("小鳥遊キアラ"))
-                        hasAttached = true;
-                    break;
-                case "hBP01-124":
-                    if (_DuelAction.targetCard.name.Equals("AZKi") || _DuelAction.targetCard.name.Equals("SorAZ"))
-                        hasAttached = true;
-                    break;
-                case "hBP01-121":
-                case "hBP01-120":
-                case "hBP01-119":
-                case "hBP01-118":
-                case "hBP01-117":
-                case "hBP01-115":
-                case "hBP01-114":
-                case "hBP01-116":
-                    hasAttached = !AlreadyAttachToThisHolomem(cMatchRoom, _DuelAction.usedCard.cardNumber, _DuelAction.usedCard.cardPosition);
-                    break;
-            }
-
-            hasAttached = true;
-
-            if (!hasAttached)
+            if (!Lib.CanBeAttached(cMatchRoom, _DuelAction.usedCard, _DuelAction.targetCard))
             {
                 Lib.WriteConsoleMessage("didnt match the criteria");
                 return;
             }
 
+            bool hasAttached = false;
             //checking if can attach
             if (stage != null)
                 if (_DuelAction.targetCard.cardNumber.Equals(stage.cardNumber) && _DuelAction.targetCard.cardPosition.Equals("Stage"))
@@ -141,38 +106,6 @@ namespace hololive_oficial_cardgame_server
 
             cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
             cMatchRoom.currentGamePhase = GAMEPHASE.RevolingAttachEffect;
-        }
-
-        private bool AlreadyAttachToThisHolomem(MatchRoom cMatchRoom, string cardNumber, string cardPosition)
-        {
-            bool ISFIRSTPLAYER = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer;
-
-            List<Card> backStage = ISFIRSTPLAYER ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
-            Card stage = ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
-            Card collab = ISFIRSTPLAYER ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
-
-            if (cardPosition.Equals("Stage")) {
-                foreach (Card card in stage.attachedEquipe) {
-                    if (card.cardNumber.Equals(cardNumber))
-                        return true; 
-                }
-            }
-            else if (cardPosition.Equals("Collaboration"))
-            {
-                foreach (Card card in collab.attachedEquipe)
-                {
-                    if (card.cardNumber.Equals(cardNumber))
-                        return true;
-                }
-            }
-            else { 
-                foreach (Card cardBs in backStage) { 
-                    foreach(Card card in cardBs.attachedEquipe)
-                        if (card.cardNumber.Equals(cardNumber))
-                            return true;
-                }
-            }
-            return false;
         }
     }
 }

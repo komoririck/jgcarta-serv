@@ -84,7 +84,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
             //cleaning effects that should end at the end of the turn
-            cMatchRoom.ActiveTurnEffects.Clear();
+            cMatchRoom.ActiveEffects.Clear();
 
             //string whichStep = cMatchRoom.currentGamePhase == GAMEPHASE.ResetStepReSetStage ? "ReSetStage" : "ResetStep";
 

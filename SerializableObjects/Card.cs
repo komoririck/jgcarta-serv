@@ -163,9 +163,9 @@ public class Card
 [Serializable]
 public class CardEffect
 {
-    internal int listIndex;
-    internal int diceRollValue;
-
+    public int diceRollValue = 0;
+    public int activatedTurn = 0;
+    public string cardTag;
     public string playerWhoUsedTheEffect { get; set; }
     public string playerWhoIsTheTargetOfEffect { get; set; }
     public string cardNumber { get; set; }
@@ -179,6 +179,10 @@ public class CardEffect
     //BuffThisCardDamageExistXAtZone
     public string ExistXAtZone_Name { get; set; }
     public string ExistXAtZone_Color { get; set; }
+    public int IncreaseCostAmount { get; internal set; }
+    //BuffDamageToCardAtZoneIfOtherCardNameAtZoneHaveTag
+    public string zoneThatShouldHaveTag { get; set; }
+    public string nameThatShouldntExistAtZone { get; set; }
 }
 
 [Flags]
@@ -191,5 +195,14 @@ public enum CardEffectType : byte
     BuffThisCardDamageExistXCOLORAtZone,
     FixedDiceRoll,
     BuffZoneCardDamageExistXCOLORAtZone,
-    BuffDamageToCardAtZoneIfHaveTag
+    BuffDamageToCardAtZoneIfHaveTag,
+    BuffDamageToCardAtZoneIfOtherCardNameAtZoneHaveTag,
+    BlockRetreat,
+    OneUseFixedDiceRoll,
+    ProtectFromOneLifeCostCharge,
+    IncreaseLifeCostIfDamageSurpassX,
+    BuffDamageToCardAtZoneMultiplyByBackstageCount,
+    BuffDamageToCardAtZoneIfHasATool,
+    BuffThisCardDamageIfAtZoneAndMultplyByCheer,
+    BuffDamageToCardAtZoneMultiplyByAmountOfToolAtYourSide
 }

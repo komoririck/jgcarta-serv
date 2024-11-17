@@ -1,4 +1,6 @@
 ﻿using hololive_oficial_cardgame_server.EffectControllers;
+using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
+using System.Linq;
 using System.Text.Json;
 
 namespace hololive_oficial_cardgame_server.SerializableObjects
@@ -83,7 +85,7 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
             int baseDamage = 0;
             bool _AreColorRequirementsMet = AreColorRequirementsMet(colorCount, attackingCard.attachedEnergy);
 
-            List<CardEffect> currentActivatedTurnEffect = matchRoom.ActiveTurnEffects;
+            List<CardEffect> currentActivatedTurnEffect = matchRoom.ActiveEffects;
 
             currentActivatedTurnEffect.AddRange(attackingCard.OnAttackEffects);
             currentActivatedTurnEffect.AddRange(AttackedCard.OnAttackEffects);
@@ -107,6 +109,90 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
                         effectExtraDamage += cardeffect.Damage;
                     }
                 }
+                else if (cardeffect.type == CardEffectType.BuffDamageToCardAtZoneMultiplyByBackstageCount) {
+                    if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
+                        continue;
+
+                    if (!(cardeffect.playerWhoIsTheTargetOfEffect.Equals(playerWhoWasTargeted)))
+                        continue;
+                    //if this card is in the zone that the effect is active
+                    if (cardeffect.zoneTarget.Equals(cardZone))
+                    {
+                        int mulplier = cardeffect.playerWhoIsTheTargetOfEffect.Equals(matchRoom.firstPlayer) ? matchRoom.playerABackPosition.Count : matchRoom.playerBBackPosition.Count;
+                        effectExtraDamage += cardeffect.Damage * mulplier;
+                    }
+                }
+                else if (cardeffect.type == CardEffectType.BuffDamageToCardAtZoneIfHasATool)
+                {
+                    if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
+                        continue;
+
+                    if (!(cardeffect.playerWhoIsTheTargetOfEffect.Equals(playerWhoWasTargeted)))
+                        continue;
+
+                    bool hasTool = false;
+                    foreach (Card card in attackingCard.attachedEquipe) {
+                        if (card.cardType.Equals("サポート・ツール")) { 
+                            hasTool = true;
+                            break;
+                        }
+                    }
+                    
+                    if (cardeffect.zoneTarget.Equals(cardZone) && hasTool)
+                    {
+                        effectExtraDamage += cardeffect.Damage;
+                    }
+                }
+                else if (cardeffect.type == CardEffectType.BuffDamageToCardAtZoneMultiplyByAmountOfToolAtYourSide)
+                {
+                    if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
+                        continue;
+
+                    if (!(cardeffect.playerWhoIsTheTargetOfEffect.Equals(playerWhoWasTargeted)))
+                        continue;
+
+                    if (cardeffect.zoneTarget.Equals(cardZone))
+                    {
+                        int mulplier = 0;
+                        Card stage = cardeffect.playerWhoIsTheTargetOfEffect.Equals(matchRoom.firstPlayer) ? matchRoom.playerAStage : matchRoom.playerBStage;
+                        Card collab = cardeffect.playerWhoIsTheTargetOfEffect.Equals(matchRoom.firstPlayer) ? matchRoom.playerACollaboration : matchRoom.playerBCollaboration;
+                        List<Card> backstage = cardeffect.playerWhoIsTheTargetOfEffect.Equals(matchRoom.firstPlayer) ? matchRoom.playerABackPosition : matchRoom.playerBBackPosition;
+
+                        foreach (Card card in stage.attachedEquipe) 
+                        {
+                            if (card.cardType.Equals("サポート・ツール"))
+                                mulplier++;
+                        }
+                        foreach (Card card in collab.attachedEquipe)
+                        {
+                            if (card.cardType.Equals("サポート・ツール"))
+                                mulplier++;
+                        }
+                        foreach (Card card in backstage) {
+                            foreach (Card cardEquip in card.attachedEquipe)
+                            {
+                                if (card.cardType.Equals("サポート・ツール"))
+                                    mulplier++;
+                            }
+                        }
+
+                        effectExtraDamage += cardeffect.Damage * mulplier;
+                    }
+                }
+                else if (cardeffect.type == CardEffectType.BuffThisCardDamageIfAtZoneAndMultplyByCheer)
+                {
+                    if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
+                        continue;
+
+                    if (!(cardeffect.playerWhoIsTheTargetOfEffect.Equals(playerWhoWasTargeted)))
+                        continue;
+
+                    if (cardeffect.zoneTarget.Equals(cardZone))
+                    {
+                        int mulplier = Math.Min(attackingCard.attachedEnergy.Count, 5);
+                        effectExtraDamage += cardeffect.Damage * mulplier;
+                    }
+                }
                 else if (cardeffect.type == CardEffectType.BuffDamageToCardAtZoneIfHaveTag)
                 {
                     if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
@@ -115,9 +201,30 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
                     if (!(cardeffect.playerWhoIsTheTargetOfEffect.Equals(playerWhoWasTargeted)))
                         continue;
 
-                    if (!attackingCard.cardTag.Contains("#promise"))
+                    if (!attackingCard.cardTag.Contains(cardeffect.cardTag))
                         continue;
 
+                    //if this card is in the zone that the effect is active
+                    if (cardeffect.zoneTarget.Equals(cardZone))
+                    {
+                        effectExtraDamage += cardeffect.Damage;
+                    }
+                }
+                else if (cardeffect.type == CardEffectType.BuffDamageToCardAtZoneIfOtherCardNameAtZoneHaveTag)
+                {
+                    if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
+                        continue;
+
+                    if (!(cardeffect.playerWhoIsTheTargetOfEffect.Equals(playerWhoWasTargeted)))
+                        continue;
+
+                    if (cardeffect.zoneThatShouldHaveTag.Equals("Stage"))
+                    {
+                        Card stage = cardeffect.playerWhoIsTheTargetOfEffect.Equals(matchRoom.firstPlayer) ? matchRoom.playerAStage : matchRoom.playerBStage;
+                        if (!(!cardeffect.nameThatShouldntExistAtZone.Equals(stage.name) && stage.cardTag.Contains(cardeffect.cardTag))) {
+                            continue;
+                        }
+                    }
                     //if this card is in the zone that the effect is active
                     if (cardeffect.zoneTarget.Equals(cardZone))
                     {

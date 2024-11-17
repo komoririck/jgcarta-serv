@@ -63,7 +63,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
            
             //checking if the player has the card in the hand and getting the pos
-            int handPos = Lib.CheckIfCardExistInPlayerHand(cMatchRoom, playerRequest.playerID, _DuelAction.usedCard.cardNumber);
+            int handPos = Lib.CheckIfCardExistAtList(cMatchRoom, playerRequest.playerID, _DuelAction.usedCard.cardNumber);
             if (handPos == -1)
             {
                 Lib.PrintPlayerHand(cMatchRoom);

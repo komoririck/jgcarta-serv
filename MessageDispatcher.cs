@@ -131,13 +131,21 @@ namespace hololive_oficial_cardgame_server
                         cMatchRoom.playerBUsedSupportThisTurn = false;
                     }
 
+                    cMatchRoom.currentTurn++;
+
                     cMatchRoom.currentPlayerTurn = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.secondPlayer : cMatchRoom.firstPlayer;
                     cMatchRoom.currentGamePhase = GAMEPHASE.ResetStep;
                     cMatchRoom.centerStageArtUsed = false;
                     cMatchRoom.collabStageArtUsed = false;
 
-                    cMatchRoom.ActiveTurnEffects.Clear();
-                    cMatchRoom.GenerateArtEffectData(EFFECTTYPE.Turn);
+                    cMatchRoom.ActiveEffects.Clear();
+                    List<CardEffect> tempEffectList = new List<CardEffect>();
+                    foreach (var effect in cMatchRoom.ActiveEffects) {
+                        if (cMatchRoom.currentTurn < effect.activatedTurn)
+                            tempEffectList.Add(effect);
+                    }
+                    cMatchRoom.ActiveEffects.Clear();
+                    cMatchRoom.ActiveEffects = tempEffectList;
 
                     Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
                     Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
@@ -204,6 +212,12 @@ namespace hololive_oficial_cardgame_server
 
                     //since retreated, cannot use art anymore
                     cMatchRoom.centerStageArtUsed = true;
+
+                    if (Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.targetCard.cardPosition) || Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.usedCard.cardPosition))
+                    {
+                        Lib.WriteConsoleMessage("Cannot retreat by effect");
+                        return;
+                    }
 
                     Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, playerRequest.playerID, _DuelAction.targetCard);
 

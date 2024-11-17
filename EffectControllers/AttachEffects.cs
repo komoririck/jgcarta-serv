@@ -44,7 +44,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     case "hBP01-125":
                         string SelectedCard = _DuelAction.actionObject;
 
-                        int n = Lib.CheckIfCardExistInPlayerHand(cMatchRoom, cMatchRoom.currentPlayerTurn, SelectedCard);
+                        int n = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, SelectedCard);
                         if (n > -1)
                         {
                             DuelAction duelAction = new() {

@@ -17,7 +17,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             this.matchRooms = matchRooms;
         }
 
-        internal async Task AttachRangeFromCheerEnergyToZoneHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, bool stage, bool collab, bool back, List<Card> tempHandList)
+        internal async Task AttachRangeFromCheerEnergyToZoneHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, bool stage, bool collab, bool back)
         {
             int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
             MatchRoom cMatchRoom = matchRooms[matchnumber];
