@@ -79,15 +79,14 @@ public class Card
 
     public Card GetCardInfo(bool forceUpdate = false)
     {
+        if (cardNumber.Equals("0") || string.IsNullOrEmpty(cardNumber))
+            return null;
 
         if (!string.IsNullOrEmpty(cardType) && !forceUpdate)
             return null;
 
-        if (cardNumber.Equals("0") || string.IsNullOrEmpty(cardNumber))
-            return null;
+        Record record = FileReader.result[this.cardNumber];
 
-        foreach (Record record in FileReader.result)
-        {
             if (record.CardNumber == this.cardNumber)
             {
                 cardNumber = record.CardNumber;
@@ -112,7 +111,7 @@ public class Card
                     Arts.Add(Art.ParseArtFromString(art));
                 }
             }
-        }
+        
         return this;
     }
     public Card SetCardNumber(string numnber)

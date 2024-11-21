@@ -8,66 +8,55 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class ResolveArtDamageHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-
-        public ResolveArtDamageHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task ResolveArtDamageHandleAsync(PlayerRequest playerRequest)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
+            MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(playerRequest.playerID);
 
-        internal async Task ResolveArtDamageHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
-            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
-            DuelAction LastDuelAction = (DuelAction)cMatchRoom.extraInfo[0];
-
-            Card currentOponnentCard = null;
-
-            Card currentStageOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBStage : cMatchRoom.playerAStage;
-            Card currentCollabOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBCollaboration : cMatchRoom.playerACollaboration;
-
-            bool validCard = false;
-            if (currentStageOponnentCard.cardNumber.Equals(LastDuelAction.targetCard.cardNumber))
-            {
-                currentOponnentCard = currentStageOponnentCard;
-                validCard = true;
-            }
+            if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
+                cMatchRoom.playerAResolveConfirmation = true;
             else
-            if (currentCollabOponnentCard.cardNumber.Equals(LastDuelAction.targetCard.cardNumber))
-            {
-                currentOponnentCard = currentCollabOponnentCard;
-                validCard = true;
-            }
+                cMatchRoom.playerBResolveConfirmation = true;
 
-            if (!validCard)
+            if (!(cMatchRoom.playerBResolveConfirmation && cMatchRoom.playerAResolveConfirmation))
                 return;
 
-            if (_DuelAction.actionObject.Equals("false"))
+            cMatchRoom.BeingTargetedForAttackCard.GetCardInfo();
+
+            ResolveOnDamageStepEffects(cMatchRoom);
+
+            cMatchRoom.BeingTargetedForAttackCard.currentHp -= cMatchRoom.currentArtDamage;
+            cMatchRoom.BeingTargetedForAttackCard.currentHp -= cMatchRoom.currentEffectDamage;
+            cMatchRoom.BeingTargetedForAttackCard.normalDamageRecieved += cMatchRoom.currentArtDamage;
+            cMatchRoom.BeingTargetedForAttackCard.effectDamageRecieved += cMatchRoom.currentEffectDamage;
+
+            if (int.Parse(cMatchRoom.BeingTargetedForAttackCard.hp) + cMatchRoom.BeingTargetedForAttackCard.currentHp < 1)
             {
-
-                int damage = cMatchRoom.currentArtDamage;
-
-                currentOponnentCard.currentHp -= damage;
-                currentOponnentCard.normalDamageRecieved += damage;
-                currentOponnentCard.GetCardInfo();
-
-                if (int.Parse(currentOponnentCard.hp) <= -1 * currentOponnentCard.currentHp)
-                {
-                    List<Card> arquive = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
-                    Lib.DefeatedHoloMemberAsync(arquive, currentOponnentCard, cMatchRoom, true, LastDuelAction);
-                }
-                else
-                {
-                    var pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveDamageToHolomem", requestObject = JsonSerializer.Serialize(LastDuelAction, Lib.options) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
-                }
-                cMatchRoom.extraInfo.Clear();
+                List<Card> arquive = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
+                Lib.DefeatedHoloMemberAsync(arquive, cMatchRoom.BeingTargetedForAttackCard, cMatchRoom, cMatchRoom.currentPlayerTurn);
             }
+            else
+            {
+                DuelAction _DuelAction = new() { playerID = cMatchRoom.currentPlayerTurn, targetCard = cMatchRoom.BeingTargetedForAttackCard, actionObject = cMatchRoom.currentArtDamage.ToString() ?? cMatchRoom.currentEffectDamage.ToString() };
+                var pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
+            }
+
+            //reset information
+            cMatchRoom.playerAResolveConfirmation = false;
+            cMatchRoom.playerBResolveConfirmation = false;
+
+            cMatchRoom.ResolvingArt = null;
+            cMatchRoom.currentArtDamage = 0;
+            cMatchRoom.currentEffectDamage = 0;
+
+            cMatchRoom.DeclaringAttackCard = null;
+            cMatchRoom.BeingTargetedForAttackCard = null;
+        }
+
+        private void ResolveOnDamageStepEffects(MatchRoom cMatchRoom)
+        {
+            //resolve the effects that was add when attaccking
         }
     }
 }

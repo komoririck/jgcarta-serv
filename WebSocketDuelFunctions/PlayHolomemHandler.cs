@@ -7,37 +7,22 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class PlayHolomemHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
         private PlayerRequest _ReturnData;
 
         bool TESTEMODE = true;
 
-        public PlayHolomemHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task MainDoActionRequestPlayHolomemHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task MainDoActionRequestPlayHolomemHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
             
-            if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo();
-            if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo();
-            if (_DuelAction.cheerCostCard != null)
-                _DuelAction.cheerCostCard.GetCardInfo();
+                _DuelAction.targetCard?.GetCardInfo();
+                _DuelAction.usedCard?.GetCardInfo();
+                _DuelAction.cheerCostCard?.GetCardInfo();
 
             List<Record> avaliableCards = FileReader.QueryRecords(null, null, null, _DuelAction.usedCard.cardNumber);
 
             if (TESTEMODE)
-                avaliableCards = FileReader.result;
+                avaliableCards = FileReader.result.AsQueryable().Select(r => r.Value).ToList();
 
             //if not break
             if (_DuelAction.usedCard.cardPosition.Equals("Collaboration") )
@@ -150,15 +135,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
             _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
-            Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
-            Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
 
             cMatchRoom.currentGameHigh++;
-        }
-
-        internal async Task ResolveArtDamageHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            throw new NotImplementedException();
         }
     }
 }

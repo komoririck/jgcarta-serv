@@ -4,25 +4,17 @@ using System.Net.WebSockets;
 using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 using System.Text.Json;
 
-namespace hololive_oficial_cardgame_server
+namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class AttachEquipamentToHolomemHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-
-        public AttachEquipamentToHolomemHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task AttachEquipamentToHolomemHandleAsync(PlayerRequest playerRequest, string local = "Hand")
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task AttachEquipamentToHolomemHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, string local = "Hand")
-        {
-            MatchRoom cMatchRoom = matchRooms[FindPlayerMatchRoom(matchRooms, playerRequest.playerID)];
+            MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(playerRequest.playerID);
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-            if (Lib.CheckIfCardExistAtList(cMatchRoom, playerRequest.playerID, _DuelAction.usedCard.cardNumber, local) == -1) {
+            if (Lib.CheckIfCardExistAtList(cMatchRoom, playerRequest.playerID, _DuelAction.usedCard.cardNumber, local) == -1)
+            {
                 Lib.WriteConsoleMessage("Dont have this card to use it");
                 return;
             }
@@ -34,7 +26,7 @@ namespace hololive_oficial_cardgame_server
                 return;
             }
 
-            _DuelAction.usedCard.GetCardInfo();
+            _DuelAction.usedCard?.GetCardInfo();
 
             if (!(_DuelAction.usedCard.cardType.Equals("サポート・ツール") || _DuelAction.usedCard.cardType.Equals("サポート・マスコット") || _DuelAction.usedCard.cardType.Equals("サポート・ファン")))
             {
@@ -48,7 +40,7 @@ namespace hololive_oficial_cardgame_server
                 Lib.WriteConsoleMessage("targetCard is null ");
                 return;
             }
-            _DuelAction.targetCard.GetCardInfo();
+            _DuelAction.targetCard?.GetCardInfo();
 
 
             bool ISFIRSTPLAYER = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer;
@@ -94,15 +86,16 @@ namespace hololive_oficial_cardgame_server
                     }
                 }
 
-            if (!hasAttached) { 
+            if (!hasAttached)
+            {
                 Lib.WriteConsoleMessage($"Error: failled to equipe at {_DuelAction.targetCard.cardPosition}.");
                 return;
             }
 
             PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachSupportItem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer], _ReturnData);
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
 
             cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
             cMatchRoom.currentGamePhase = GAMEPHASE.RevolingAttachEffect;

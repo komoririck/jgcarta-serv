@@ -1,5 +1,6 @@
 ﻿
 using hololive_oficial_cardgame_server.SerializableObjects;
+using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
 using System.Net.WebSockets;
 using System.Text.Json;
 using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
@@ -69,8 +70,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
             bool energyPaid = false;
 
-                _DuelAction.targetCard.GetCardInfo();
-                _DuelAction.usedCard.GetCardInfo();
+                _DuelAction.targetCard?.GetCardInfo();
+                _DuelAction.usedCard?.GetCardInfo();
                 _DuelAction.cheerCostCard.GetCardInfo();
 
             //ensure that we have a resolving card, if we have dont need to use
@@ -374,8 +375,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         case "hBP01-0031":
                             cMatchRoom.ShuffleCards(playerDeck);
                             Lib.SendPlayerData(cMatchRoom, false, new() { playerID = playerRequest.playerID}, "SuffleDeck");
-                            var handler151 = new AttachEquipamentToHolomemHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                            await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest, webSocket, "Deck");
+                            var handler151 = new AttachEquipamentToHolomemHandler();
+                            await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest, "Deck");
                             break;
                     }
                 }
@@ -435,14 +436,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 playerHand.RemoveAt(indexInHand);
             }
 
-            if (cMatchRoom.extraInfo != null)
-                cMatchRoom.extraInfo.Clear();
-
             cMatchRoom.currentCardResolving = "";
             cMatchRoom.currentCardResolvingStage = "";
 
             List<Card> temphand = ISFIRSTPLAYER ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
-            cMatchRoom.currentDuelActionResolvingRecieved.Clear();
+            cMatchRoom.ResolvingEffectChain.Clear();
             cMatchRoom.currentGameHigh++;
 
             cMatchRoom.currentGamePhase = GAMEPHASE.MainStep;

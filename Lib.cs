@@ -45,28 +45,23 @@ namespace hololive_oficial_cardgame_server
             return amount;
         }
 
-        static public async Task EndDuelAsync(MatchRoom matchRoom, string pickWinner = "")
+        static public async Task EndDuelAsync(MatchRoom cMatchRoom, string pickWinner = "")
         {
-            //just for safety, lets get the id room to remove again in the bottom, we got a problem that when a exception occours, the room wanst being removed from the list
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(MessageDispatcher._MatchRooms, matchRoom.firstPlayer);
+            string PlayerWinner = (string.IsNullOrEmpty(pickWinner)) ? cMatchRoom.currentPlayerTurn : pickWinner;
+            string oponnent = GetOtherPlayer(cMatchRoom, PlayerWinner);
 
-            string currentPlayerTurn = matchRoom.currentPlayerTurn;
-            if (string.IsNullOrEmpty(pickWinner))
-                currentPlayerTurn = pickWinner;
-
-            string oponnent = GetOtherPlayer(matchRoom, currentPlayerTurn);
-            DuelAction _duelaction = new();
-            _duelaction.actionType = "Victory";
-            _duelaction.playerID = currentPlayerTurn.ToString();
+            DuelAction _duelaction = new() {
+                actionType = "Victory",
+                playerID = PlayerWinner,
+            };
 
             PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "Endduel", requestObject = JsonSerializer.Serialize(_duelaction, options) };
 
-
-            await SendMessage(MessageDispatcher.playerConnections[currentPlayerTurn.ToString()], _ReturnData);
-            await SendMessage(MessageDispatcher.playerConnections[oponnent.ToString()], _ReturnData);
+            await SendMessage(MessageDispatcher.playerConnections[PlayerWinner], _ReturnData);
+            await SendMessage(MessageDispatcher.playerConnections[oponnent], _ReturnData);
 
             //we need to update the socket, so the players can be paired or enter the pool again
-            bool isPlayersnew = new DBConnection().SetWinnerForMatch(currentPlayerTurn, oponnent);
+            bool isPlayersnew = new DBConnection().SetWinnerForMatch(PlayerWinner, oponnent);
 
             if (!isPlayersnew)
                 throw new Exception("Error while removing players from the lock status in the database");
@@ -74,27 +69,26 @@ namespace hololive_oficial_cardgame_server
             //continue to remove players from the websocketlist
             try
             {
-                if (matchnumber > -1)
+                if (cMatchRoom != null)
                 {
-                    MessageDispatcher._MatchRooms[matchnumber].StopTimer(MessageDispatcher._MatchRooms[matchnumber].firstPlayer);
-                    MessageDispatcher._MatchRooms[matchnumber].StopTimer(MessageDispatcher._MatchRooms[matchnumber].secondPlayer);
-                    MessageDispatcher._MatchRooms.RemoveAt(matchnumber);
+                    cMatchRoom.StopTimer(cMatchRoom.firstPlayer);
+                    cMatchRoom.StopTimer(cMatchRoom.secondPlayer);
+                    MatchRoom.RemoveRoom(cMatchRoom);
                 }
 
-                if (MessageDispatcher.playerConnections.TryGetValue(currentPlayerTurn.ToString(), out var currentPlayerConnection))
+                if (MessageDispatcher.playerConnections.TryGetValue(PlayerWinner.ToString(), out var currentPlayerConnection))
                 {
                     try
                     {
                         if (currentPlayerConnection.State != WebSocketState.Closed) { }
-                        //                        await currentPlayerConnection.CloseAsync(WebSocketCloseStatus.NormalClosure,"Closing connection",CancellationToken.None);
                     }
                     catch (WebSocketException ex)
                     {
                         // Handle the exception, log it, or notify the user
-                        Debug.WriteLine($"Error closing connection for {currentPlayerTurn}: {ex.Message}");
+                        Debug.WriteLine($"Error closing connection for {PlayerWinner}: {ex.Message}");
                     }
-                    MessageDispatcher.playerConnections[currentPlayerTurn.ToString()].Dispose();
-                    MessageDispatcher.playerConnections.TryRemove(currentPlayerTurn.ToString(), out _);
+                    MessageDispatcher.playerConnections[PlayerWinner.ToString()].Dispose();
+                    MessageDispatcher.playerConnections.TryRemove(PlayerWinner.ToString(), out _);
                 }
 
                 if (MessageDispatcher.playerConnections.TryGetValue(oponnent.ToString(), out var opponentConnection))
@@ -102,7 +96,6 @@ namespace hololive_oficial_cardgame_server
                     try
                     {
                         if (opponentConnection.State != WebSocketState.Closed) { }
-                        //                            await opponentConnection.CloseAsync(WebSocketCloseStatus.NormalClosure,"Closing connection",CancellationToken.None);
                     }
                     catch (WebSocketException ex)
                     {
@@ -314,7 +307,7 @@ namespace hololive_oficial_cardgame_server
         }
 
 
-        static public async Task DefeatedHoloMemberAsync(List<Card> arquive, Card currentOponnentCard, MatchRoom cMatchRoom, bool result, DuelAction _Duelaction)
+        static public async Task DefeatedHoloMemberAsync(List<Card> arquive, Card currentOponnentCard, MatchRoom cMatchRoom, string playerWhoDealDamage)
         {
             cMatchRoom.cheersAssignedThisChainTotal = GetDownneedCheerAmount(currentOponnentCard.cardNumber);
 
@@ -328,13 +321,8 @@ namespace hololive_oficial_cardgame_server
             arquive.AddRange(currentOponnentCard.bloomChild);
             arquive.Add(currentOponnentCard);
 
-            DuelAction _duelaction = _Duelaction;
-            _duelaction.actionType = "DefeatedHoloMember";
-            _duelaction.playerID = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn);
-            _duelaction.targetCard = currentOponnentCard;
 
-
-            string otherPlayer = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn);
+            string otherPlayer = GetOtherPlayer(cMatchRoom, playerWhoDealDamage);
 
             if (otherPlayer.Equals(cMatchRoom.firstPlayer))
             {
@@ -360,13 +348,23 @@ namespace hololive_oficial_cardgame_server
                 }
             }
 
-            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DefeatedHoloMember", requestObject = JsonSerializer.Serialize(_duelaction, options) }; /// mudei o targeto aqui de _DuelAction para duelaction, conferir dps
+            DuelAction _duelaction = new DuelAction()
+            {
+                playerID = otherPlayer,
+                targetCard = currentOponnentCard,
+            };
+
+            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DefeatedHoloMember", requestObject = JsonSerializer.Serialize(_duelaction, options) };
 
             cMatchRoom.currentGamePhase = GAMEPHASE.HolomemDefeated;
 
             //assign the values need to check if the user win the duel
-            List<Card> attackedPlayerBackStage = _duelaction.playerID == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
-            List<Card> attackedPlayerLife = _duelaction.playerID == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerALife : cMatchRoom.playerBLife;
+            List<Card> attackedPlayerBackStage = _duelaction.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
+            List<Card> attackedPlayerLife = _duelaction.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerALife : cMatchRoom.playerBLife;
+
+            // if the player didnt win the duel, awnser the player to get his new cheer
+            SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
+            SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
 
             if (attackedPlayerLife.Count == 1)
             {
@@ -379,9 +377,6 @@ namespace hololive_oficial_cardgame_server
                 _ = EndDuelAsync(cMatchRoom);
                 return;
             }
-            // if the player didnt win the duel, awnser the player to get his new cheer
-            SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
-            SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
         }
 
         static private int GetDownneedCheerAmount(string cardNumber)

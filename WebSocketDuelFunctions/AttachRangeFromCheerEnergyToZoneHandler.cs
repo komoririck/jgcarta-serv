@@ -7,29 +7,16 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class AttachRangeFromCheerEnergyToZoneHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-        private int energyIndex;
-
-        public AttachRangeFromCheerEnergyToZoneHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task AttachRangeFromCheerEnergyToZoneHandleAsync(PlayerRequest playerRequest, bool stage, bool collab, bool back)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
+            MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(playerRequest.playerID);
+            int energyIndex;
 
-        internal async Task AttachRangeFromCheerEnergyToZoneHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, bool stage, bool collab, bool back)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
+        DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
-
-            if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo();
-            if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo();
-            if (_DuelAction.cheerCostCard != null)
-                _DuelAction.cheerCostCard.GetCardInfo();
+                _DuelAction.targetCard?.GetCardInfo();
+                _DuelAction.usedCard?.GetCardInfo();
+                _DuelAction.cheerCostCard?.GetCardInfo();
 
             //temphand
             List<Card> playertemphand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
@@ -75,8 +62,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //lest send to player AttachEnergyResponse since is generic
             PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
         }
     }
 }

@@ -8,20 +8,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class CheerRequestHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-
-        public CheerRequestHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task CheerRequestHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task CheerRequestHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                 return;
 
@@ -41,18 +29,18 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     Lib.getCardFromDeck(cMatchRoom.playerACardCheer, cMatchRoom.playerAHand, 1);
                     cardCheerDraw.cardList = new List<Card>() { cMatchRoom.playerAHand[cMatchRoom.playerAHand.Count - 1] };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
 
                     cardCheerDraw.cardList = new List<Card>() { new Card() };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }
                 else
                 {
                     cardCheerDraw.cardList = new List<Card>() { new Card("Empty")};
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }
             }
             else
@@ -62,18 +50,18 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     Lib.getCardFromDeck(cMatchRoom.playerBCardCheer, cMatchRoom.playerBHand, 1);
                     cardCheerDraw.cardList = new List<Card>() { cMatchRoom.playerBHand[cMatchRoom.playerBHand.Count - 1] };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
 
                     cardCheerDraw.cardList = new List<Card>() { new Card() };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
                 }
                 else
                 {
                     cardCheerDraw.cardList = new List<Card>() { new Card("Empty") };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }
             }
 

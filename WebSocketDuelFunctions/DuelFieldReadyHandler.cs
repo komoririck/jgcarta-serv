@@ -8,20 +8,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class DuelFieldReadyHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-
-        public DuelFieldReadyHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task DuelFieldReadyHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task DuelFieldReadyHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             DuelFieldData _DuelFieldDataA = new();
             DuelFieldData _DuelFieldDataB = new();
 
@@ -31,12 +19,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
             {
-                FirstGameBoardSetup(_duelFieldData, playerRequest.playerID, cMatchRoom, MessageDispatcher.CardList, _duelFieldData.playerAStage, _duelFieldData.playerABackPosition);
+                FirstGameBoardSetup(_duelFieldData, playerRequest.playerID, cMatchRoom, _duelFieldData.playerAStage, _duelFieldData.playerABackPosition);
                 cMatchRoom.StopTimer(playerRequest.playerID);
             }
             else
             {
-                FirstGameBoardSetup(_duelFieldData, playerRequest.playerID, cMatchRoom, MessageDispatcher.CardList, _duelFieldData.playerBStage, _duelFieldData.playerBBackPosition);
+                FirstGameBoardSetup(_duelFieldData, playerRequest.playerID, cMatchRoom, _duelFieldData.playerBStage, _duelFieldData.playerBBackPosition);
                 cMatchRoom.StopTimer(playerRequest.playerID);
             }
 
@@ -71,10 +59,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             //since we were able to update the users table to lock the match, send both players to the match
             pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DuelUpdate", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) };
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
 
             pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DuelUpdate", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) }; 
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
             //update the room phase, so the server can take it automaticaly from here
             cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
@@ -84,7 +72,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             cMatchRoom.StartOrResetTimer(cMatchRoom.currentPlayerTurn.ToString(), enduel => Lib.EndDuelAsync(cMatchRoom, MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)));
         }
 
-        bool FirstGameBoardSetup(DuelFieldData _duelFieldData, string playerid, MatchRoom matchroom, List<Record> AllCardList, Card playerStage, List<Card> playerBackStage)
+        bool FirstGameBoardSetup(DuelFieldData _duelFieldData, string playerid, MatchRoom matchroom, Card playerStage, List<Card> playerBackStage)
         {
 
 

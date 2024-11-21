@@ -6,34 +6,11 @@ using hololive_oficial_cardgame_server.SerializableObjects;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
-    internal class MainDoActionRequestDoArtHandler
+    internal class DoArtHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-        private DuelAction _DuelAction;
-        private PlayerRequest pReturnData;
-
-
-
-
-        public MainDoActionRequestDoArtHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task DoArtHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task MainDoActionRequestDoArtHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            Card currentCollabOponnentCard = null;
-            Card currentOponnentCard = null;
-            Card currentStageOponnentCard = null;
-
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
-            _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
-
-
+            DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             switch (_DuelAction.usedCard.cardNumber)
             {
@@ -49,66 +26,65 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             bool validCard = false;
 
             if (_DuelAction.usedCard.cardPosition.Equals("Stage"))
-                if (currentStageCard.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
+                if (currentStageCard.cardNumber.Equals(_DuelAction.usedCard.cardNumber)) 
+                { 
+                    cMatchRoom.DeclaringAttackCard = currentStageCard;
                     validCard = true;
+                }
 
 
             if (_DuelAction.usedCard.cardPosition.Equals("Collaboration"))
                 if (currentCollabCard.cardNumber.Equals(_DuelAction.usedCard.cardNumber))
+                {
+                    cMatchRoom.DeclaringAttackCard = currentCollabCard;
                     validCard = true;
+                }
 
 
             if ((_DuelAction.usedCard.cardPosition.Equals("Stage") && cMatchRoom.centerStageArtUsed) || (_DuelAction.usedCard.cardPosition.Equals("Collaboration") && cMatchRoom.collabStageArtUsed))
                 validCard = false;
-
 
             if (!validCard)
                 return;
 
             validCard = false;
 
-            currentStageOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBStage : cMatchRoom.playerAStage;
-            currentCollabOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBCollaboration : cMatchRoom.playerACollaboration;
+            Card currentStageOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBStage : cMatchRoom.playerAStage;
+            Card currentCollabOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBCollaboration : cMatchRoom.playerACollaboration;
 
             if (currentStageOponnentCard.cardNumber.Equals(_DuelAction.targetCard.cardNumber))
             {
-                currentOponnentCard = currentStageOponnentCard;
+                cMatchRoom.BeingTargetedForAttackCard = currentStageOponnentCard;
                 validCard = true;
             }
             else if (currentCollabOponnentCard != null)
             {
                 if (currentCollabOponnentCard.cardNumber.Equals(_DuelAction.targetCard.cardNumber))
                 {
-                    currentOponnentCard = currentCollabOponnentCard;
+                    cMatchRoom.BeingTargetedForAttackCard = currentCollabOponnentCard;
                     validCard = true;
                 }
             }
 
-
             if (!validCard)
                 return;
-
-            Art usedArt = new();
-
-            _DuelAction.targetCard.GetCardInfo();
-            _DuelAction.usedCard.GetCardInfo();
 
             foreach (Art art in _DuelAction.usedCard.Arts)
             {
                 if (art.Name.Equals(_DuelAction.selectedSkill))
                 {
-                    usedArt = art;
+                    cMatchRoom.ResolvingArt = art;
                     break;
                 }
             }
 
-            //check the attacking effect
-            cMatchRoom.currentArtResolving = usedArt;
-            cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
+            if (cMatchRoom.DeclaringAttackCard.cardPosition.Equals("Stage"))
+                cMatchRoom.centerStageArtUsed = true;
 
-            cMatchRoom.extraInfo.Add(JsonSerializer.Serialize(_DuelAction, Lib.options));
+            if (cMatchRoom.DeclaringAttackCard.cardPosition.Equals("Collaboration"))
+                cMatchRoom.collabStageArtUsed = true;
 
-            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ActiveArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ActiveArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
 
             cMatchRoom.currentGameHigh++;

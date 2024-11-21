@@ -8,22 +8,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class CheerChooseRequestHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-        private object _DuelAction;
         private PlayerRequest _ReturnData;
 
-        public CheerChooseRequestHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task CheerChooseRequestHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task CheerChooseRequestHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
             //we need to check the cheer count to see if the player can draw and assign a cheer, if he cant, the client send the call with no information, so we need to skip the validations
@@ -68,8 +56,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
             _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "CheerStepEnd", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
 
             cMatchRoom.currentGamePhase = GAMEPHASE.MainStep;
             cMatchRoom.currentGameHigh++;

@@ -9,23 +9,13 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     class AskForMulliganHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-
-        public AskForMulliganHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        public async Task AskForMulliganHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-        public async Task AskForMulliganHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer) && cMatchRoom.PAMulliganAsked)
             {
                 return;
             }
+
             else if (playerRequest.playerID.Equals(cMatchRoom.secondPlayer) && cMatchRoom.PBMulliganAsked)
             {
                 return;
@@ -38,12 +28,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer) && !cMatchRoom.PAMulliganAsked)
             {
-                await HandleMulligan(cMatchRoom, true, playerRequest, playerConnections[cMatchRoom.firstPlayer.ToString()], playerConnections[cMatchRoom.secondPlayer.ToString()]);
+                await HandleMulligan(cMatchRoom, true, playerRequest, MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()]);
                 cMatchRoom.PAMulliganAsked = true;
             }
             else if (playerRequest.playerID.Equals(cMatchRoom.secondPlayer) && !cMatchRoom.PBMulliganAsked)
             {
-                await HandleMulligan(cMatchRoom, false, playerRequest, playerConnections[cMatchRoom.secondPlayer.ToString()], playerConnections[cMatchRoom.firstPlayer.ToString()]);
+                await HandleMulligan(cMatchRoom, false, playerRequest, MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()]);
                 cMatchRoom.PBMulliganAsked = true;
             }
 
@@ -105,10 +95,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PAMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
             draw.cardList = cMatchRoom.FillCardListWithEmptyCards(draw.cardList);
             pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PAMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
             /////////////
             /////////////
@@ -161,10 +151,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PBMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
             draw.cardList = cMatchRoom.FillCardListWithEmptyCards(draw.cardList);
             pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PBMulliganF", requestObject = JsonSerializer.Serialize(draw, Lib.options) };
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
 
 
             cMatchRoom.currentGameHigh = 6;

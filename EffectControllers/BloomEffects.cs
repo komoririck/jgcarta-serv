@@ -10,12 +10,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 {
     class BloomEffects
     {
-        internal static async Task OnBloomEffectResolutionAsync(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms, PlayerRequest playerRequest, WebSocket webSocket)
+        internal static async Task OnBloomEffectResolutionAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
 
             if (string.IsNullOrEmpty(cMatchRoom.currentCardResolving))
                 cMatchRoom.currentCardResolving = cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
@@ -47,8 +45,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
             bool energyPaid = false;
 
-            _DuelAction.targetCard.GetCardInfo();
-            _DuelAction.usedCard.GetCardInfo();
+            _DuelAction.targetCard?.GetCardInfo();
+            _DuelAction.usedCard?.GetCardInfo();
             _DuelAction.cheerCostCard.GetCardInfo();
 
             //ensure that we have a resolving card, if we have dont need to use
@@ -178,8 +176,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
                         break;
                     case "hBP01-0122":
-                        var handler151 = new AttachEquipamentToHolomemHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                        await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest, webSocket, "Deck");
+                        var handler151 = new AttachEquipamentToHolomemHandler();
+                        await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest, "Deck");
                         ResetResolution(cMatchRoom);
                         break;
                     case "hBP01-013":
@@ -196,9 +194,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             targetCard = opsStage,
                         };
 
-                        opsStage.currentHp -= 30;
+                        cMatchRoom.currentEffectDamage = 30;
 
-                        _DuelAction.actionObject = "30";
+                        _DuelAction.actionObject = cMatchRoom.currentEffectDamage.ToString();
+
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                         // Serialize and send data to the current player
                         PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
@@ -232,9 +231,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             targetCard = opsStage,
                         };
 
-                        opsStage.currentHp -= 50;
 
-                        _DuelAction.actionObject = "50";
+                        cMatchRoom.currentEffectDamage = 50;
+
+                        _DuelAction.actionObject = cMatchRoom.currentEffectDamage.ToString();
+
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                         // Serialize and send data to the current player
                         _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
@@ -257,9 +258,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             targetCard = opsCollab,
                         };
 
-                        opsCollab.currentHp -= 10;
+                        cMatchRoom.currentEffectDamage = 10;
 
-                        _DuelAction.actionObject = "10";
+                        _DuelAction.actionObject = cMatchRoom.currentEffectDamage.ToString();
+
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                         // Serialize and send data to the current player
                         _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
@@ -310,8 +312,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         playerTempHand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
 
-                        var handler191 = new AttachRangeFromCheerEnergyToZoneHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                        await handler191.AttachRangeFromCheerEnergyToZoneHandleAsync(playerRequest, webSocket, true, true, true);
+                        var handler191 = new AttachRangeFromCheerEnergyToZoneHandler();
+                        await handler191.AttachRangeFromCheerEnergyToZoneHandleAsync(playerRequest, true, true, true);
                         ResetResolution(cMatchRoom);
                         break;
                     case "hBP01-037":
@@ -335,8 +337,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)], pReturnData);
                         break;
                     case "hBP01-0371":
-                        var handler192 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                        await handler192.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 0);
+                        var handler192 = new AttachTopCheerEnergyToBackHandler();
+                        await handler192.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false, ClientEnergyIndex: 0);
                         
                         Card targeted = null;
                         if (_DuelAction.targetCard.cardPosition.Equals("Stage"))
@@ -394,8 +396,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)], pReturnData);
                         break;
                     case "hBP01-0811":
-                        var handler194 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                        await handler194.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 0);
+                        var handler194 = new AttachTopCheerEnergyToBackHandler();
+                        await handler194.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false, ClientEnergyIndex: 0);
 
                         ResetResolution(cMatchRoom);
                         break;
@@ -427,8 +429,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)], pReturnData);
                         break;
                     case "hBP01-0541":
-                        handler194 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                        await handler194.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 0);
+                        handler194 = new AttachTopCheerEnergyToBackHandler();
+                        await handler194.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false, ClientEnergyIndex: 0);
 
                         ResetResolution(cMatchRoom);
                         break;
@@ -446,9 +448,6 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
             List<Card> playerHand = ISFIRSTPLAYER ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
             List<Card> playerArquive = ISFIRSTPLAYER ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
-
-            if (cMatchRoom.extraInfo != null)
-                cMatchRoom.extraInfo.Clear();
 
             cMatchRoom.currentCardResolving = "";
             cMatchRoom.currentCardResolvingStage = "";

@@ -84,13 +84,13 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         tempHandList[0].playedFrom = "CardCheer";
                         //setup list to send to player
 
-                        var handler190 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
+                        var handler190 = new AttachTopCheerEnergyToBackHandler();
 
                         _DuelAction.actionObject = JsonSerializer.Serialize(new List<string>() { tempHandList[0].cardNumber }, Lib.options);
                         _DuelAction.targetCard = stage;
 
                         PlayerRequest _playerRequest = new PlayerRequest { type = "DuelUpdate", description = "OnCollabEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        await handler190.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: false, back: false, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 0);
+                        await handler190.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: false, back: false, TOPCHEERDECK: true, FULLCHEERDECK: false, ClientEnergyIndex: 0);
                     }
                     if ((stage.name.Equals("ときのそら") || stage.name.Equals("SorAZ")) && playerDeck.Count > 0)
                     {
@@ -182,8 +182,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
                     break;
                 case "hSD01-0071":
-                    var handler1 = new PickFromListThenGiveBacKFromHandHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                    await handler1.PickFromHoloPowerThenGiveBacKFromHandHandleAsync(playerRequest, webSocket);
+                    var handler1 = new PickFromListThenGiveBacKFromHandHandler();
+                    await handler1.PickFromHoloPowerThenGiveBacKFromHandHandleAsync(playerRequest);
                     ResetResolution();
                     break;
                 case "hSD01-009":
@@ -233,8 +233,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)], pReturnData);
                     break;
                 case "hSD01-0092":
-                    var handler192 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                    await handler192.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: false, collab: false, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false, energyIndex: 0);
+                    var handler192 = new AttachTopCheerEnergyToBackHandler();
+                    await handler192.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: false, collab: false, back: true, TOPCHEERDECK: true, FULLCHEERDECK: false, ClientEnergyIndex: 0);
 
                     diceValue = diceList.Last();
                     if (diceValue < 2)
@@ -295,8 +295,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                     tempHandList = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
 
-                    var handler191 = new AttachRangeFromCheerEnergyToZoneHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                    await handler191.AttachRangeFromCheerEnergyToZoneHandleAsync(playerRequest, webSocket, true, false, false);
+                    var handler191 = new AttachRangeFromCheerEnergyToZoneHandler();
+                    await handler191.AttachRangeFromCheerEnergyToZoneHandleAsync(playerRequest, true, false, false);
                     ResetResolution();
                     break;
                 case "hBP01-016":
@@ -316,12 +316,9 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             }
             void ResetResolution()
             {
-                if (cMatchRoom.extraInfo != null)
-                    cMatchRoom.extraInfo.Clear();
-
                 cMatchRoom.currentCardResolving = "";
                 cMatchRoom.currentCardResolvingStage = "";
-                cMatchRoom.currentDuelActionResolvingRecieved.Clear();
+                cMatchRoom.ResolvingEffectChain.Clear();
 
                 List<Card> temphand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
                 temphand.Clear();
@@ -335,8 +332,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
         {
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
+            MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(playerRequest.playerID);
 
             if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
             {

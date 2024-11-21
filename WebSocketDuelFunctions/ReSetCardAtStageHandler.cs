@@ -8,20 +8,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class ReSetCardAtStageHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-
-        public ReSetCardAtStageHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task MainDoActionRequestReSetCardAtStageHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom) 
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task MainDoActionRequestReSetCardAtStageHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             //if not the current player, return, since only at the begnning of a new turn a player can reSet a card at the main stage
             if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                 return;
@@ -85,8 +73,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "ReSetStage", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
 
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
 
             cMatchRoom.currentGameHigh++;
             return;

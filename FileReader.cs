@@ -2,6 +2,7 @@
 
 using ExcelDataReader;
 using hololive_oficial_cardgame_server.SerializableObjects;
+using Org.BouncyCastle.Asn1.X509;
 using System.Data;
 using System.Text;
 
@@ -28,9 +29,9 @@ public class Record
 
     public static class FileReader
 {
-    public static List<Record> result = new List<Record>();
+    public static Dictionary<string, Record> result = new ();
 
-    public static List<Record> ReadFile(string fileName)
+    public static void ReadFile(string fileName)
     {
         string rootPath = Directory.GetCurrentDirectory();
         string path = Path.Combine(rootPath, fileName);
@@ -39,7 +40,7 @@ public class Record
         if (!File.Exists(path))
         {
             Lib.WriteConsoleMessage($"File does not exist at path: {path}");
-            return null;
+            return;
         }
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         // Open the Excel file and read it using ExcelDataReader
@@ -87,13 +88,16 @@ public class Record
                         OtherNameOne = row[15]?.ToString() ?? "",
                         OtherNameTwo = row[15]?.ToString() ?? ""
                     };
-
-                    result.Add(record);
+                    try
+                    {
+                        result.Add(row[12]?.ToString(), record);
+                    }
+                    catch (Exception ex) 
+                    { 
+                    }
                 }
             }
         }
-
-        return result;
     }
 
     public static List<Record> QueryRecords(string name = null, string type = null, string bloomLevel = null, string cardNumber = null, string tag = null)
@@ -101,75 +105,45 @@ public class Record
         var query = result.AsQueryable();
 
         if (!string.IsNullOrEmpty(name))
-        {
-            query = query.Where(r => r.Name == name);
-        }
+            query = query.Where(r => r.Value.Name == name);
 
         if (!string.IsNullOrEmpty(type))
-        {
-            query = query.Where(r => r.CardType == type);
-        }
+            query = query.Where(r => r.Value.CardType == type);
 
         if (!string.IsNullOrEmpty(bloomLevel))
-        {
-            query = query.Where(r => r.BloomLevel == bloomLevel);
-        }
+            query = query.Where(r => r.Value.BloomLevel == bloomLevel);
 
         if (!string.IsNullOrEmpty(cardNumber))
-        {
-            query = query.Where(r => r.CardNumber == cardNumber);
-        }
+            query = query.Where(r => r.Value.CardNumber == cardNumber);
+
         if (!string.IsNullOrEmpty(tag))
-        {
-            query = query.Where(r => r.Tag.Contains($"#{tag}"));
-        }
+            query = query.Where(r => r.Value.Tag.Contains($"#{tag}"));
 
-        return query.ToList();
+        return query.Select(r => r.Value).ToList();
     }
-    public static List<Record> QueryRecordsByNames(List<string> names)
+    public static List<Record> QueryRecordsByNameAndBloom(List<Card> cards, string bloomLevel)
     {
-        var query = result.Where(r => names.Contains(r.Name));
-        return query.ToList();
-    }
-    public static List<Record> QueryRecordsByNameAndBloom(List<Card> names, string type)
-    {
-        var query = result.Where(r => names.GroupBy(card => card.cardNumber).Select(group => group.First()).Any(card => card.cardNumber == r.CardNumber) && r.BloomLevel == type);
-
-        return query.ToList();
-    }
-
-    public static List<Record> QueryRecordsByType(List<string> type)
-    {
-        List<Record> record = new List<Record>();
-        foreach (string tp in type)
-        {
-            record.AddRange(result.Where(r => r.CardType == tp));
-        }
-
-        return record.ToList();
+        var uniqueCardNumbers = cards.GroupBy(card => card.cardNumber).Select(group => group.Key).ToList();
+        return result.Where(r => uniqueCardNumbers.Contains(r.Value.CardNumber) && r.Value.BloomLevel == bloomLevel).Select(r => r.Value).ToList();
     }
     public static List<Record> QueryBloomableCard(string name, string bloomLevel)
     {
-        string nextBloomLevel = "";
-        switch (bloomLevel) {
-            case "Debut":
-                nextBloomLevel = "1st";
-                break;
-            case "1st":
-                nextBloomLevel = "2nd";
-                break;
-        }
+        string nextBloomLevel = bloomLevel.Equals("Debut") ? "1st" : "2nd";
 
-        List<Record> query = new();
-        if (name.Equals("SorAZ"))
+        if (string.IsNullOrEmpty(nextBloomLevel))
+            return new List<Record>(); 
+
+        var query = new List<Record>();
+
+        if (name.Equals("SorAZ", StringComparison.OrdinalIgnoreCase))
         {
-            query.AddRange(result.Where(r => ((r.Name == "AZKi") || (r.Name == "ときのそら")) && r.BloomLevel == nextBloomLevel).ToList());
-            //query.AddRange(result.Where(r => ((r.OtherNameOne == "?????") || (r.OtherNameTwo == "AZKi") || (r.OtherNameOne == "AZKi") || (r.OtherNameTwo == "?????")) && r.BloomLevel == nextBloomLevel).ToList());
+            query.AddRange(result.Where(r =>(r.Value.Name == "AZKi" || r.Value.Name == "ときのそら") && r.Value.BloomLevel == nextBloomLevel).Select(r => r.Value).ToList());
         }
         else
         {
-            query.AddRange(result.Where(r => r.Name == name && r.BloomLevel == nextBloomLevel).ToList());
+            query.AddRange(result.Where(r => r.Value.Name == name && r.Value.BloomLevel == nextBloomLevel).Select(r => r.Value).ToList());
         }
+
         return query;
     }
 }

@@ -7,35 +7,19 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class BloomHolomemHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-
-        public BloomHolomemHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task MainDoActionRequestBloomHolomemHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task MainDoActionRequestBloomHolomemHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-            if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo();
-            if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo();
-
+                _DuelAction.targetCard?.GetCardInfo();
+                _DuelAction.usedCard?.GetCardInfo();
 
             bool canContinueBloomHolomem = false;
-            if (!_DuelAction.usedCard.bloomLevel.Equals("Debut") || !_DuelAction.usedCard.bloomLevel.Equals("1st"))
-                canContinueBloomHolomem = true;
-
-            if (!canContinueBloomHolomem) {
+            if (!(_DuelAction.usedCard.bloomLevel.Equals("Debut") || _DuelAction.usedCard.bloomLevel.Equals("1st")))
+            {
                 Lib.WriteConsoleMessage("Used card is not valid to bloom");
                 return;
+
             }
 
             //targetcardValidation
@@ -83,11 +67,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             List<Record> validCardToBloom = FileReader.QueryBloomableCard(_DuelAction.targetCard.name, _DuelAction.targetCard.bloomLevel);
             //lets add especial conditions to the bloom, like SorAZ
             if (_DuelAction.usedCard.name.Equals("SorAZ") && _DuelAction.targetCard.bloomLevel.Equals("Debut") && (_DuelAction.targetCard.name.Equals("ときのそら") || _DuelAction.targetCard.name.Equals("AZKi"))) {
-                foreach (Record r in FileReader.result)
+                foreach (KeyValuePair<string, Record> r in FileReader.result)
                 {
-                    if (r.CardNumber.Equals("hSD01-013")) 
+                    if (r.Value.CardNumber.Equals("hSD01-013")) 
                     {
-                        validCardToBloom.Add(r);
+                        validCardToBloom.Add(r.Value);
                     }
                 }
             }
@@ -213,8 +197,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "BloomHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-            Lib.SendMessage(playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
-            Lib.SendMessage(playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
 
 
 

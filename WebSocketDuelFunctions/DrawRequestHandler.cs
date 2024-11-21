@@ -7,21 +7,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class DrawRequestHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-        private Task task;
 
-        public DrawRequestHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task DrawRequestHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task DrawRequestHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
+             Task task;
 
             if (playerRequest.playerID != cMatchRoom.currentPlayerTurn) 
             {

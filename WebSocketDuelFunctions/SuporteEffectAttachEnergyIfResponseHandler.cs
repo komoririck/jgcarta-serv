@@ -7,18 +7,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class SuporteEffectAttachEnergyIfResponseHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
         private PlayerRequest _ReturnData;
         private DuelAction _DuelAction;
 
-        public SuporteEffectAttachEnergyIfResponseHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
-        {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
         //we may want to add the location here later to change from here the player is getting the cheer, by now, cheerdeck
-        internal async Task SuporteEffectAttachEnergyHandleAsync(PlayerRequest playerRequest, WebSocket webSocket, string selectEnergyToAttach = null)
+        internal async Task SuporteEffectAttachEnergyHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom, string selectEnergyToAttach = null)
         {
             ///////Reference of the variables////////////////////////////
             // usually we add the duelAction values to the temphand
@@ -26,9 +19,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             // tempHand.Add(_DuelAction.cheerCostCard);
             // tempHand.Add(_DuelAction.targetCard);
             ///////Reference of the variables////////////////////////////
-
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
 
             //we recieve from the client the energy that we pick in the list displayed if was not send when called the function
             if (selectEnergyToAttach == null) {
@@ -94,8 +84,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
 
             //cleaning temphand
             tempHandd.Clear();

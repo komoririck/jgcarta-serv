@@ -83,7 +83,8 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
             var effectExtraDamage = 0;
             // Base damage calculation
             int baseDamage = 0;
-            bool _AreColorRequirementsMet = AreColorRequirementsMet(colorCount, attackingCard.attachedEnergy);
+            // public bool IsCostCovered(List<(string Color, int Amount)> cost, Dictionary<string, List<Card>> energyAmount, Card SkillOwnerCard)
+            bool _AreColorRequirementsMet = IsCostCovered(art.Cost, attackingCard.attachedEnergy, attackingCard);
 
             List<CardEffect> currentActivatedTurnEffect = matchRoom.ActiveEffects;
 
@@ -367,37 +368,66 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
 
             return totalDamage;
         }
-
-        public static bool AreColorRequirementsMet(Dictionary<string, int> colorCount, List<Card> availableColors)
+        public static bool IsCostCovered(List<(string Color, int Amount)> cost, List<Card> energyAmount, Card SkillOwnerCard)
         {
-            // Group and count the available colors
-            var availableColorCounts = availableColors
-                .GroupBy(item => item.color)
-                .ToDictionary(g => g.Key, g => g.Count());
+            List<(string Color, int Amount)> payment = energyAmount.GroupBy(card => card.color).Select(group => (Color: group.Key, Amount: group.Count())).ToList();
 
-            // Check if the available colors meet the required counts
-            bool genericColor = availableColorCounts.ContainsKey("無色");
-
-            foreach (var kvp in colorCount)
+            foreach (Card card in SkillOwnerCard.attachedEquipe)
             {
-                string color = kvp.Key;
-                int requiredCount = kvp.Value;
-
-                if (genericColor)
+                switch (card.cardNumber)
                 {
-                    continue; // Skip checking this color requirement
-                }
-
-                // Regular check for other colors
-                if (!availableColorCounts.TryGetValue(color, out int availableCount) || availableCount < requiredCount)
-                {
-                    return false; // Requirement not met
+                    case "hBP01-126":
+                        int index = payment.FindIndex(p => p.Color == "赤");
+                        payment[index] = (payment[index].Color, (payment[index].Amount + 1));
+                        break;
+                    case "hBP01-118":
+                        index = payment.FindIndex(p => p.Color == "白");
+                        payment[index] = (payment[index].Color, (payment[index].Amount + 1));
+                        break;
                 }
             }
 
-            return true; // All requirements are met
-        }
+            foreach (var (Color, Amount) in cost.ToList())
+            {
+                int remainingAmount = Amount;
 
+                for (int i = 0; i < payment.Count && remainingAmount > 0; i++)
+                {
+                    if (payment[i].Color.Equals(Color))
+                    {
+                        int deductAmount = Math.Min(payment[i].Amount, remainingAmount);
+                        payment[i] = (payment[i].Color, payment[i].Amount - deductAmount);
+                        remainingAmount -= deductAmount;
+
+                        if (payment[i].Amount == 0)
+                            payment.RemoveAt(i--);
+                    }
+                }
+
+                if (remainingAmount > 0)
+                {
+                    for (int i = 0; i < payment.Count && remainingAmount > 0; i++)
+                    {
+                        if (Color.Equals("無色"))
+                        {
+                            int deductAmount = Math.Min(payment[i].Amount, remainingAmount);
+                            payment[i] = (payment[i].Color, payment[i].Amount - deductAmount);
+                            remainingAmount -= deductAmount;
+
+                            if (payment[i].Amount == 0)
+                                payment.RemoveAt(i--);
+                        }
+                    }
+                }
+
+                if (remainingAmount > 0)
+                    return false;
+
+                cost.Remove((Color, Amount));
+            }
+
+            return true;
+        }
 
     }
 }

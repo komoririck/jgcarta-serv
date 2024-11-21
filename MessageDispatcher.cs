@@ -11,109 +11,101 @@ namespace hololive_oficial_cardgame_server
 {
     public class MessageDispatcher : Lib
     {
-        // WebSockets
         public static ConcurrentDictionary<string, WebSocket> playerConnections = new ConcurrentDictionary<string, WebSocket>();
-
-        //Players DuelRoom
-        public static List<MatchRoom> _MatchRooms = new List<MatchRoom>();
-
-        //list containing all the cards in the system
-        public static List<Record> CardList = FileReader.ReadFile("CardList.xlsx");
 
         public static async Task DispatchMessage(PlayerRequest playerRequest, WebSocket webSocket)
         {
-            MatchRoom cMatchRoom = null;
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(_MatchRooms, playerRequest.playerID);
-            if (matchnumber != -1)
-                cMatchRoom = _MatchRooms[matchnumber];
-            PlayerRequest _ReturnData;
+            MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(playerRequest.playerID);
 
+            if (cMatchRoom == null) {
+                if (playerRequest.type.Equals("JoinPlayerQueueList")){
+                    var handler = new JoinPlayerQueueListHandler(playerConnections, _MatchRooms);
+                    await handler.JoinPlayerQueueListHandleAsync(playerRequest, webSocket);
+                }
+                else
+                { 
+                   return;
+                }
+            }
 
             Lib.WriteConsoleMessage("Recieved from " + playerRequest.playerID + ":\n" + playerRequest.type + ":\n" + playerRequest.requestObject + ":\n");
             switch (playerRequest.type)
             {
-                case "JoinPlayerQueueList":
-                    var handler = new JoinPlayerQueueListHandler(playerConnections, _MatchRooms);
-                    await handler.JoinPlayerQueueListHandleAsync(playerRequest, webSocket);
-                    break;
                 case "AskForMulligan":
-                    var handler1 = new AskForMulliganHandler(playerConnections, _MatchRooms);
-                    await handler1.AskForMulliganHandleAsync(playerRequest, webSocket);
+                    var handler1 = new AskForMulliganHandler();
+                    await handler1.AskForMulliganHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "DuelFieldReady":
-                    var handler2 = new DuelFieldReadyHandler(playerConnections, _MatchRooms);
-                    await handler2.DuelFieldReadyHandleAsync(playerRequest, webSocket);
+                    var handler2 = new DuelFieldReadyHandler();
+                    await handler2.DuelFieldReadyHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "DrawRequest":
-                    var handler3 = new DrawRequestHandler(playerConnections, _MatchRooms);
-                    await handler3.DrawRequestHandleAsync(playerRequest, webSocket);
+                    var handler3 = new DrawRequestHandler();
+                    await handler3.DrawRequestHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "CheerRequest":
-                    var handler4 = new CheerRequestHandler(playerConnections, _MatchRooms);
-                    await handler4.CheerRequestHandleAsync(playerRequest, webSocket);
+                    var handler4 = new CheerRequestHandler();
+                    await handler4.CheerRequestHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "CheerRequestHolomemDown":
-                    var handler5 = new CheerRequestHolomemDownHandler(playerConnections, _MatchRooms);
-                    await handler5.CheerRequestHolomemDownHandleAsync(playerRequest, webSocket);
+                    var handler5 = new CheerRequestHolomemDownHandler();
+                    await handler5.CheerRequestHolomemDownHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "CheerChooseRequest":
-                    var handler6 = new CheerChooseRequestHandler(playerConnections, _MatchRooms);
-                    await handler6.CheerChooseRequestHandleAsync(playerRequest, webSocket);
+                    var handler6 = new CheerChooseRequestHandler();
+                    await handler6.CheerChooseRequestHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "CheerChooseRequestHolomemDown":
-                    var handler66 = new CheerChooseRequestHolomemDownHandler(playerConnections, _MatchRooms);
-                    await handler66.CheerChooseRequestHolomemDownHandleAsync(playerRequest, webSocket);
+                    var handler66 = new CheerChooseRequestHolomemDownHandler();
+                    await handler66.CheerChooseRequestHolomemDownHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "ContinueCurrentPlayerTurn":
                     if (!(playerRequest.playerID != cMatchRoom.currentPlayerTurn))
                         break;
 
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
                     break;
                 case "MainStartRequest":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                         break;
 
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
                     break;
                 case "PlayHolomem":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
                         return;
                     DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
-                    var handler902 = new PlayHolomemHandler(playerConnections, _MatchRooms);
-                    await handler902.MainDoActionRequestPlayHolomemHandleAsync(playerRequest, webSocket);
+                    var handler902 = new PlayHolomemHandler();
+                    await handler902.MainDoActionRequestPlayHolomemHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "BloomHolomemWithEffect":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
                         return;
-                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
                     break;
                 case "BloomHolomem":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
                         return;
-                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
-                    var handler903 = new BloomHolomemHandler(playerConnections, _MatchRooms);
-                    await handler903.MainDoActionRequestBloomHolomemHandleAsync(playerRequest, webSocket);
+                    _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+                    var handler903 = new BloomHolomemHandler();
+                    await handler903.MainDoActionRequestBloomHolomemHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "DoCollab":
-                    var handler904 = new DoCollabHandler(playerConnections, _MatchRooms);
-                    await handler904.DoCollabHandleAsync(playerRequest, webSocket);
+                    var handler904 = new DoCollabHandler();
+                    await handler904.DoCollabHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "doArt":
-                    var handler901 = new MainDoActionRequestDoArtHandler(playerConnections, _MatchRooms);
-                    await handler901.MainDoActionRequestDoArtHandleAsync(playerRequest, webSocket);
+                    var handler901 = new DoArtHandler();
+                    await handler901.DoArtHandleAsync(playerRequest, cMatchRoom);
                     break;
-                case "ResolveDamageToHolomem":
-                    var handler910 = new ResolveArtDamageHandler(playerConnections, _MatchRooms);
-                    await handler910.ResolveArtDamageHandleAsync(playerRequest, webSocket);
+                case "resolveArt":
+                    await ResolveArtHandler.ResolveDamage(cMatchRoom);
                     break;
-                case "MainPerformanceRequest":
-                    cMatchRoom.currentGamePhase = GAMEPHASE.PerformanceStep;
-                    break;
-                case "MainUseArtRequest":
-                    cMatchRoom.currentGamePhase = GAMEPHASE.UseArt;
+                case "AskServerToResolveDamageToHolomem":
+                    var handler910 = new ResolveArtDamageHandler();
+                    await handler910.ResolveArtDamageHandleAsync(playerRequest);
                     break;
                 case "MainEndturnRequest":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
@@ -125,7 +117,8 @@ namespace hololive_oficial_cardgame_server
                         cMatchRoom.usedOshiSkillPlayerA = false;
                         cMatchRoom.playerBUsedSupportThisTurn = true;
                     }
-                    else { 
+                    else
+                    {
                         cMatchRoom.playerBLimiteCardPlayed.Clear();
                         cMatchRoom.usedOshiSkillPlayerB = false;
                         cMatchRoom.playerBUsedSupportThisTurn = false;
@@ -140,7 +133,8 @@ namespace hololive_oficial_cardgame_server
 
                     cMatchRoom.ActiveEffects.Clear();
                     List<CardEffect> tempEffectList = new List<CardEffect>();
-                    foreach (var effect in cMatchRoom.ActiveEffects) {
+                    foreach (var effect in cMatchRoom.ActiveEffects)
+                    {
                         if (cMatchRoom.currentTurn < effect.activatedTurn)
                             tempEffectList.Add(effect);
                     }
@@ -148,28 +142,28 @@ namespace hololive_oficial_cardgame_server
                     cMatchRoom.ActiveEffects = tempEffectList;
 
                     Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
-                    Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
-                    Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
+                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
 
                     cMatchRoom.currentGameHigh++;
                     break;
                 case "ResetRequest":
-                    var handler13 = new ResetRequestHandler(playerConnections, _MatchRooms);
-                    await handler13.ResetRequestHandleAsync(playerRequest, webSocket);
+                    var handler13 = new ResetRequestHandler();
+                    await handler13.ResetRequestHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "ReSetCardAtStage":
-                    var handler905 = new ReSetCardAtStageHandler(playerConnections, _MatchRooms);
-                    await handler905.MainDoActionRequestReSetCardAtStageHandleAsync(playerRequest, webSocket);
+                    var handler905 = new ReSetCardAtStageHandler();
+                    await handler905.MainDoActionRequestReSetCardAtStageHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "AttachEquipamentToHolomem":
-                    var handler151 = new AttachEquipamentToHolomemHandler(playerConnections, _MatchRooms);
-                    await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest, webSocket);
-             
+                    var handler151 = new AttachEquipamentToHolomemHandler();
+                    await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest);
+
                     break;
                 case "AskAttachEnergy":
                     //call to attach energy
-                    var handler15 = new SuporteEffectAttachEnergyIfResponseHandler(playerConnections, _MatchRooms);
-                    await handler15.SuporteEffectAttachEnergyHandleAsync(playerRequest, webSocket);
+                    var handler15 = new SuporteEffectAttachEnergyIfResponseHandler();
+                    await handler15.SuporteEffectAttachEnergyHandleAsync(playerRequest, cMatchRoom);
                     break;
                 case "ResolveOnCollabEffect":
                     CollabEffects.OnCollabEffectResolutionAsync(playerConnections, _MatchRooms, playerRequest, webSocket);
@@ -183,7 +177,7 @@ namespace hololive_oficial_cardgame_server
                     break;
                 case "ResolveOnOshiSPEffect":
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
-                    OshiEffects.OnOshiEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket, SPSKILL:true);
+                    OshiEffects.OnOshiEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket, SPSKILL: true);
                     break;
                 case "ResolveOnOshiEffect":
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
@@ -194,7 +188,7 @@ namespace hololive_oficial_cardgame_server
                     AttachEffects.OnAttachEffectsAsync(_DuelAction, cMatchRoom, playerRequest, webSocket);
                     break;
                 case "ResolveOnBloomEffect":
-                    BloomEffects.OnBloomEffectResolutionAsync(playerConnections, _MatchRooms, playerRequest, webSocket);
+                    BloomEffects.OnBloomEffectResolutionAsync(playerRequest, cMatchRoom);
                     break;
                 case "Retreat":
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
@@ -221,13 +215,15 @@ namespace hololive_oficial_cardgame_server
 
                     Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, playerRequest.playerID, _DuelAction.targetCard);
 
-                    _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "SwitchStageCardByRetreat", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "SwitchStageCardByRetreat", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
 
                     break;
                 case "ResolveRerollEffect":
-                    //random dice number
+                    //need to add one gamephase for each of the resolving effects, then validate here
+                    //                   if (cMatchRoom.currentGamePhase != MatchRoom.GAMEPHASE.ResolvingDeclaringAttackEffects)
+                    //                      return;
 
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
                     bool canContinue = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, ENERGY: false);

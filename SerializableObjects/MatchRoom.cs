@@ -6,6 +6,9 @@ namespace hololive_oficial_cardgame_server.SerializableObjects;
 
 public class MatchRoom
 {
+    //Players DuelRoom
+    public static List<MatchRoom> _MatchRooms = new List<MatchRoom>();
+
     public List<CardEffect> ActiveEffects = new();
 
     private readonly ConcurrentDictionary<string, Timer> playerTimers = new ConcurrentDictionary<string, Timer>();
@@ -85,13 +88,18 @@ public class MatchRoom
     public Card playerBOshi = null;
 
     public string currentCardResolving = "";
-    public Art currentArtResolving = null;
     internal int cheersAssignedThisChainAmount;
     internal int cheersAssignedThisChainTotal = 1;
-    internal List<object> extraInfo = new();
     internal string currentCardResolvingStage = "";
+
+    internal List<DuelAction> ResolvingEffectChain = new();
+
+    public Art ResolvingArt = null;
+    internal Card DeclaringAttackCard = null;
+    internal Card BeingTargetedForAttackCard = null;
+
     internal int currentArtDamage;
-    internal List<DuelAction> currentDuelActionResolvingRecieved = new();
+    internal int currentEffectDamage;
 
     internal List<int> playerADiceRollList = new();
     internal List<int> playerBDiceRollList = new();
@@ -101,6 +109,10 @@ public class MatchRoom
 
     internal int playerADiceRollCount = 0;
     internal int playerBDiceRollCount = 0;
+
+
+    internal bool playerAResolveConfirmation;
+    internal bool playerBResolveConfirmation;
 
     public List<DuelAction> RecoilDuelActions { get; internal set; }
 
@@ -124,7 +136,8 @@ public class MatchRoom
         HolomemDefeatedCheerChoose = 104,
         HolomemDefeatedCheerChoosed = 105,
         ResolvingDamage = 106,
-        RevolingAttachEffect = 107
+        RevolingAttachEffect = 107,
+        ResolvingDeclaringAttackEffects = 108
     }
 
     public void suffleHandToTheDeck(List<Card> deck, List<Card> hand)
@@ -163,17 +176,22 @@ public class MatchRoom
         return returnCards;
     }
 
-    static public int FindPlayerMatchRoom(List<MatchRoom> LM, string playerid)
+    static public MatchRoom FindPlayerMatchRoom(string playerid)
     {
-        for (int i = 0; i < LM.Count; i++)
+        for (int i = 0; i < _MatchRooms.Count; i++)
         {
-            if (LM[i].playerA.PlayerID.Equals(playerid) || LM[i].playerB.PlayerID.Equals(playerid))
+            if (_MatchRooms[i].playerA.PlayerID.Equals(playerid) || _MatchRooms[i].playerB.PlayerID.Equals(playerid))
             {
-                return i;
+                return _MatchRooms[i];
             }
         }
-        return -1;
+        return null;
     }
+    static public void RemoveRoom(MatchRoom room)
+    {
+        _MatchRooms.Remove(room);
+    }
+
     static public string GetOtherPlayer(MatchRoom m, string playerid)
     {
         if (m.playerA.PlayerID.Equals(playerid))

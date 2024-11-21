@@ -8,27 +8,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class DoCollabHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
-
-        public DoCollabHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task DoCollabHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task DoCollabHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-            if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo();
-            if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo();
+                _DuelAction.targetCard?.GetCardInfo();
+                _DuelAction.usedCard?.GetCardInfo();
 
             if (cMatchRoom.firstPlayer.Equals(_DuelAction.playerID))
             {
@@ -97,8 +82,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DoCollab", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
             cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
 

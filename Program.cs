@@ -10,6 +10,8 @@ using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 
 var builder = WebApplication.CreateBuilder(args);
 
+FileReader.ReadFile("CardList.xlsx");
+
 // Add services to the container
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -105,12 +107,10 @@ async Task HandleWebSocketAsync(HttpContext context)
                     finally
                     {
                         string player = Lib.GetKeyByValue(webSocket);
-                        MatchRoom matchRoom = null;
-                        int matchNumber = MatchRoom.FindPlayerMatchRoom(MessageDispatcher._MatchRooms, player);
-                        if (matchNumber != -1)
+                        MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(player);
+                        if (cMatchRoom != null)
                         {
-                            matchRoom = MessageDispatcher._MatchRooms[matchNumber];
-                            Lib.EndDuelAsync(matchRoom, GetOtherPlayer(matchRoom, player));
+                            Lib.EndDuelAsync(cMatchRoom, GetOtherPlayer(cMatchRoom, player));
                         }
                     }
                 }

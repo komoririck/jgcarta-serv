@@ -31,9 +31,9 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             bool energyPaid = false;
 
             if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo();
+                _DuelAction.targetCard?.GetCardInfo();
             if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo();
+                _DuelAction.usedCard?.GetCardInfo();
             if (_DuelAction.cheerCostCard != null)
                 _DuelAction.cheerCostCard.GetCardInfo();
 
@@ -89,7 +89,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             cMatchRoom.currentCardResolvingStage = "";
 
             List<Card> temphand = ISFIRSTPLAYER ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
-            cMatchRoom.currentDuelActionResolvingRecieved.Clear();
+            cMatchRoom.ResolvingEffectChain.Clear();
             cMatchRoom.currentGameHigh++;
 
             cMatchRoom.currentGamePhase = GAMEPHASE.MainStep;

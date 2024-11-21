@@ -17,16 +17,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
         private PlayerRequest pReturnData;
         private DuelAction _DuelAction = new();
 
-        public PickFromListThenGiveBacKFromHandHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task PickFromHoloPowerThenGiveBacKFromHandHandleAsync(PlayerRequest playerRequest)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task PickFromHoloPowerThenGiveBacKFromHandHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
+            MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(playerRequest.playerID);
 
             DuelAction response = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
             List<string> returnedCardList = JsonSerializer.Deserialize<List<string>>(response.actionObject);

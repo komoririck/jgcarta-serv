@@ -9,22 +9,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class ResetRequestHandler : Lib
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
         private PlayerRequest _ReturnData;
 
-        public ResetRequestHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+
+        internal async Task ResetRequestHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task ResetRequestHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
             {
                 Lib.WriteConsoleMessage("Wrong player calling");
@@ -90,8 +79,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
 
-            Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
 
             cMatchRoom.currentGameHigh++;
 

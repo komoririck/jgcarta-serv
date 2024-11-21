@@ -9,21 +9,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class MainConditionedDrawResponseHandler
     {
-        private ConcurrentDictionary<string, WebSocket> playerConnections;
-        private List<MatchRoom> matchRooms;
         private PlayerRequest _ReturnData;
 
-        public MainConditionedDrawResponseHandler(ConcurrentDictionary<string, WebSocket> playerConnections, List<MatchRoom> matchRooms)
+        internal async Task MainConditionedDrawResponseHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-            this.playerConnections = playerConnections;
-            this.matchRooms = matchRooms;
-        }
-
-        internal async Task MainConditionedDrawResponseHandleAsync(PlayerRequest playerRequest, WebSocket webSocket)
-        {
-            int matchnumber = MatchRoom.FindPlayerMatchRoom(matchRooms, playerRequest.playerID);
-            MatchRoom cMatchRoom = matchRooms[matchnumber];
-
             DuelAction _DuelActionRecieved = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
             List<object> ResponseObjList = JsonSerializer.Deserialize<List<object>>(_DuelActionRecieved.actionObject);
 
@@ -210,9 +199,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cMatchRoom.playerATempHand.Clear();
 
 
-                Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
                 DrawReturn.cardList = cMatchRoom.FillCardListWithEmptyCards(DrawReturn.cardList);
-                Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
 
             }
             else
@@ -221,9 +210,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cMatchRoom.playerBDeck.InsertRange(0, ReturnToDeck);
                 cMatchRoom.playerBTempHand.Clear();
 
-                Lib.SendMessage(playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
                 DrawReturn.cardList = cMatchRoom.FillCardListWithEmptyCards(DrawReturn.cardList);
-                Lib.SendMessage(playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             }
             cMatchRoom.currentCardResolving = "";
             cMatchRoom.currentGameHigh++;

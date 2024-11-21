@@ -16,9 +16,9 @@ namespace hololive_oficial_cardgame_server.EffectControllers
         {
 
             if (_DuelAction.targetCard != null)
-                _DuelAction.targetCard.GetCardInfo();
+                _DuelAction.targetCard?.GetCardInfo();
             if (_DuelAction.usedCard != null)
-                _DuelAction.usedCard.GetCardInfo();
+                _DuelAction.usedCard?.GetCardInfo();
             if (_DuelAction.cheerCostCard != null)
                 _DuelAction.cheerCostCard.GetCardInfo();
 
@@ -64,8 +64,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
             bool energyPaid = false;
 
-            if (string.IsNullOrEmpty(cMatchRoom.currentCardResolving))
-                cMatchRoom.currentCardResolving = cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
+            cMatchRoom.currentCardResolving = string.IsNullOrEmpty(cMatchRoom.currentCardResolvingStage) ? _DuelAction.usedCard.cardNumber : cMatchRoom.currentCardResolving;
 
             try
             {
@@ -306,6 +305,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             if (card.cardType.Equals("エール"))
                             {
                                 card.playedFrom = "Arquive";
+                                card.cardPosition = "Arquive";
                                 playerTempHand.Add(card);
                             }
                         }
@@ -334,8 +334,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
                         break;
                     case "hSD01-0202":
-                        var handler190 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                        await handler190.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: false, FULLCHEERDECK: false, energyIndex: 1, ARQUIVEFULLDECK: true);
+                        var handler190 = new AttachTopCheerEnergyToBackHandler();
+                        await handler190.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: false, FULLCHEERDECK: false, ClientEnergyIndex: 1, ARQUIVEFULLDECK: true);
                         ResetResolution();
                         break;
                     case "hSD01-021":
@@ -399,7 +399,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         foreach (Card c in playerCheer)
                         {
                             c.GetCardInfo();
-                            _DuelAction.usedCard.GetCardInfo();
+                            _DuelAction.usedCard?.GetCardInfo();
                             if (Lib.MatchCardColors(c, _DuelAction.usedCard))
                             {
                                 //we add the played from to match the validation the function already did for other effects
@@ -421,8 +421,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         Lib.UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, cardListToRreturn, _DuelAction, false);
                         break;
                     case "hBP01-1051":
-                        var handler1051 = new AttachTopCheerEnergyToBackHandler(MessageDispatcher.playerConnections, MessageDispatcher._MatchRooms);
-                        await handler1051.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: false, FULLCHEERDECK: true, energyIndex: 1);
+                        var handler1051 = new AttachTopCheerEnergyToBackHandler();
+                        await handler1051.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: false, FULLCHEERDECK: true, ClientEnergyIndex: 1);
                         ResetResolution();
                         break;
                     case "hBP01-106":
@@ -654,9 +654,6 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             ResetResolution();
                             return;
                         }
-                        tempOpponentBackStage[n].GetCardInfo();
-                        tempOpponentBackStage[n].effectDamageRecieved += 20;
-                        tempOpponentBackStage[n].currentHp -= 20;
 
                         _DuelAction = new()
                         {
@@ -675,7 +672,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         };
                         cMatchRoom.ActiveEffects.Add(_CardEffect);
 
-                        _DuelAction.actionObject = "20";
+
+                        cMatchRoom.currentEffectDamage = 20;
+                        _DuelAction.actionObject = cMatchRoom.currentEffectDamage.ToString();
+
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                         // Serialize and send data to the current player
                         PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
@@ -754,12 +754,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
                 Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
 
-                if (cMatchRoom.extraInfo != null)
-                    cMatchRoom.extraInfo.Clear();
                 cMatchRoom.currentCardResolving = "";
                 cMatchRoom.currentCardResolvingStage = "";
                 List<Card> temphand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
-                cMatchRoom.currentDuelActionResolvingRecieved.Clear();
+                cMatchRoom.ResolvingEffectChain.Clear();
                 cMatchRoom.currentGameHigh++;
                 cMatchRoom.currentGamePhase = GAMEPHASE.MainStep;
                 temphand.Clear();
