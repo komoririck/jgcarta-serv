@@ -31,8 +31,8 @@ namespace hololive_oficial_cardgame_server
                     try
                     {
                         // Insert statement
-                        string insertQuery = "INSERT INTO `player` (`PlayerID`, `PlayerName`, `PlayerIcon`, `HoloCoins`, `HoloGold`, `NNMaterial`, `RRMaterial`, `SRMaterial`, `URMaterial`, `MatchVictory`, `MatchLoses`, `MatchesTotal`, `Email`, `Password`, `AccountLink`, `RegDate`) " +
-                                                "VALUES (NULL, '', '', '', '', '', '', '', '', '', '', '', '', @hash, '', NOW());";
+                        string insertQuery = "INSERT INTO `player` (`PlayerID`, `PlayerName`, `PlayerIcon`, `HoloCoins`, `HoloGold`, `NNMaterial`, `RRMaterial`, `SRMaterial`, `URMaterial`, `MatchVictory`, `MatchLoses`, `MatchesTotal`, `Email`, `Password`, `AccountLink`, `RegDate`, `LoginPassword`) " +
+                                                "VALUES (NULL, '', '', '', '', '', '', '', '', '', '', '', '', '', '', NOW(), @hash);";
 
                         using (MySqlCommand insertCommand = new MySqlCommand(insertQuery, connection, transaction))
                         {
@@ -59,7 +59,6 @@ namespace hololive_oficial_cardgame_server
                         transaction.Rollback();
                         return null;
                     }
-                    return null;
                 }
             }
         }
@@ -113,7 +112,7 @@ namespace hololive_oficial_cardgame_server
 
                         transaction.Commit();
 
-                        return playerInfoList[0];
+                        return playerInfoList[0] == null ? null : playerInfoList[0];
                     }
                     catch (Exception ex)
                     {
@@ -121,12 +120,10 @@ namespace hololive_oficial_cardgame_server
                         transaction.Rollback();
                         return null;
                     }
-                    return null;
                 }
             }
         }
-
-        public PlayerInfo LoginAccount(string email, string password)
+        public PlayerInfo LoginSession(string id, string password)
         {
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
@@ -137,19 +134,16 @@ namespace hololive_oficial_cardgame_server
                 {
                     try
                     {
-                        string insertQuery = "SELECT * FROM player WHERE Email=@email AND Password=@password LIMIT 1;";
+                        string insertQuery = "SELECT * FROM player WHERE PlayerId=@id AND Password=@password LIMIT 1;";
 
                         using (MySqlCommand insertCommand = new MySqlCommand(insertQuery, connection, transaction))
                         {
-                            insertCommand.Parameters.AddWithValue("@email", email);
+                            insertCommand.Parameters.AddWithValue("@id", id);
                             insertCommand.Parameters.AddWithValue("@password", password);
 
                             var result = insertCommand.ExecuteReader();
                             var dataTable = new DataTable();
                             dataTable.Load(result);
-
-
-                            PrintDataTable(dataTable);
 
                             foreach (DataRow row in dataTable.Rows)
                             {
@@ -166,7 +160,7 @@ namespace hololive_oficial_cardgame_server
 
                         transaction.Commit();
 
-                        return playerInfoList[0];
+                        return playerInfoList[0] == null ? null : playerInfoList[0];
                     }
                     catch (Exception ex)
                     {
@@ -174,7 +168,92 @@ namespace hololive_oficial_cardgame_server
                         transaction.Rollback();
                         return null;
                     }
-                    return null;
+                }
+            }
+        }
+
+        public PlayerInfo LoginAccount(string email, string password, string id = "")
+        {
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                List<PlayerInfo> playerInfoList = new List<PlayerInfo>();
+
+                using (MySqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        string insertQuery = "";
+                        if (string.IsNullOrEmpty(email))
+                            insertQuery = "SELECT * FROM player WHERE PlayerId=@playerid AND LoginPassword=@password LIMIT 1;";
+                        else
+                            insertQuery = "SELECT * FROM player WHERE Email=@email AND LoginPassword=@password LIMIT 1;";
+
+                        using (MySqlCommand insertCommand = new MySqlCommand(insertQuery, connection, transaction))
+                        {
+                            insertCommand.Parameters.AddWithValue("@email", email);
+                            insertCommand.Parameters.AddWithValue("@playerid", id);
+                            insertCommand.Parameters.AddWithValue("@password", password);
+
+                            var result = insertCommand.ExecuteReader();
+                            var dataTable = new DataTable();
+                            dataTable.Load(result);
+
+                            foreach (DataRow row in dataTable.Rows)
+                            {
+                                var playerInfo = new PlayerInfo
+                                {
+                                    PlayerID = row.Field<int>("PlayerID").ToString(),
+                                    Password = row.Field<string>("Password")
+                                };
+
+                                playerInfoList.Add(playerInfo);
+                            }
+
+                        }
+
+                        transaction.Commit();
+
+                        return playerInfoList[0] == null ? null : playerInfoList[0];
+                    }
+                    catch (Exception ex)
+                    {
+                        Lib.WriteConsoleMessage("\nError: " + ex.Message);
+                        transaction.Rollback();
+                        return null;
+                    }
+                }
+            }
+        }
+        public bool UpdateSessionPassword(string id, string sessionPassword)
+        {
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+
+                using (MySqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        string insertQuery = "UPDATE player SET Password=@password WHERE PlayerID=@playerid LIMIT 1;";
+
+                        using (MySqlCommand insertCommand = new MySqlCommand(insertQuery, connection, transaction))
+                        {
+                            insertCommand.Parameters.AddWithValue("@playerid", id);
+                            insertCommand.Parameters.AddWithValue("@password", sessionPassword);
+
+                            insertCommand.ExecuteNonQuery();
+
+                            transaction.Commit();
+                            return true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Lib.WriteConsoleMessage("\nError: " + ex.Message);
+                        transaction.Rollback();
+                        return false;
+                    }
                 }
             }
         }
@@ -527,7 +606,6 @@ namespace hololive_oficial_cardgame_server
                         transaction.Rollback();
                         return null;
                     }
-                    return null;
                 }
             }
         }
@@ -639,7 +717,6 @@ namespace hololive_oficial_cardgame_server
                         transaction.Rollback();
                         return null;
                     }
-                    return null;
                 }
             }
         }
@@ -744,7 +821,7 @@ namespace hololive_oficial_cardgame_server
                 }
             }
         }
-        public PlayerMatchRoom JoinTable(PlayerRequest _PlayerRequest)
+        public PlayerMatchRoom? JoinTable(PlayerRequest _PlayerRequest)
         {
             string PlayerIDSQL = "( SELECT PlayerID FROM `hololive-official-cardgame`.`player` WHERE PlayerID = @playerid AND Password =@password )";
             using (MySqlConnection connection = new MySqlConnection(connectionString))
@@ -869,7 +946,6 @@ namespace hololive_oficial_cardgame_server
                         transaction.Rollback();
                         return null;
                     }
-                    return null;
                 }
             }
         }
@@ -1051,7 +1127,6 @@ namespace hololive_oficial_cardgame_server
                         transaction.Rollback();
                         return null;
                     }
-                    return null;
                 }
             }
         }
@@ -1064,8 +1139,6 @@ namespace hololive_oficial_cardgame_server
         // we check if there's two players in the matchpool ready to play 'A' if so, get the oldest in the list and match with the one that just joined
         public List<PlayerInfo> CheckForAvaliablePlayers()
         {
-            string PlayerIDSQL = "";
-
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
@@ -1136,7 +1209,6 @@ namespace hololive_oficial_cardgame_server
                         transaction.Rollback();
                         return null;
                     }
-                    return null;
                 }
             }
         }
@@ -1234,8 +1306,6 @@ namespace hololive_oficial_cardgame_server
 
         public bool CofirmMatchForAvaliablePlayers(int p1, int p2)
         {
-            string PlayerIDSQL = "";
-
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
@@ -1268,7 +1338,6 @@ namespace hololive_oficial_cardgame_server
 
         public List<List<Card>> GetMatchPlayersDeck(string p1)
         {
-            string PlayerIDSQL = "";
 
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
@@ -1320,16 +1389,19 @@ namespace hololive_oficial_cardgame_server
             }
         }
 
-
-        static public bool UpdateDeckInfo(PlayerRequest PlayerInfo)
+        static public bool SetDeckAsActive(PlayerRequest PlayerInfo)
         {
             string jsonDeckData = PlayerInfo.jsonObject.ToString();
             if (PlayerInfo.jsonObject is JsonElement element && element.ValueKind == JsonValueKind.Object)
-            {
                 jsonDeckData = element.GetRawText();
+            DeckData _DeckData;
+            try
+            {
+                 _DeckData = JsonSerializer.Deserialize<DeckData>(jsonDeckData);
             }
-            DeckData _DeckData = JsonSerializer.Deserialize<DeckData>(jsonDeckData);
-
+            catch (Exception e) {
+                return false;
+            }
             using (MySqlConnection connection = new MySqlConnection("Server=localhost;Database=hololive-official-cardgame;User ID=root;Password=;Pooling=true;"))
             {
                 connection.Open();
@@ -1338,15 +1410,18 @@ namespace hololive_oficial_cardgame_server
                 {
                     try
                     {
-                        using (MySqlCommand updateCommand = new MySqlCommand("UPDATE playerdeck SET Name=@name, MainDeck=@maindeck, CheerDeck=@cheerdeck, OshiCard=@oshicard WHERE Status ='A' AND PlayerID=@playerid ", connection, transaction))
+                        using (MySqlCommand updateCommand = new MySqlCommand("UPDATE playerdeck SET Status='' WHERE PlayerID=@playerid ", connection, transaction))
                         {
-                            updateCommand.Parameters.AddWithValue("@name", _DeckData.deckName);
-                            updateCommand.Parameters.AddWithValue("@maindeck", _DeckData.main);
-                            updateCommand.Parameters.AddWithValue("@cheerdeck", _DeckData.energy);
-                            updateCommand.Parameters.AddWithValue("@oshicard", _DeckData.oshi);
                             updateCommand.Parameters.AddWithValue("@playerid", PlayerInfo.playerID);
                             updateCommand.ExecuteNonQuery();
                         }
+                        using (MySqlCommand updateCommand = new MySqlCommand("UPDATE playerdeck SET Status='A' WHERE DeckID=@deckid AND PlayerID=@playerid ", connection, transaction))
+                        {
+                            updateCommand.Parameters.AddWithValue("@playerid", PlayerInfo.playerID);
+                            updateCommand.Parameters.AddWithValue("@deckid", _DeckData.deckId);
+                            updateCommand.ExecuteNonQuery();
+                        }
+
                         transaction.Commit();
 
                         return true;
@@ -1360,7 +1435,70 @@ namespace hololive_oficial_cardgame_server
                 }
             }
         }
-        public DeckData GetDeckInfo(PlayerRequest PlayerInfo)
+        static public bool UpdateDeckInfo(PlayerRequest PlayerInfo)
+        {
+            string jsonDeckData = PlayerInfo.jsonObject.ToString();
+            if (PlayerInfo.jsonObject is JsonElement element && element.ValueKind == JsonValueKind.Object)
+            {
+                jsonDeckData = element.GetRawText();
+            }
+            DeckData _DeckData;
+            try
+            {
+                _DeckData = JsonSerializer.Deserialize<DeckData>(jsonDeckData);
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+
+            using (MySqlConnection connection = new MySqlConnection("Server=localhost;Database=hololive-official-cardgame;User ID=root;Password=;Pooling=true;"))
+            {
+                connection.Open();
+
+                using (MySqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        int rowsAffected = 0;
+                        using (MySqlCommand updateCommand = new MySqlCommand("UPDATE playerdeck SET Name=@name, MainDeck=@maindeck, CheerDeck=@cheerdeck, OshiCard=@oshicard WHERE DeckID=@deckid AND PlayerID=@playerid ", connection, transaction))
+                        {
+                            updateCommand.Parameters.AddWithValue("@name", _DeckData.deckName);
+                            updateCommand.Parameters.AddWithValue("@maindeck", _DeckData.main);
+                            updateCommand.Parameters.AddWithValue("@cheerdeck", _DeckData.energy);
+                            updateCommand.Parameters.AddWithValue("@oshicard", _DeckData.oshi);
+                            updateCommand.Parameters.AddWithValue("@playerid", PlayerInfo.playerID);
+                            updateCommand.Parameters.AddWithValue("@deckid", _DeckData.deckId);
+                            rowsAffected = updateCommand.ExecuteNonQuery();
+                        }
+
+                        if (rowsAffected == 0)
+                        {
+                            using (MySqlCommand insertCommand = new MySqlCommand("INSERT INTO `playerdeck` (`DeckID`, `PlayerID`, `Name`, `MainDeck`, `CheerDeck`, `OshiCard`, `Status`) VALUES ('', @playerid, @name, @maindeck, @cheerdeck, @oshicard, '')", connection, transaction))
+                            {
+                                insertCommand.Parameters.AddWithValue("@name", _DeckData.deckName);
+                                insertCommand.Parameters.AddWithValue("@maindeck", _DeckData.main);
+                                insertCommand.Parameters.AddWithValue("@cheerdeck", _DeckData.energy);
+                                insertCommand.Parameters.AddWithValue("@oshicard", _DeckData.oshi);
+                                insertCommand.Parameters.AddWithValue("@playerid", PlayerInfo.playerID);
+                                insertCommand.ExecuteNonQuery();
+                            }
+                        }
+
+                        transaction.Commit();
+
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Lib.WriteConsoleMessage("\nError cleaning the list before start the server: " + ex.Message);
+                        transaction.Rollback();
+                        return false;
+                    }
+                }
+            }
+        }
+        public List<DeckData> GetDeckInfo(PlayerRequest PlayerInfo, bool AllDecks)
         {
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
@@ -1371,15 +1509,17 @@ namespace hololive_oficial_cardgame_server
                 {
                     try
                     {
-                        string insertQuery = "SELECT * FROM playerdeck WHERE Status ='A' AND PlayerID=( SELECT PlayerID FROM `hololive-official-cardgame`.`player` WHERE PlayerID =@playerid AND Password =@password ) LIMIT 1;";
-                        DeckData deckData;
+                        string queryComplement = !AllDecks ? "Status ='A' AND" : "";
+                        string insertQuery = $"SELECT * FROM playerdeck WHERE {queryComplement} PlayerID=( SELECT PlayerID FROM `hololive-official-cardgame`.`player` WHERE PlayerID =@playerid AND Password =@password ) LIMIT 1;";
+
+                        List<DeckData> ListDeckData = new();
                         using (MySqlCommand insertCommand = new MySqlCommand(insertQuery, connection, transaction))
                         {
                             insertCommand.Parameters.AddWithValue("@playerid", PlayerInfo.playerID);
                             insertCommand.Parameters.AddWithValue("@password", PlayerInfo.password);
 
                             var result = insertCommand.ExecuteReader();
-                            var dataTable = new DataTable();
+                            DataTable dataTable = new ();
                             dataTable.Load(result);
 
                             if (dataTable.Rows.Count == 0)
@@ -1406,17 +1546,22 @@ namespace hololive_oficial_cardgame_server
                                 }
                             }
 
-                            deckData = new DeckData()
+                            foreach (DataRow row in dataTable.Rows)
                             {
-                                deckName = dataTable.Rows[0].Field<string>("Name"),
-                                main = dataTable.Rows[0].Field<string>("MainDeck"),
-                                energy = dataTable.Rows[0].Field<string>("CheerDeck"),
-                                oshi = dataTable.Rows[0].Field<string>("OshiCard")
-                            };
+                                DeckData deckData = new (){
+                                    deckId = row.Field<string>("DeckID"),
+                                    deckName = row.Field<string>("Name"),
+                                    main = row.Field<string>("MainDeck"),
+                                    energy = row.Field<string>("CheerDeck"),
+                                    status = row.Field<string>("Status"),
+                                    oshi = row.Field<string>("OshiCard")
+                                };
+                                ListDeckData.Add(deckData);
+                            }
                         }
 
                         transaction.Commit();
-                        return deckData;
+                        return ListDeckData;
                     }
                     catch (Exception ex)
                     {
@@ -1505,7 +1650,7 @@ namespace hololive_oficial_cardgame_server
             return new PlayerItemBox
             {
                 PlayerItemBoxID = row.Field<int>("PlayerItemBoxID"),
-                PlayerID = row.Field<int>("PlayerID"),
+                PlayerID = row.Field<int>("PlayerID").ToString(),
                 ItemID = row.Field<int>("ItemID"),
                 Amount = row.Field<int>("Amount"),
                 ObtainedDate = row.Field<DateTime>("ObtainedDate"),
@@ -1520,7 +1665,7 @@ namespace hololive_oficial_cardgame_server
                 PlayerMissionListID = row.Field<int>("PlayerMissionListID"),
                 ObtainedDate = row.Field<DateTime>("ObtainedDate"),
                 ClearData = row.Field<DateTime>("ClearData"),
-                PlayerID = row.Field<int>("PlayerID"),
+                PlayerID = row.Field<int>("PlayerID").ToString(),
                 MissionID = row.Field<int>("MissionID")
             };
         }
@@ -1530,7 +1675,7 @@ namespace hololive_oficial_cardgame_server
             return new PlayerMessageBox
             {
                 MessageID = row.Field<int>("MessageID"),
-                PlayerID = row.Field<int>("PlayerID"),
+                PlayerID = row.Field<int>("PlayerID").ToString(),
                 Title = row.Field<string>("Title"),
                 ObtainedDate = row.Field<DateTime>("ObtainedDate"),
                 Description = row.Field<string>("Description")
@@ -1542,7 +1687,7 @@ namespace hololive_oficial_cardgame_server
             return new PlayerBadge
             {
                 BadgeID = row.Field<int>("BadgeID"),
-                PlayerID = row.Field<int>("PlayerID"),
+                PlayerID = row.Field<int>("PlayerID").ToString(),
                 Rank = row.Field<int>("Rank"),
                 ObtainedDate = row.Field<DateTime>("ObtainedDate")
             };
@@ -1552,7 +1697,7 @@ namespace hololive_oficial_cardgame_server
             return new PlayerTitle
             {
                 TitleID = row.Field<int>("TitleID"),
-                PlayerID = row.Field<int>("PlayerID"),
+                PlayerID = row.Field<int>("PlayerID").ToString(),
                 TitleName = row.Field<string>("TitleName"),
                 TitleDescription = row.Field<string>("TitleDescription"),
                 ObtainedDate = row.Field<DateTime>("ObtainedDate")

@@ -4,7 +4,7 @@ public class PlayerItemBox
 {
     public int PlayerItemBoxID { get; set; }
 
-    public int PlayerID { get; set; }
+    public string PlayerID { get; set; }
 
     public int ItemID { get; set; }
 

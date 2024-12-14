@@ -1,10 +1,12 @@
 ﻿using hololive_oficial_cardgame_server;
 using hololive_oficial_cardgame_server.SerializableObjects;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static hololive_oficial_cardgame_server.DBConnection;
 
 namespace hololive_oficial_cardgame_server.Controllers
 {
+    [Authorize]
     [Route("[controller]")]
     public class ControlMatchQueueController : ControllerBase
     {
@@ -18,7 +20,7 @@ namespace hololive_oficial_cardgame_server.Controllers
 
         [HttpPost("JoinQueue")]
         [Consumes("application/json")]
-        public async Task<IActionResult> Post([FromBody] PlayerRequest _PlayerRequest)
+        public IActionResult Post([FromBody] PlayerRequest _PlayerRequest)
         {
             try
             {
@@ -38,7 +40,7 @@ namespace hololive_oficial_cardgame_server.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError("Failed to save CreateAccount data");
+                _logger.LogError("Failed to process data {Exception}", e);
                 return StatusCode(500, "An error occurred while processing your request");
             }
 
@@ -46,7 +48,7 @@ namespace hololive_oficial_cardgame_server.Controllers
         }
         [HttpPut("JoinLeave")]
         [Consumes("application/json")]
-        public async Task<IActionResult> Put([FromBody] PlayerRequest _PlayerRequest)
+        public IActionResult Put([FromBody] PlayerRequest _PlayerRequest)
         {
             try
             {
@@ -64,7 +66,7 @@ namespace hololive_oficial_cardgame_server.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError("Failed to save CreateAccount data");
+                _logger.LogError("Failed to process data {Exception}", e);
                 return StatusCode(500, "An error occurred while processing your request");
             }
 

@@ -82,8 +82,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DoCollab", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
             cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
 

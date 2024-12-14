@@ -4,7 +4,7 @@ public class PlayerMission
 {
     public int PlayerMissionListID { get; set; }
 
-    public int PlayerID { get; set; }
+    public string PlayerID { get; set; }
     public int MissionID { get; set; }
     public DateTime? ObtainedDate { get; set; }
     public DateTime? ClearData { get; set; }

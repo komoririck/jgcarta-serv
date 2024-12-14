@@ -100,7 +100,7 @@ public class Record
         }
     }
 
-    public static List<Record> QueryRecords(string name = null, string type = null, string bloomLevel = null, string cardNumber = null, string tag = null)
+    public static List<Record> QueryRecords(string? name = null, string? type = null, string? bloomLevel = null, string? cardNumber = null, string? tag = null)
     {
         var query = result.AsQueryable();
 

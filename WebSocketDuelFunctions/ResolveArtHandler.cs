@@ -27,8 +27,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             OnArtUsedEffects(cMatchRoom.DeclaringAttackCard, cMatchRoom);
 
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicArtDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
 
             cMatchRoom.currentGamePhase = MatchRoom.GAMEPHASE.ResolvingDamage;
         }

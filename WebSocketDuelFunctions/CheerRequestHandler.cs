@@ -29,18 +29,18 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     Lib.getCardFromDeck(cMatchRoom.playerACardCheer, cMatchRoom.playerAHand, 1);
                     cardCheerDraw.cardList = new List<Card>() { cMatchRoom.playerAHand[cMatchRoom.playerAHand.Count - 1] };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
 
                     cardCheerDraw.cardList = new List<Card>() { new Card() };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }
                 else
                 {
                     cardCheerDraw.cardList = new List<Card>() { new Card("Empty")};
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }
             }
             else
@@ -50,18 +50,18 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     Lib.getCardFromDeck(cMatchRoom.playerBCardCheer, cMatchRoom.playerBHand, 1);
                     cardCheerDraw.cardList = new List<Card>() { cMatchRoom.playerBHand[cMatchRoom.playerBHand.Count - 1] };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
 
                     cardCheerDraw.cardList = new List<Card>() { new Card() };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
                 }
                 else
                 {
                     cardCheerDraw.cardList = new List<Card>() { new Card("Empty") };
                     ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }
             }
 

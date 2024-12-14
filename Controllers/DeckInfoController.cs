@@ -1,9 +1,11 @@
 ﻿using hololive_oficial_cardgame_server.SerializableObjects;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
 namespace hololive_oficial_cardgame_server.Controllers
 {
+    [Authorize]
     [Route("[controller]")]
     public class DeckInfoController : ControllerBase
     {
@@ -16,11 +18,11 @@ namespace hololive_oficial_cardgame_server.Controllers
 
         [HttpPost("GetDeck")]
         [Consumes("application/json")]
-        public async Task<IActionResult> Put([FromBody] PlayerRequest PlayerInfo)
+        public IActionResult GetDeck([FromBody] PlayerRequest PlayerInfo)
         {
             try
             {
-                DeckData deckData = new DBConnection().GetDeckInfo(PlayerInfo);
+                List<DeckData> deckData = new DBConnection().GetDeckInfo(PlayerInfo, AllDecks: true);
                 return Ok(deckData);
             }
             catch (Exception e)
@@ -32,7 +34,7 @@ namespace hololive_oficial_cardgame_server.Controllers
 
         [HttpPut("UpdateDeck")]
         [Consumes("application/json")]
-        public async Task<IActionResult> Post([FromBody] PlayerRequest PlayerInfo)
+        public IActionResult UpdateDeck([FromBody] PlayerRequest PlayerInfo)
         {
             try
             {
@@ -41,7 +43,22 @@ namespace hololive_oficial_cardgame_server.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError("Failed to save player Information data");
+                _logger.LogError("Failed to process data {Exception}", e);
+                return StatusCode(500, "An error occurred while processing your request");
+            }
+        }
+        [HttpPut("SetDeckAsActive")]
+        [Consumes("application/json")]
+        public IActionResult SetDeckAsActive([FromBody] PlayerRequest PlayerInfo)
+        {
+            try
+            {
+                bool didUpdate = DBConnection.SetDeckAsActive(PlayerInfo);
+                return Ok(didUpdate);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Failed to process data {Exception}", e);
                 return StatusCode(500, "An error occurred while processing your request");
             }
         }

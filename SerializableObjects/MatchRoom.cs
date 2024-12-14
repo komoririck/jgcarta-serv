@@ -66,14 +66,14 @@ public class MatchRoom
     public List<Card> playerABackPosition = new List<Card>();
     public List<Card> playerBBackPosition = new List<Card>();
 
-    public Card playerAFavourite = null;
-    public Card playerBFavourite = null;
+    public Card? playerAFavourite = null;
+    public Card? playerBFavourite = null;
 
-    public Card playerAStage = null;
-    public Card playerBStage = null;
+    public Card? playerAStage = null;
+    public Card? playerBStage = null;
 
-    public Card playerACollaboration = null;
-    public Card playerBCollaboration = null;
+    public Card? playerACollaboration = null;
+    public Card? playerBCollaboration = null;
 
     public List<Card> playerAArquive = new List<Card>();
     public List<Card> playerBArquive = new List<Card>();
@@ -84,8 +84,8 @@ public class MatchRoom
     public List<Card> playerACardCheer = new List<Card>();
     public List<Card> playerBCardCheer = new List<Card>();
 
-    public Card playerAOshi = null;
-    public Card playerBOshi = null;
+    public Card? playerAOshi = null;
+    public Card? playerBOshi = null;
 
     public string currentCardResolving = "";
     internal int cheersAssignedThisChainAmount;
@@ -94,9 +94,9 @@ public class MatchRoom
 
     internal List<DuelAction> ResolvingEffectChain = new();
 
-    public Art ResolvingArt = null;
-    internal Card DeclaringAttackCard = null;
-    internal Card BeingTargetedForAttackCard = null;
+    public Art? ResolvingArt = null;
+    internal Card? DeclaringAttackCard = null;
+    internal Card? BeingTargetedForAttackCard = null;
 
     internal int currentArtDamage;
     internal int currentEffectDamage;
@@ -114,7 +114,8 @@ public class MatchRoom
     internal bool playerAResolveConfirmation;
     internal bool playerBResolveConfirmation;
 
-    public List<DuelAction> RecoilDuelActions { get; internal set; }
+    public List<DuelAction> RecoilDuelActions = new ();
+    internal Card? BloomedCard;
 
     [Flags]
     public enum GAMEPHASE : byte

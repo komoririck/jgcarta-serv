@@ -8,11 +8,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
     internal class DrawRequestHandler
     {
 
-        internal async Task DrawRequestHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
+        internal void DrawRequestHandle(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-             Task task;
+            Task task;
 
-            if (playerRequest.playerID != cMatchRoom.currentPlayerTurn) 
+            if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
             {
                 Lib.WriteConsoleMessage("Wrong player calling");
                 return;

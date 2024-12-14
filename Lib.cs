@@ -115,20 +115,19 @@ namespace hololive_oficial_cardgame_server
 
         public static async Task SendPlayerData(MatchRoom cMatchRoom, bool reveal, DuelAction DuelActionResponse, string description)
         {
-            PlayerRequest _ReturnData;
             string otherPlayer = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerB.PlayerID : cMatchRoom.playerA.PlayerID;
 
             // Serialize and send data to the current player
-            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
+            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], _ReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], _ReturnData);
 
             // Handle reveal logic and send data to the other player
             if (reveal == false)
                 DuelActionResponse.cardList = cMatchRoom.FillCardListWithEmptyCards(DuelActionResponse.cardList);
 
             _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
-            Lib.SendMessage(MessageDispatcher.playerConnections[otherPlayer.ToString()], _ReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[otherPlayer.ToString()], _ReturnData);
         }
         public static async Task SendMessage(WebSocket webSocket, PlayerRequest data, [CallerMemberName] string callerName = "")
         {
@@ -177,21 +176,20 @@ namespace hololive_oficial_cardgame_server
             duelAction.targetCard.GetCardInfo();
 
             //checking if can attach
-            bool hasAttached = false;
             if (duelAction.usedCard.cardType.Equals("エール"))
             {
                 if (stage != null)
                     if (duelAction.targetCard.cardNumber.Equals(stage.cardNumber) && duelAction.targetCard.cardPosition.Equals("Stage"))
                     {
                         stage.attachedEnergy.Add(duelAction.usedCard);
-                        return hasAttached = true;
+                        return true;
                     }
 
                 if (collab != null)
                     if (duelAction.targetCard.cardNumber.Equals(collab.cardNumber) && duelAction.targetCard.cardPosition.Equals("Collaboration"))
                     {
                         collab.attachedEnergy.Add(duelAction.usedCard);
-                        return hasAttached = true;
+                        return true;
                     }
 
                 if (backStage != null)
@@ -204,7 +202,7 @@ namespace hololive_oficial_cardgame_server
                                 duelAction.targetCard.cardPosition.Equals(backStage[y].cardPosition))
                             {
                                 backStage[y].attachedEnergy.Add(duelAction.usedCard);
-                                return hasAttached = true;
+                                return true;
                             }
                         }
                     }
@@ -526,6 +524,9 @@ namespace hololive_oficial_cardgame_server
                 case "Deck":
                     playerHand = playerId.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADeck : cMatchRoom.playerBDeck;
                     break;
+                case "TempHand":
+                    playerHand = playerId.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
+                    break;
             }
             int handPosCounter = 0;
             foreach (Card inHand in playerHand)
@@ -655,7 +656,7 @@ namespace hololive_oficial_cardgame_server
             return false;
         }
 
-        static public bool TransferEnergyFromCardAToTarget(MatchRoom cMatchRoom, Card CardA, Card Energy, DuelAction _DuelAction)
+        static public async Task<bool> TransferEnergyFromCardAToTargetAsync(MatchRoom cMatchRoom, Card CardA, Card Energy, DuelAction _DuelAction)
         {
             Card seletectedCard = null;
 
@@ -704,8 +705,8 @@ namespace hololive_oficial_cardgame_server
                 };
 
                 PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyAtAndDestroy", requestObject = JsonSerializer.Serialize(_DisposeAction, options) };
-                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
+                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
 
                 //lets change duelaction just so the assign energy can work, maybe this need to be reworked to not use duelaction
                 _DuelAction.usedCard = Energy;
@@ -723,8 +724,8 @@ namespace hololive_oficial_cardgame_server
 
                 pReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
+                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
                 return true;
             }
             return false;
@@ -733,6 +734,13 @@ namespace hololive_oficial_cardgame_server
         static public void SwittchCardYToCardZButKeepPosition(MatchRoom cMatchRoom, string playerid, Card TargetPosition)
         {
             int backStagePos = Lib.CheckIfCardExistInPlayerBackStage(cMatchRoom, playerid, TargetPosition);
+
+            if (!(TargetPosition.cardPosition.Equals("BackStage1") || TargetPosition.cardPosition.Equals("BackStage2") || TargetPosition.cardPosition.Equals("BackStage3") ||
+                TargetPosition.cardPosition.Equals("BackStage4") || TargetPosition.cardPosition.Equals("BackStage5")))
+            {
+                Lib.WriteConsoleMessage("Invalid target position");
+                return;
+            }
 
             if (backStagePos < 0)
             {
@@ -806,19 +814,19 @@ namespace hololive_oficial_cardgame_server
 
             return randomNumber;
         }
-        internal static void SendDiceRoll(MatchRoom cMatchRoom, List<int> diceValue, bool COUNTFORRESONSE)
+        internal static async Task SendDiceRollAsync(MatchRoom cMatchRoom, List<int> diceValue, bool COUNTFORRESONSE)
         {
 
 
             DuelAction response = new() { actionObject = JsonSerializer.Serialize(diceValue, options) };
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = COUNTFORRESONSE ? "RollDice" : "OnlyDiceRoll", requestObject = JsonSerializer.Serialize(response, Lib.options) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
 
         }
 
-        internal static void RecoveryHP(MatchRoom cMatchRoom, bool STAGE, bool COLLAB, bool BACKSTAGE, int RecoveryAmount, string targetPlayerID, string cardPosition = "")
+        internal static async Task RecoveryHPAsync(MatchRoom cMatchRoom, bool STAGE, bool COLLAB, bool BACKSTAGE, int RecoveryAmount, string targetPlayerID, string cardPosition = "")
         {
             // Determine which player is the target
             bool isFirstPlayer = cMatchRoom.firstPlayer.Equals(targetPlayerID);
@@ -841,8 +849,8 @@ namespace hololive_oficial_cardgame_server
                     requestObject = JsonSerializer.Serialize(da, Lib.options)
                 };
 
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
+                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
             }
 
             if (COLLAB)
@@ -863,8 +871,8 @@ namespace hololive_oficial_cardgame_server
                     requestObject = JsonSerializer.Serialize(da, Lib.options)
                 };
 
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
+                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
             }
 
             if (BACKSTAGE)
@@ -890,8 +898,8 @@ namespace hololive_oficial_cardgame_server
                         requestObject = JsonSerializer.Serialize(da, Lib.options)
                     };
 
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
                 }
             }
         }
@@ -899,11 +907,11 @@ namespace hololive_oficial_cardgame_server
         internal static void RecoveryHP(MatchRoom cMatchRoom, DuelAction duelaction, int RecoveryAmount)
         {
             if (duelaction.targetCard.cardPosition.Equals("Stage"))
-                RecoveryHP(cMatchRoom, STAGE: true, COLLAB: false, BACKSTAGE: false, RecoveryAmount, targetPlayerID: cMatchRoom.currentPlayerTurn);
+                RecoveryHPAsync(cMatchRoom, STAGE: true, COLLAB: false, BACKSTAGE: false, RecoveryAmount, targetPlayerID: cMatchRoom.currentPlayerTurn);
             else if (duelaction.targetCard.cardPosition.Equals("Collaboration"))
-                RecoveryHP(cMatchRoom, STAGE: false, COLLAB: true, BACKSTAGE: false, RecoveryAmount, targetPlayerID: cMatchRoom.currentPlayerTurn);
+                RecoveryHPAsync(cMatchRoom, STAGE: false, COLLAB: true, BACKSTAGE: false, RecoveryAmount, targetPlayerID: cMatchRoom.currentPlayerTurn);
             else
-                RecoveryHP(cMatchRoom, STAGE: false, COLLAB: false, BACKSTAGE: true, RecoveryAmount, targetPlayerID: cMatchRoom.currentPlayerTurn, duelaction.targetCard.cardPosition);
+                RecoveryHPAsync(cMatchRoom, STAGE: false, COLLAB: false, BACKSTAGE: true, RecoveryAmount, targetPlayerID: cMatchRoom.currentPlayerTurn, duelaction.targetCard.cardPosition);
         }
 
         public static async Task UseCardEffectDrawXAddIfMatchCondition(MatchRoom cMatchRoom, List<Card> queryy, DuelAction _DuelAction, bool reveal = false)
@@ -928,7 +936,7 @@ namespace hololive_oficial_cardgame_server
             Lib.SendPlayerData(cMatchRoom, reveal, DuelActionResponse, "ResolveOnSupportEffect");
         }
 
-        public static async Task UseCardEffectDrawXAmountAddAnyIfConditionMatchThenReorderToBottom(MatchRoom cMatchRoom, int cNum, int HandMustHave, bool reveal = false)
+        public static void UseCardEffectDrawXAmountAddAnyIfConditionMatchThenReorderToBottom(MatchRoom cMatchRoom, int cNum, int HandMustHave, bool reveal = false)
         {
 
             if (cMatchRoom.firstPlayer == cMatchRoom.currentPlayerTurn)
@@ -957,7 +965,7 @@ namespace hololive_oficial_cardgame_server
 
             Lib.SendPlayerData(cMatchRoom, reveal, DuelActionResponse, "ResolveOnSupportEffect");
         }
-        public static async Task UseCardEffectDrawAnyAsync(MatchRoom cMatchRoom, int cNum, string cUsedNumber)
+        public static void UseCardEffectDrawAny(MatchRoom cMatchRoom, int cNum, string cUsedNumber)
         {
             if (cMatchRoom.firstPlayer == cMatchRoom.currentPlayerTurn)
                 Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, cNum);
@@ -976,7 +984,7 @@ namespace hololive_oficial_cardgame_server
 
             Lib.SendPlayerData(cMatchRoom, false, _Draw, "SupportEffectDraw");
         }
-        public static async Task FromTheListAddFirstToHandThenAddRemainingToBottom(MatchRoom cMatchRoom, List<string> possibleDraw, DuelAction duelaction, bool shouldUseTempHandValidation, int pickedLimit, string shouldUseToCompareWithTempHand = "")
+        public static void FromTheListAddFirstToHandThenAddRemainingToBottom(MatchRoom cMatchRoom, List<string> possibleDraw, DuelAction duelaction, bool shouldUseTempHandValidation, int pickedLimit, string shouldUseToCompareWithTempHand = "")
         {
             List<Card> TempHand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
             List<Card> playerHand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAHand : cMatchRoom.playerBTempHand;
@@ -996,7 +1004,7 @@ namespace hololive_oficial_cardgame_server
                     TempHand[i].GetCardInfo();
 
                     if (shouldUseToCompareWithTempHand.Equals("name"))
-                        comparatingValue = TempHand[i].name;
+                        comparatingValue = TempHand[i].cardName;
                     else if (shouldUseToCompareWithTempHand.Equals("number"))
                         comparatingValue = TempHand[i].cardNumber;
 
@@ -1097,11 +1105,11 @@ namespace hololive_oficial_cardgame_server
             };
             backPosition.Add(_DuelActio.usedCard);
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelActio, Lib.options) });
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelActio, Lib.options) });
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelActio, Lib.options) });
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelActio, Lib.options) });
             cMatchRoom.currentGameHigh++;
         }
-        public static async Task UseCardEffectToSummom(MatchRoom cMatchRoom, string zone, string cUsedNumber, string bloomLevel)
+        public static void UseCardEffectToSummom(MatchRoom cMatchRoom, string zone, string cUsedNumber, string bloomLevel)
         {
             List<Card> query = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerADeck : cMatchRoom.playerBDeck;
 
@@ -1145,23 +1153,23 @@ namespace hololive_oficial_cardgame_server
             switch (card.cardNumber)
             {
                 case "hBP01-123":
-                    if (target.name.Equals("兎田ぺこら"))
+                    if (target.cardName.Equals("兎田ぺこら"))
                         return true;
                     break;
                 case "hBP01-122":
-                    if (target.name.Equals("アキ・ローゼンタール"))
+                    if (target.cardName.Equals("アキ・ローゼンタール"))
                         return true;
                     break;
                 case "hBP01-126":
-                    if (target.name.Equals("尾丸ポルカ"))
+                    if (target.cardName.Equals("尾丸ポルカ"))
                         return true;
                     break;
                 case "hBP01-125":
-                    if (target.name.Equals("小鳥遊キアラ"))
+                    if (target.cardName.Equals("小鳥遊キアラ"))
                         return true;
                     break;
                 case "hBP01-124":
-                    if (target.name.Equals("AZKi") || target.name.Equals("SorAZ"))
+                    if (target.cardName.Equals("AZKi") || target.cardName.Equals("SorAZ"))
                         return true;
                     break;
                 case "hBP01-121":
@@ -1234,6 +1242,36 @@ namespace hololive_oficial_cardgame_server
                 }
             }
             return false;
+        }
+        public static string[] GetAreasThatContainsCardWithColorOrTagOrName(MatchRoom cMatchRoom, string playerID, string color = "", string tag = "", string name = "")
+        {
+            List<Card> allAttachments = new();
+            List<string> list = new();
+
+            allAttachments.AddRange(cMatchRoom.firstPlayer.Equals(playerID) ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition);
+            allAttachments.Add(cMatchRoom.firstPlayer.Equals(playerID) ? cMatchRoom.playerAStage : cMatchRoom.playerBStage);
+            allAttachments.Add(cMatchRoom.firstPlayer.Equals(playerID) ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration);
+
+            if (!string.IsNullOrEmpty(color))
+            {
+                foreach (Card card in allAttachments)
+                    if (card.color.Equals(color))
+                        list.Add(card.cardPosition);
+            }
+            else if (!string.IsNullOrEmpty(tag))
+            {
+                foreach (Card card in allAttachments)
+                    if (card.cardTag.Contains(tag))
+                        list.Add(card.cardPosition);
+            }
+            else if (!string.IsNullOrEmpty(name))
+            {
+                foreach (Card card in allAttachments)
+                    if (card.cardName.Contains(name))
+                        list.Add(card.cardPosition);
+            }
+
+            return list.ToArray();
         }
     }
 }

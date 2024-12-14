@@ -41,7 +41,7 @@ namespace hololive_oficial_cardgame_server
                     break;
                 case "DrawRequest":
                     var handler3 = new DrawRequestHandler();
-                    await handler3.DrawRequestHandleAsync(playerRequest, cMatchRoom);
+                    handler3.DrawRequestHandle(playerRequest, cMatchRoom);
                     break;
                 case "CheerRequest":
                     var handler4 = new CheerRequestHandler();
@@ -63,20 +63,22 @@ namespace hololive_oficial_cardgame_server
                     if (!(playerRequest.playerID != cMatchRoom.currentPlayerTurn))
                         break;
 
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
                     break;
                 case "MainStartRequest":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                         break;
 
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
                     break;
                 case "PlayHolomem":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
                         return;
+
                     DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
+
                     var handler902 = new PlayHolomemHandler();
                     await handler902.MainDoActionRequestPlayHolomemHandleAsync(playerRequest, cMatchRoom);
                     break;
@@ -142,8 +144,8 @@ namespace hololive_oficial_cardgame_server
                     cMatchRoom.ActiveEffects = tempEffectList;
 
                     Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
 
                     cMatchRoom.currentGameHigh++;
                     break;
@@ -193,13 +195,6 @@ namespace hololive_oficial_cardgame_server
                 case "Retreat":
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-                    if (!(_DuelAction.targetCard.cardPosition.Equals("BackStage1") || _DuelAction.targetCard.cardPosition.Equals("BackStage2") || _DuelAction.targetCard.cardPosition.Equals("BackStage3") ||
-                        _DuelAction.targetCard.cardPosition.Equals("BackStage4") || _DuelAction.targetCard.cardPosition.Equals("BackStage5")))
-                    {
-                        Lib.WriteConsoleMessage("Invalid target position");
-                        return;
-                    }
-                    //paying the cost for retrat
                     bool energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
                     if (!energyPaid)
                         break;
@@ -216,8 +211,8 @@ namespace hololive_oficial_cardgame_server
                     Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, playerRequest.playerID, _DuelAction.targetCard);
 
                     PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "SwitchStageCardByRetreat", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+                    await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
 
                     break;
                 case "ResolveRerollEffect":
@@ -234,7 +229,7 @@ namespace hololive_oficial_cardgame_server
                         int diceRollCount = playerRequest.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollCount : cMatchRoom.playerBDiceRollCount;
 
                         int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn, diceRollCount);
-                        Lib.SendDiceRoll(cMatchRoom, diceRollList.GetRange(Math.Max(0, diceRollList.Count - 3), Math.Min(3, diceRollList.Count)), COUNTFORRESONSE: true);
+                        Lib.SendDiceRollAsync(cMatchRoom, diceRollList.GetRange(Math.Max(0, diceRollList.Count - 3), Math.Min(3, diceRollList.Count)), COUNTFORRESONSE: true);
                     }
                     break;
 

@@ -11,8 +11,15 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
         {
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-                _DuelAction.targetCard?.GetCardInfo();
+
+            if (_DuelAction.targetCard == null)
+                return;
+            if (_DuelAction.usedCard == null)
+                return;
+
+            _DuelAction.targetCard?.GetCardInfo();
                 _DuelAction.usedCard?.GetCardInfo();
+
 
             bool canContinueBloomHolomem = false;
             if (!(_DuelAction.usedCard.bloomLevel.Equals("Debut") || _DuelAction.usedCard.bloomLevel.Equals("1st")))
@@ -64,9 +71,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
             //QueryBloomableCard has a special treatment for card with more than one name
-            List<Record> validCardToBloom = FileReader.QueryBloomableCard(_DuelAction.targetCard.name, _DuelAction.targetCard.bloomLevel);
+            List<Record> validCardToBloom = FileReader.QueryBloomableCard(_DuelAction.targetCard.cardName, _DuelAction.targetCard.bloomLevel);
             //lets add especial conditions to the bloom, like SorAZ
-            if (_DuelAction.usedCard.name.Equals("SorAZ") && _DuelAction.targetCard.bloomLevel.Equals("Debut") && (_DuelAction.targetCard.name.Equals("ときのそら") || _DuelAction.targetCard.name.Equals("AZKi"))) {
+            if (_DuelAction.usedCard.cardName.Equals("SorAZ") && _DuelAction.targetCard.bloomLevel.Equals("Debut") && (_DuelAction.targetCard.cardName.Equals("ときのそら") || _DuelAction.targetCard.cardName.Equals("AZKi"))) {
                 foreach (KeyValuePair<string, Record> r in FileReader.result)
                 {
                     if (r.Value.CardNumber.Equals("hSD01-013")) 
@@ -79,8 +86,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (_DuelAction.usedCard.cardNumber.Equals("hBP01-045")) {
                 List<Card> playerLife = cMatchRoom.currentPlayerTurn.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerALife : cMatchRoom.playerBLife;
                 if (playerLife.Count < 4) { 
-                validCardToBloom = FileReader.QueryBloomableCard(_DuelAction.targetCard.name, "1st");
-                validCardToBloom.AddRange(FileReader.QueryBloomableCard(_DuelAction.targetCard.name, "2nd"));
+                validCardToBloom = FileReader.QueryBloomableCard(_DuelAction.targetCard.cardName, "1st");
+                validCardToBloom.AddRange(FileReader.QueryBloomableCard(_DuelAction.targetCard.cardName, "2nd"));
                 }
             }
 
@@ -184,6 +191,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     break;
             }
 
+            cMatchRoom.BloomedCard = _DuelAction.usedCard;
+
             //since we pass all the validation, lets just assign the new card
             void bloomCard(Card cardToBloom, Card cardWithBloomInfo, MatchRoom matchRoom)
             {
@@ -197,8 +206,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             }
 
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "BloomHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], pReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], pReturnData);
 
 
 
@@ -211,7 +220,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 switch (card.cardNumber) { 
                     case "hBP01-121":
 
-                        if (cardToBloom.name.Equals("小鳥遊キアラ")) { 
+                        if (cardToBloom.cardName.Equals("小鳥遊キアラ")) { 
                             PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DrawBloomIncreaseEffect", requestObject = "" };
                             if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
                             {

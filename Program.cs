@@ -1,5 +1,9 @@
 ﻿using hololive_oficial_cardgame_server;
+using hololive_oficial_cardgame_server.Controllers;
 using hololive_oficial_cardgame_server.SerializableObjects;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics;
 using System.Net.Sockets;
 using System.Net.WebSockets;
@@ -19,6 +23,23 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAuthentication(x => {
+     x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+     x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+     x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+ }).AddJwtBearer(x => {
+     x.TokenValidationParameters = new TokenValidationParameters
+     {
+         ValidIssuer = "https://test-server.com",
+         ValidAudience = "https://test-api.com",
+         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AccountController.GetKey())),
+         ValidateIssuer = true,          
+         ValidateAudience = true,        
+         ValidateLifetime = false,       
+         ValidateIssuerSigningKey = true,
+     };
+ });
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -38,6 +59,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
@@ -63,7 +85,7 @@ async Task HandleWebSocketAsync(HttpContext context)
     if (context.WebSockets.IsWebSocketRequest)
     {
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        var buffer = new byte[1024 * 4];
+        var buffer = new byte[64 * 1024];
 
         try
         {
@@ -120,7 +142,11 @@ async Task HandleWebSocketAsync(HttpContext context)
 
                     try
                     {
-                        var playerRequest = JsonSerializer.Deserialize<PlayerRequest>(receivedMessage);
+                        var options = new JsonSerializerOptions
+                        {
+                            DefaultBufferSize = 8192 
+                        };
+                        var playerRequest = JsonSerializer.Deserialize<PlayerRequest>(receivedMessage, options);
 
                         if (playerRequest != null && Lib.ValidatePlayerRequest(playerRequest))
                         {

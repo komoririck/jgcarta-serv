@@ -135,8 +135,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
             _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
+            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
 
             cMatchRoom.currentGameHigh++;
         }

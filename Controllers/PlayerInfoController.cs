@@ -1,9 +1,11 @@
 ﻿using hololive_oficial_cardgame_server.EffectControllers;
 using hololive_oficial_cardgame_server.SerializableObjects;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace hololive_oficial_cardgame_server.Controllers
 {
+    [Authorize]
     [Route("[controller]")]
     public class PlayerInfoController : ControllerBase
     {
@@ -16,7 +18,7 @@ namespace hololive_oficial_cardgame_server.Controllers
 
         [HttpPut("UpdateName")]
         [Consumes("application/json")]
-        public async Task<IActionResult> UpdateName([FromBody] PlayerRequest playerInfo)
+        public IActionResult UpdateName([FromBody] PlayerRequest playerInfo)
         {
             try
             {
@@ -28,7 +30,7 @@ namespace hololive_oficial_cardgame_server.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError("Failed to update player name");
+                _logger.LogError("Failed to process data {Exception}", e);
                 return StatusCode(500, "An error occurred while processing your request");
             }
             return Ok("Name updated successfully");
@@ -36,7 +38,7 @@ namespace hololive_oficial_cardgame_server.Controllers
 
         [HttpPut("UpdateProfilePicture")]
         [Consumes("application/json")]
-        public async Task<IActionResult> UpdateProfilePicture([FromBody] PlayerRequest playerInfo)
+        public IActionResult UpdateProfilePicture([FromBody] PlayerRequest playerInfo)
         {
             try
             {
@@ -48,7 +50,7 @@ namespace hololive_oficial_cardgame_server.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError("Failed to update player profile picture");
+                _logger.LogError("Failed to process data {Exception}", e);
                 return StatusCode(500, "An error occurred while processing your request");
             }
             return Ok("Profile picture updated successfully");
@@ -56,7 +58,7 @@ namespace hololive_oficial_cardgame_server.Controllers
 
         [HttpPost("GetFullProfile")]
         [Consumes("application/json")]
-        public async Task<IActionResult> GetPlayerFullProfile([FromBody] PlayerRequest getPlayerInfo)
+        public IActionResult GetPlayerFullProfile([FromBody] PlayerRequest getPlayerInfo)
         {
             if (string.IsNullOrEmpty(getPlayerInfo.playerID) || string.IsNullOrEmpty(getPlayerInfo.password))
             {
@@ -93,7 +95,7 @@ namespace hololive_oficial_cardgame_server.Controllers
         [Consumes("application/json")]
         public async Task<IActionResult> GetPlayerItemBox([FromBody] PlayerRequest getPlayerInfo)
         {
-            return await RetrievePlayerData(getPlayerInfo, () =>
+            return RetrievePlayerData(getPlayerInfo, () =>
                 new DBConnection().GetPlayerItemBox(getPlayerInfo.playerID)
             );
         }
@@ -102,7 +104,7 @@ namespace hololive_oficial_cardgame_server.Controllers
         [Consumes("application/json")]
         public async Task<IActionResult> GetPlayerBadge([FromBody] PlayerRequest getPlayerInfo)
         {
-            return await RetrievePlayerData(getPlayerInfo, () =>
+            return RetrievePlayerData(getPlayerInfo, () =>
                 new DBConnection().GetPlayerBadges(getPlayerInfo.playerID)
             );
         }
@@ -111,7 +113,7 @@ namespace hololive_oficial_cardgame_server.Controllers
         [Consumes("application/json")]
         public async Task<IActionResult> GetPlayerTitle([FromBody] PlayerRequest getPlayerInfo)
         {
-            return await RetrievePlayerData(getPlayerInfo, () =>
+            return RetrievePlayerData(getPlayerInfo, () =>
                 new DBConnection().GetPlayerTitles(getPlayerInfo.playerID)
             );
         }
@@ -120,7 +122,7 @@ namespace hololive_oficial_cardgame_server.Controllers
         [Consumes("application/json")]
         public async Task<IActionResult> GetPlayerMission([FromBody] PlayerRequest getPlayerInfo)
         {
-            return await RetrievePlayerData(getPlayerInfo, () =>
+            return RetrievePlayerData(getPlayerInfo, () =>
                 new DBConnection().GetPlayerMission(getPlayerInfo.playerID)
             );
         }
@@ -129,21 +131,21 @@ namespace hololive_oficial_cardgame_server.Controllers
         [Consumes("application/json")]
         public async Task<IActionResult> GetPlayerMessageBox([FromBody] PlayerRequest getPlayerInfo)
         {
-            return await RetrievePlayerData(getPlayerInfo, () =>
+            return RetrievePlayerData(getPlayerInfo, () =>
                 new DBConnection().GetPlayerMessageBox(getPlayerInfo.playerID)
             );
         }
 
         [HttpPost("GetProfile")]
         [Consumes("application/json")]
-        public async Task<IActionResult> GetPlayerProfile([FromBody] PlayerRequest getPlayerInfo)
+        public IActionResult GetPlayerProfile([FromBody] PlayerRequest getPlayerInfo)
         {
-            return await RetrievePlayerData(getPlayerInfo, () =>
+            return RetrievePlayerData(getPlayerInfo, () =>
                 new DBConnection().GetPlayerInfo(getPlayerInfo.playerID, getPlayerInfo.password)
             );
         }
 
-        private async Task<IActionResult> RetrievePlayerData(PlayerRequest getPlayerInfo, Func<object> retrieveDataFunc)
+        private IActionResult RetrievePlayerData(PlayerRequest getPlayerInfo, Func<object> retrieveDataFunc)
         {
             if (string.IsNullOrEmpty(getPlayerInfo.playerID))
             {
