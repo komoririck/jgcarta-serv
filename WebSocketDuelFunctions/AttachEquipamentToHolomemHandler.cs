@@ -8,7 +8,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class AttachEquipamentToHolomemHandler
     {
-        internal async Task AttachEquipamentToHolomemHandleAsync(PlayerRequest playerRequest, string local = "Hand")
+        internal async Task AttachEquipamentToHolomemHandleAsync(PlayerRequest playerRequest, string local = "hand")
         {
             MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(playerRequest.playerID);
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);

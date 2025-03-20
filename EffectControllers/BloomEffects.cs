@@ -101,7 +101,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             DuelAction duelAction = new()
                             {
                                 playerID = cMatchRoom.currentPlayerTurn,
-                                local = "Hand",
+                                local = "hand",
                                 cardList = new() { new Card(SelectedCard) }
                             };
 
@@ -559,7 +559,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         playerHand.Add(playerArquive[n]);
 
                         playerArquive[n].playedFrom = "Arquive";
-                        playerArquive[n].cardPosition = "Hand";
+                        playerArquive[n].cardPosition = "hand";
 
                         da = new()
                         {
@@ -587,7 +587,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         playerHand.Add(playerArquive[n]);
 
                         playerArquive[n].playedFrom = "Arquive";
-                        playerArquive[n].cardPosition = "Hand";
+                        playerArquive[n].cardPosition = "hand";
 
                         da = new()
                         {

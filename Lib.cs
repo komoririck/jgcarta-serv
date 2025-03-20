@@ -509,13 +509,13 @@ namespace hololive_oficial_cardgame_server
             SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(mr, newDraw.playerID).ToString()], ReturnData);
         }
 
-        static public int CheckIfCardExistAtList(MatchRoom cMatchRoom, string playerId, string UsedCard, string list = "Hand")
+        static public int CheckIfCardExistAtList(MatchRoom cMatchRoom, string playerId, string UsedCard, string list = "hand")
         {
             int handPos = -1;
             List<Card> playerHand = null;
             switch (list)
             {
-                case "Hand":
+                case "hand":
                     playerHand = playerId.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
                     break;
                 case "Arquive":

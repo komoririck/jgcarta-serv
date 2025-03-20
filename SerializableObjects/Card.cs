@@ -15,7 +15,7 @@ public class Card
     public int normalDamageRecieved = 0;
     [JsonIgnore]
     public string? cardLimit { get; set; }
-    [JsonIgnore]
+   
     public string? playedFrom { get; set; }
     public string cardPosition { get; set; } = "";
     [JsonIgnore]
