@@ -6,7 +6,7 @@ public class PlayerBadge
 
     public int Rank { get; set; }
 
-    public string PlayerID { get; set; }
+    public int PlayerID { get; set; }
 
     public DateTime? ObtainedDate { get; set; }
 }

@@ -12,13 +12,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
         {
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-            Card currentStageCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
-            Card currentCollabCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
-
-            Card currentStageOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBStage : cMatchRoom.playerAStage;
-            Card currentCollabOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBCollaboration : cMatchRoom.playerACollaboration;
-
-            //especial cases
             switch (_DuelAction.usedCard.cardNumber)
             {
                 case "hBP01-009":
@@ -26,10 +19,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                         return;
                     break;
             }
-            if (currentCollabOponnentCard.cardName.Equals("hBP01-050") && !_DuelAction.targetCard.cardPosition.Equals("Collaboration"))
-            { // GIFT: Bodyguard
-                return;
-            }
+
+            Card currentStageCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
+            Card currentCollabCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
 
             bool validCard = false;
 
@@ -57,6 +49,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             validCard = false;
 
+            Card currentStageOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBStage : cMatchRoom.playerAStage;
+            Card currentCollabOponnentCard = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerBCollaboration : cMatchRoom.playerACollaboration;
+
             if (currentStageOponnentCard.cardNumber.Equals(_DuelAction.targetCard.cardNumber))
             {
                 cMatchRoom.BeingTargetedForAttackCard = currentStageOponnentCard;
@@ -71,25 +66,16 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 }
             }
 
-            foreach (Art art in cMatchRoom.DeclaringAttackCard.Arts)
+            if (!validCard)
+                return;
+
+            foreach (Art art in _DuelAction.usedCard.Arts)
             {
                 if (art.Name.Equals(_DuelAction.selectedSkill))
                 {
                     cMatchRoom.ResolvingArt = art;
-                    validCard = PassSpecialDeclareAttackCondition(cMatchRoom.DeclaringAttackCard, cMatchRoom.ResolvingArt);
                     break;
                 }
-                validCard = false;
-            }
-
-
-
-            if (!validCard)
-            {
-                cMatchRoom.ResolvingArt = null;
-                cMatchRoom.DeclaringAttackCard = null;
-                cMatchRoom.BeingTargetedForAttackCard = null;
-                return;
             }
 
             if (cMatchRoom.DeclaringAttackCard.cardPosition.Equals("Stage"))
@@ -99,23 +85,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cMatchRoom.collabStageArtUsed = true;
 
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ActiveArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-            await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
 
             cMatchRoom.currentGameHigh++;
             return;
-        }
-
-        private bool PassSpecialDeclareAttackCondition(Card card, Art currentArt)
-        {
-            switch (card.cardNumber + "+" + currentArt.Name)
-            {
-                case "hBP01-070+共依存":
-                    foreach (Card _card in card.attachedEquipe)
-                        if (_card.cardName.Equals("座員"))
-                            return true;
-                    return false;
-            }
-            return true;
         }
     }
 }

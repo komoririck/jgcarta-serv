@@ -1,0 +1,386 @@
+[
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.AccountController",
+    "Method": "UpdateProfilePicture",
+    "RelativePath": "Account/CreateAccount",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "_PlayerRequest",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.AccountController",
+    "Method": "Post",
+    "RelativePath": "Account/Login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "_PlayerRequest",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchQueueController",
+    "Method": "Put",
+    "RelativePath": "ControlMatchQueue/JoinLeave",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "_PlayerRequest",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchQueueController",
+    "Method": "Post",
+    "RelativePath": "ControlMatchQueue/JoinQueue",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "_PlayerRequest",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoomController",
+    "Method": "CancelRoom",
+    "RelativePath": "ControlMatchRoom/CancelRoom",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoomController",
+    "Method": "CreateRoom",
+    "RelativePath": "ControlMatchRoom/CreateRoom",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoomController",
+    "Method": "JoinRoom",
+    "RelativePath": "ControlMatchRoom/JoinRoom",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoomController",
+    "Method": "JoinTable",
+    "RelativePath": "ControlMatchRoom/JoinTable",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoomController",
+    "Method": "LeaveRoom",
+    "RelativePath": "ControlMatchRoom/LeaveRoom",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoomController",
+    "Method": "LeaveTable",
+    "RelativePath": "ControlMatchRoom/LeaveTable",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoomController",
+    "Method": "LockTable",
+    "RelativePath": "ControlMatchRoom/LockTable",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoomController",
+    "Method": "UnlockTable",
+    "RelativePath": "ControlMatchRoom/UnlockTable",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.ControlMatchRoomController",
+    "Method": "GetPlayerProfile",
+    "RelativePath": "ControlMatchRoom/UpdateRoom",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.DeckInfoController",
+    "Method": "Put",
+    "RelativePath": "DeckInfo/GetDeck",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "PlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.DeckInfoController",
+    "Method": "Post",
+    "RelativePath": "DeckInfo/UpdateDeck",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "PlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.PlayerInfoController",
+    "Method": "GetPlayerBadge",
+    "RelativePath": "PlayerInfo/GetBadge",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.PlayerInfoController",
+    "Method": "GetPlayerFullProfile",
+    "RelativePath": "PlayerInfo/GetFullProfile",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.PlayerInfoController",
+    "Method": "GetPlayerItemBox",
+    "RelativePath": "PlayerInfo/GetItemBox",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.PlayerInfoController",
+    "Method": "GetPlayerMessageBox",
+    "RelativePath": "PlayerInfo/GetMessageBox",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.PlayerInfoController",
+    "Method": "GetPlayerMission",
+    "RelativePath": "PlayerInfo/GetMission",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.PlayerInfoController",
+    "Method": "GetPlayerProfile",
+    "RelativePath": "PlayerInfo/GetProfile",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.PlayerInfoController",
+    "Method": "GetPlayerTitle",
+    "RelativePath": "PlayerInfo/GetTitle",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "getPlayerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.PlayerInfoController",
+    "Method": "UpdateName",
+    "RelativePath": "PlayerInfo/UpdateName",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "playerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "hololive_oficial_cardgame_server.Controllers.PlayerInfoController",
+    "Method": "UpdateProfilePicture",
+    "RelativePath": "PlayerInfo/UpdateProfilePicture",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "playerInfo",
+        "Type": "hololive_oficial_cardgame_server.SerializableObjects.PlayerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

@@ -44,8 +44,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     shouldUseTempHandValidation = true;
                     break;
                 case "hSD01-018":
-                    List<Record> limitedSuport = FileReader.QueryRecords(name: null, type: "サポート・アイテム・LIMITED", bloomLevel: null, cardNumber: null);
-                    limitedSuport.AddRange(FileReader.QueryRecords(name: null, type: "サポート・イベント・LIMITED", bloomLevel: null, cardNumber: null));
+                    List<Record> limitedSuport = FileReader.QueryRecords(null, "サポート・アイテム・LIMITED", null, null);
+                    limitedSuport.AddRange(FileReader.QueryRecords(null, "サポート・イベント・LIMITED", null, null));
                     limitedSuport.AddRange(FileReader.QueryRecords(null, "サポート・スタッフ・LIMITED", null, null));
 
                     foreach (Record r in limitedSuport)
@@ -165,7 +165,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
                     if (shouldUseToCompareWithTempHand.Equals("name"))
-                        name = TempHand[i].cardName;
+                        name = TempHand[i].name;
                     else if (shouldUseToCompareWithTempHand.Equals("number"))
                         name = TempHand[i].cardNumber;
 
@@ -199,9 +199,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cMatchRoom.playerATempHand.Clear();
 
 
-                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
                 DrawReturn.cardList = cMatchRoom.FillCardListWithEmptyCards(DrawReturn.cardList);
-                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
 
             }
             else
@@ -210,9 +210,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cMatchRoom.playerBDeck.InsertRange(0, ReturnToDeck);
                 cMatchRoom.playerBTempHand.Clear();
 
-                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
                 DrawReturn.cardList = cMatchRoom.FillCardListWithEmptyCards(DrawReturn.cardList);
-                await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
+                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             }
             cMatchRoom.currentCardResolving = "";
             cMatchRoom.currentGameHigh++;

@@ -1,4 +1,9 @@
-﻿using System.Text.Json.Serialization;
+﻿using Org.BouncyCastle.Crypto.Digests;
+using System.Diagnostics;
+using System.Resources;
+using System.Security.Policy;
+using System.Text.Json.Serialization;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace hololive_oficial_cardgame_server.SerializableObjects;
 
@@ -14,48 +19,54 @@ public class Card
     [JsonIgnore]
     public int normalDamageRecieved = 0;
     [JsonIgnore]
+<<<<<<< HEAD
     public string? cardLimit { get; set; }
    
     public string? playedFrom { get; set; }
+=======
+    public string cardLimit { get; set; }
+    [JsonIgnore]
+    public string playedFrom { get; set; }
+>>>>>>> parent of 33a33ba (update)
     public string cardPosition { get; set; } = "";
     [JsonIgnore]
     public bool playedThisTurn { get; set; } = true;
     [JsonIgnore]
     public bool suspended { get; set; } = false;
     [JsonIgnore]
-    public string? cardName { get; set; }
+    public string name { get; set; }
     [JsonIgnore]
-    public string? cardType { get; set; }
+    public string cardType { get; set; }
     [JsonIgnore]
-    public string? rarity { get; set; }
+    public string rarity { get; set; }
     [JsonIgnore]
-    public string? product { get; set; }
+    public string product { get; set; }
     [JsonIgnore]
-    public string? color { get; set; }
+    public string color { get; set; }
     [JsonIgnore]
-    public string? hp { get; set; }
+    public string hp { get; set; }
     [JsonIgnore]
-    public string? bloomLevel { get; set; }
+    public string bloomLevel { get; set; }
     [JsonIgnore]
-    public string? arts { get; set; }
+    public string arts { get; set; }
     [JsonIgnore]
-    public string? oshiSkill { get; set; }
+    public string oshiSkill { get; set; }
     [JsonIgnore]
-    public string? spOshiSkill { get; set; }
+    public string spOshiSkill { get; set; }
     [JsonIgnore]
-    public string? abilityText { get; set; }
+    public string abilityText { get; set; }
     [JsonIgnore]
-    public string? illustrator { get; set; }
+    public string illustrator { get; set; }
     [JsonIgnore]
-    public string? life { get; set; }
+    public string life { get; set; }
     [JsonIgnore]
-    public string? cardTag { get; set; }
+    public string cardTag { get; set; }
     [JsonIgnore]
-    public List<CardEffect> cardEffects { get; set; } = new ();
+    public List<CardEffect> cardEffects { get; set; } = new List<CardEffect>();
     [JsonIgnore]
-    public List<Card> attachedEnergy { get; set; } = new ();
+    public List<Card> attachedEnergy { get; set; } = new List<Card>();
     [JsonIgnore]
-    public List<Card> bloomChild { get; set; } = new ();
+    public List<Card> bloomChild { get; set; } = new List<Card>();
     [JsonIgnore]
     public List<Card> attachedEquipe = new();
     [JsonIgnore]
@@ -63,7 +74,7 @@ public class Card
     [JsonIgnore]
     public List<CardEffect> OnAttackEffects = new();
 
-    public Card(string? cardNumber = "", string? cardPosition = "")
+    public Card(string cardNumber = "", string cardPosition = "")
     {
         this.cardNumber = cardNumber;
         if (!string.IsNullOrEmpty(cardPosition))
@@ -72,7 +83,7 @@ public class Card
             GetCardInfo();
     }
 
-    public Card? GetCardInfo(bool forceUpdate = false)
+    public Card GetCardInfo(bool forceUpdate = false)
     {
         if (cardNumber.Equals("0") || string.IsNullOrEmpty(cardNumber))
             return null;
@@ -85,7 +96,7 @@ public class Card
             if (record.CardNumber == this.cardNumber)
             {
                 cardNumber = record.CardNumber;
-                cardName = record.Name;
+                name = record.Name;
                 cardType = record.CardType;
                 rarity = record.Rarity;
                 product = record.Product;
@@ -132,7 +143,7 @@ public class Card
             cardPosition = originalCard.cardPosition,
             playedThisTurn = originalCard.playedThisTurn,
             suspended = originalCard.suspended,
-            cardName = originalCard.cardName,
+            name = originalCard.name,
             cardType = originalCard.cardType,
             rarity = originalCard.rarity,
             product = originalCard.product,
@@ -159,24 +170,24 @@ public class CardEffect
 {
     public int diceRollValue = 0;
     public int activatedTurn = 0;
-    public string? cardTag;
-    public string? playerWhoUsedTheEffect { get; set; }
-    public string? playerWhoIsTheTargetOfEffect { get; set; }
-    public string? cardNumber { get; set; }
-    public string? artName { get; set; } 
-    public string? zoneTarget { get; set; }
-    public string? cardTarget { get; set; }
+    public string cardTag;
+    public string playerWhoUsedTheEffect { get; set; }
+    public string playerWhoIsTheTargetOfEffect { get; set; }
+    public string cardNumber { get; set; }
+    public string artName { get; set; } 
+    public string zoneTarget { get; set; }
+    public string cardTarget { get; set; }
     public CardEffectType type { get; set; }
     public int Damage { get; set; }
     public int damageType { get; set; }
-    public string? nameMatch { get; set; }
+    public string nameMatch { get; set; }
     //BuffThisCardDamageExistXAtZone
-    public string? ExistXAtZone_Name { get; set; }
-    public string? ExistXAtZone_Color { get; set; }
+    public string ExistXAtZone_Name { get; set; }
+    public string ExistXAtZone_Color { get; set; }
     public int IncreaseCostAmount { get; internal set; }
     //BuffDamageToCardAtZoneIfOtherCardNameAtZoneHaveTag
-    public string? zoneThatShouldHaveTag { get; set; }
-    public string? nameThatShouldntExistAtZone { get; set; }
+    public string zoneThatShouldHaveTag { get; set; }
+    public string nameThatShouldntExistAtZone { get; set; }
 }
 
 [Flags]
@@ -198,6 +209,5 @@ public enum CardEffectType : byte
     BuffDamageToCardAtZoneMultiplyByBackstageCount,
     BuffDamageToCardAtZoneIfHasATool,
     BuffThisCardDamageIfAtZoneAndMultplyByCheer,
-    BuffDamageToCardAtZoneMultiplyByAmountOfToolAtYourSide,
-    BuffThisCardDamageMultplyByEachTag
+    BuffDamageToCardAtZoneMultiplyByAmountOfToolAtYourSide
 }

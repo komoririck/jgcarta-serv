@@ -16,6 +16,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 return;
             }
 
+            PlayerRequest pReturnData;
+
             bool ISFIRSTPLAYER = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer;
 
             List<Card> playerHand = ISFIRSTPLAYER ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;

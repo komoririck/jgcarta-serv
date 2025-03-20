@@ -123,20 +123,6 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
                         effectExtraDamage += cardeffect.Damage * mulplier;
                     }
                 }
-                else if (cardeffect.type == CardEffectType.BuffThisCardDamageMultplyByEachTag)
-                {
-                    if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
-                        continue;
-
-                    if (!(cardeffect.playerWhoIsTheTargetOfEffect.Equals(playerWhoWasTargeted)))
-                        continue;
-                    //if this card is in the zone that the effect is active
-                    if (cardeffect.zoneTarget.Equals(cardZone))
-                    {
-                        int mulplier = Lib.GetAreasThatContainsCardWithColorOrTagOrName(matchRoom, cardeffect.playerWhoUsedTheEffect, tag: "#Promise").Count();
-                        effectExtraDamage += cardeffect.Damage * mulplier;
-                    }
-                }
                 else if (cardeffect.type == CardEffectType.BuffDamageToCardAtZoneIfHasATool)
                 {
                     if (!(cardeffect.playerWhoUsedTheEffect.Equals(playerWhoDeclaredAttack)))
@@ -236,7 +222,7 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
                     if (cardeffect.zoneThatShouldHaveTag.Equals("Stage"))
                     {
                         Card stage = cardeffect.playerWhoIsTheTargetOfEffect.Equals(matchRoom.firstPlayer) ? matchRoom.playerAStage : matchRoom.playerBStage;
-                        if (!(!cardeffect.nameThatShouldntExistAtZone.Equals(stage.cardName) && stage.cardTag.Contains(cardeffect.cardTag))) {
+                        if (!(!cardeffect.nameThatShouldntExistAtZone.Equals(stage.name) && stage.cardTag.Contains(cardeffect.cardTag))) {
                             continue;
                         }
                     }
@@ -262,7 +248,7 @@ namespace hololive_oficial_cardgame_server.SerializableObjects
                     Card cardAtStage = matchRoom.firstPlayer.Equals(playerWhoDeclaredAttack) ? matchRoom.playerAStage : matchRoom.playerBStage;
 
                     // if the name didnt match what the effect need, continue
-                    if (!cardeffect.ExistXAtZone_Name.Equals(cardAtStage.cardName))
+                    if (!cardeffect.ExistXAtZone_Name.Equals(cardAtStage.name))
                         continue;
 
                     if (cardeffect.zoneTarget.Equals(cardZone))
