@@ -106,7 +106,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn, Amount: 3);
                     cMatchRoom.currentCardResolvingStage = "1";
                     Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
-                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
                     break;
                 case "hBP01-0431-全人類兎化計画":
@@ -136,7 +136,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                      diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
                     cMatchRoom.currentCardResolvingStage = "1";
                     Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
-                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
                     break;
                 case "hSD01-0131-越えたい未来":
@@ -153,10 +153,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         var handler191 = new AttachTopCheerEnergyToBackHandler();
 
-                        _DuelAction.actionObject = JsonSerializer.Serialize(new List<string>() { tempHandList[0].cardNumber }, Lib.options);
+                        _DuelAction.actionObject = JsonSerializer.Serialize(new List<string>() { tempHandList[0].cardNumber }, Lib.jsonOptions);
                         _DuelAction.targetCard = _DuelAction.usedCard;
 
-                        PlayerRequest _playerRequest = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                        PlayerRequest _playerRequest = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                         await handler191.AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: false, TOPCHEERDECK: true, FULLCHEERDECK: false, ClientEnergyIndex: 0);
                     }
                     else
@@ -199,8 +199,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     cMatchRoom.currentCardResolving = "hSD01-011";
 
                     //send the info to the currentplayer so he can pick the card
-                    _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
-                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.jsonOptions);
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
                     break;
@@ -242,7 +242,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                     Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
 
-                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
                     break;
                 case "hBP01-0381-こんぺこー！":
@@ -271,7 +271,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                     Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
 
-                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
                     break;
                 case "hBP01-0421-きｔらあああ":
@@ -415,7 +415,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     _DuelAction.actionObject = cMatchRoom.currentEffectDamage.ToString();
                     _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                     // Serialize and send data to the current player
-                    PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
                     ResetResolutionAsync();
@@ -439,7 +439,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                     Lib.SendDiceRoll(cMatchRoom, new() { diceValue }, COUNTFORRESONSE: false);
 
-                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
                     break;
                 case "hBP01-0721-WAZZUP!!":
@@ -473,7 +473,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     _DuelAction.actionObject = cMatchRoom.currentEffectDamage.ToString();
                     _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                     // Serialize and send data to the current player
-                    _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                    _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
                     ResetResolutionAsync();

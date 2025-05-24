@@ -18,14 +18,11 @@ namespace hololive_oficial_cardgame_server
             MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(playerRequest.playerID);
 
             if (cMatchRoom == null) {
-                if (playerRequest.type.Equals("JoinPlayerQueueList")){
-                    var handler = new JoinPlayerQueueListHandler(playerConnections, _MatchRooms);
-                    await handler.JoinPlayerQueueListHandleAsync(playerRequest, webSocket);
-                }
-                else
-                { 
-                   return;
-                }
+                if (!(playerRequest.type.Equals("JoinPlayerQueueList")))
+                    return;
+                
+                var handler = new JoinPlayerQueueListHandler(playerConnections, _MatchRooms);
+                await handler.JoinPlayerQueueListHandleAsync(playerRequest, webSocket);
             }
 
             Lib.WriteConsoleMessage("Recieved from " + playerRequest.playerID + ":\n" + playerRequest.type + ":\n" + playerRequest.requestObject + ":\n");
@@ -63,15 +60,19 @@ namespace hololive_oficial_cardgame_server
                     if (!(playerRequest.playerID != cMatchRoom.currentPlayerTurn))
                         break;
 
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    PlayerRequest pRequestContinueCurrentPlayerTurn = new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" };
+                    cMatchRoom.RecordPlayerRequest(pRequestContinueCurrentPlayerTurn);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerB);
                     break;
                 case "MainStartRequest":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                         break;
 
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "MainPhase", requestObject = "" });
+                    PlayerRequest pRequestMainStartRequest = new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" };
+                    cMatchRoom.RecordPlayerRequest(pRequestMainStartRequest);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerB);
                     break;
                 case "PlayHolomem":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
@@ -142,8 +143,10 @@ namespace hololive_oficial_cardgame_server
                     cMatchRoom.ActiveEffects = tempEffectList;
 
                     Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" });
+                    PlayerRequest pRequest = new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" };
+                    cMatchRoom.RecordPlayerRequest(pRequest);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerB);
 
                     cMatchRoom.currentGameHigh++;
                     break;
@@ -215,9 +218,13 @@ namespace hololive_oficial_cardgame_server
 
                     Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, playerRequest.playerID, _DuelAction.targetCard);
 
-                    PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "SwitchStageCardByRetreat", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+                    PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "SwitchStageCardByRetreat", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) }; 
+                    
+                    //i removed this by mistake ?
+                    //PlayerRequest pRequest = new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" };
+                    cMatchRoom.RecordPlayerRequest(_ReturnData);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerB);
 
                     break;
                 case "ResolveRerollEffect":

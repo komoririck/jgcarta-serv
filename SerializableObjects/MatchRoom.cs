@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc.Formatters;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
+using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace hololive_oficial_cardgame_server.SerializableObjects;
 
@@ -8,6 +10,8 @@ public class MatchRoom
 {
     //Players DuelRoom
     public static List<MatchRoom> _MatchRooms = new List<MatchRoom>();
+
+    private MatchRoom initialBoard;
 
     public List<CardEffect> ActiveEffects = new();
 
@@ -88,7 +92,7 @@ public class MatchRoom
     public Card playerBOshi = null;
 
     public string currentCardResolving = "";
-    internal int cheersAssignedThisChainAmount;
+    internal int cheersAssignedThisChainAmount = 0;
     internal int cheersAssignedThisChainTotal = 1;
     internal string currentCardResolvingStage = "";
 
@@ -114,7 +118,10 @@ public class MatchRoom
     internal bool playerAResolveConfirmation;
     internal bool playerBResolveConfirmation;
 
-    public List<DuelAction> RecoilDuelActions { get; internal set; }
+    public List<DuelAction> RecoilDuelActions = new(); // what the hell i'm saving this for only one effect ?
+    public List<PlayerRequest> RecordedPlayerRequest = new();
+
+    public DuelFieldData initialBoardInfo;
 
     [Flags]
     public enum GAMEPHASE : byte
@@ -139,11 +146,86 @@ public class MatchRoom
         RevolingAttachEffect = 107,
         ResolvingDeclaringAttackEffects = 108
     }
+    public enum Player { 
+        FirstPlayer = 0,
+        SecondPlayer = 1,
+        PlayerA = 0,
+        PlayerB = 1,
+        TurnPlayer = 2,
+    }
+    public enum PlayerZone { 
+        Deck,
+        Cheer,
+        Hand,
+        Arquive,
+    }
+    public void RecordPlayerRequest(PlayerRequest playerRequest, bool INCREMENTID = true) {
+        if (INCREMENTID && RecordedPlayerRequest.Count > 0)
+            playerRequest.id = RecordedPlayerRequest.Last().id + 1;
+        RecordedPlayerRequest.Add(playerRequest);
+    }
+    public void PushPlayerRequest(Player player) 
+    {
+        var webSocket = MessageDispatcher.playerConnections[(player.Equals(Player.PlayerA) || player.Equals(Player.FirstPlayer) ? firstPlayer : secondPlayer)];
 
-    public void suffleHandToTheDeck(List<Card> deck, List<Card> hand)
+        if (player.Equals(Player.TurnPlayer))
+            webSocket = MessageDispatcher.playerConnections[currentPlayerTurn];
+
+        webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(RecordedPlayerRequest.Last(), new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true }))), WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+    public void PushPlayerRequest(string player)
+    {
+        var webSocket = MessageDispatcher.playerConnections[player];
+        webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(RecordedPlayerRequest.Last(), new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true }))), WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+
+    public void SuffleHandToTheDeck(List<Card> deck, List<Card> hand)
     {
         deck.AddRange(hand);
         hand.Clear();
+    }
+
+    public void SnapShotInitialBoard() {
+        //DOTO
+    }
+
+    public void ShuffleCards(Player player, PlayerZone playerZone) {
+
+        if (player.Equals(Player.FirstPlayer) || player.Equals(Player.PlayerA))
+        {
+            switch (playerZone)
+            {
+                case PlayerZone.Deck:
+                    ShuffleCards(playerADeck);
+                    break;
+                case PlayerZone.Cheer:
+                    ShuffleCards(playerACardCheer);
+                    break;
+                case PlayerZone.Hand:
+                    ShuffleCards(playerAHand);
+                    break;
+                case PlayerZone.Arquive:
+                    ShuffleCards(playerAArquive);
+                    break;
+            }
+        }
+        else {
+            switch (playerZone)
+            {
+                case PlayerZone.Deck:
+                    ShuffleCards(playerBDeck);
+                    break;
+                case PlayerZone.Cheer:
+                    ShuffleCards(playerBCardCheer);
+                    break;
+                case PlayerZone.Hand:
+                    ShuffleCards(playerBHand);
+                    break;
+                case PlayerZone.Arquive:
+                    ShuffleCards(playerBArquive);
+                    break;
+            }
+        }
     }
 
     public List<Card> ShuffleCards(List<Card> list)
@@ -160,6 +242,7 @@ public class MatchRoom
             list[i] = value;
         }
         return list;
+        // why i'm returning stuff here ? need to check why, doesnt make sense since this class is the owner of tha list
     }
     public List<Card> FillCardListWithEmptyCards(List<Card> cards)
     {
@@ -203,9 +286,6 @@ public class MatchRoom
             return m.playerA.PlayerID;
         }
     }
-
-
-
 
     // Starts or resets the timer for a player's turn
     public void StartOrResetTimer(string playerId, Action<string> onTimeout)

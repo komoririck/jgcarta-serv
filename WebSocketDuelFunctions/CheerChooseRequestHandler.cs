@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Net.WebSockets;
-using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
+﻿using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 using System.Text.Json;
 using hololive_oficial_cardgame_server.SerializableObjects;
 
@@ -54,10 +52,11 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 // we dont need to pass anything to the client if the user doesnt have energy, but lets just send some empty object
                 _DuelAction = new();
             }
-            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "CheerStepEnd", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "CheerStepEnd", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+            cMatchRoom.RecordPlayerRequest(_ReturnData);
+            cMatchRoom.PushPlayerRequest(Player.PlayerA);
+            cMatchRoom.PushPlayerRequest(Player.PlayerB);
 
             cMatchRoom.currentGamePhase = GAMEPHASE.MainStep;
             cMatchRoom.currentGameHigh++;

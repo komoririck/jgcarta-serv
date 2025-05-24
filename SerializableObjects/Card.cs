@@ -19,15 +19,9 @@ public class Card
     [JsonIgnore]
     public int normalDamageRecieved = 0;
     [JsonIgnore]
-<<<<<<< HEAD
-    public string? cardLimit { get; set; }
-   
-    public string? playedFrom { get; set; }
-=======
     public string cardLimit { get; set; }
     [JsonIgnore]
     public string playedFrom { get; set; }
->>>>>>> parent of 33a33ba (update)
     public string cardPosition { get; set; } = "";
     [JsonIgnore]
     public bool playedThisTurn { get; set; } = true;

@@ -37,7 +37,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             else
             {
                 DuelAction _DuelAction = new() { playerID = cMatchRoom.currentPlayerTurn, targetCard = cMatchRoom.BeingTargetedForAttackCard, actionObject = cMatchRoom.currentArtDamage.ToString() ?? cMatchRoom.currentEffectDamage.ToString() };
-                var pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                var pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                 Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
                 Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
             }

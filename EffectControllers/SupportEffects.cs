@@ -181,7 +181,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             return;
                         }
 
-                        cMatchRoom.suffleHandToTheDeck(playerDeck, playerHand);
+                        cMatchRoom.SuffleHandToTheDeck(playerDeck, playerHand);
                         cMatchRoom.ShuffleCards(playerDeck);
                         Lib.getCardFromDeck(playerDeck, playerHand, 5);
 
@@ -326,9 +326,9 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         cMatchRoom.currentCardResolvingStage = "2";
 
                         //send the info to the currentplayer so he can pick the card
-                        _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
+                        _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.jsonOptions);
                         _DuelAction.cardList = playerTempHand;
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnSupportEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnSupportEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
 
                         Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
                         Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
@@ -678,7 +678,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                         // Serialize and send data to the current player
-                        PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                        PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                         Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
                         Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
 
@@ -702,10 +702,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         _DuelAction = new()
                         {
                             playerID = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn),
-                            actionObject = JsonSerializer.Serialize(returnToclient, Lib.options)
+                            actionObject = JsonSerializer.Serialize(returnToclient, Lib.jsonOptions)
                         };
 
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "RollDice", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "RollDice", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                         Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
 
                         if (diceValue > 3)
@@ -750,7 +750,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     usedCard = new(cMatchRoom.currentCardResolving),
                 };
 
-                pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DisposeUsedSupport", requestObject = JsonSerializer.Serialize(_DisposeAction, Lib.options) };
+                pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DisposeUsedSupport", requestObject = JsonSerializer.Serialize(_DisposeAction, Lib.jsonOptions) };
                 Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
                 Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
 

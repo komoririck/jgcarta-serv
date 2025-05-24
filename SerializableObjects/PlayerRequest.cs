@@ -4,6 +4,7 @@ namespace hololive_oficial_cardgame_server.SerializableObjects;
 
 public class PlayerRequest
 {
+    public int id { get; set; } = 0;
     public string? playerID { get; set; }
     public string? password { get; set; }
     public string? email { get; set; }

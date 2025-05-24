@@ -171,9 +171,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         playerTempHand.AddRange(listToSend);
 
                         //send the info to the currentplayer so he can pick the card
-                        _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.options);
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
+                        _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.jsonOptions);
+                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
+                        cMatchRoom.RecordPlayerRequest(pReturnData);
+                        cMatchRoom.PushPlayerRequest(cMatchRoom.currentPlayerTurn);
                         break;
                     case "hBP01-0122":
                         var handler151 = new AttachEquipamentToHolomemHandler();
@@ -200,9 +201,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                         // Serialize and send data to the current player
-                        PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
+                        PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
+
+                        cMatchRoom.RecordPlayerRequest(_ReturnData);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerB);
 
                         _CardEffect = new CardEffect
                         {
@@ -238,9 +241,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                         // Serialize and send data to the current player
-                        _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
+                        _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
+
+                        cMatchRoom.RecordPlayerRequest(_ReturnData);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerB);
                         ResetResolution(cMatchRoom);
                         break;
                     case "hBP01-057":
@@ -264,9 +269,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                         // Serialize and send data to the current player
-                        _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
+                        _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
+
+                        cMatchRoom.RecordPlayerRequest(_ReturnData);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerB);
                         ResetResolution(cMatchRoom);
                         break;
                     case "hBP01-090":
@@ -299,9 +306,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         playerTempHand.AddRange(listToSend);
 
                         //send the info to the currentplayer so he can pick the card
-                        _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.options);
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
+                        _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.jsonOptions);
+                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) }; 
+                        cMatchRoom.RecordPlayerRequest(pReturnData);
+                        cMatchRoom.PushPlayerRequest(cMatchRoom.currentPlayerTurn);
                         break;
                     case "hBP01-0901":
                         if (!_DuelAction.actionObject.Equals("Yes"))
@@ -331,10 +339,12 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         cMatchRoom.currentCardResolvingStage = "1";
 
                         //send the info to the currentplayer so he can pick the card
-                        _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
-                        Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)], pReturnData);
+                        _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.jsonOptions);
+                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
+
+                        cMatchRoom.RecordPlayerRequest(pReturnData);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerB);
                         break;
                     case "hBP01-0371":
                         var handler192 = new AttachTopCheerEnergyToBackHandler();
@@ -390,10 +400,12 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         cMatchRoom.currentCardResolvingStage = "1";
 
                         //send the info to the currentplayer so he can pick the card
-                        _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
-                        Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)], pReturnData);
+                        _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.jsonOptions);
+                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
+
+                        cMatchRoom.RecordPlayerRequest(pReturnData);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerB);
                         break;
                     case "hBP01-0811":
                         var handler194 = new AttachTopCheerEnergyToBackHandler();
@@ -423,10 +435,12 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         cMatchRoom.currentCardResolvingStage = "1";
 
                         //send the info to the currentplayer so he can pick the card
-                        _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.options);
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
-                        Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn)], pReturnData);
+                        _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.jsonOptions);
+                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
+
+                        cMatchRoom.RecordPlayerRequest(pReturnData);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                        cMatchRoom.PushPlayerRequest(Player.PlayerB);
                         break;
                     case "hBP01-0541":
                         handler194 = new AttachTopCheerEnergyToBackHandler();
@@ -434,188 +448,6 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         ResetResolution(cMatchRoom);
                         break;
-<<<<<<< HEAD
-                    case "hBP01-035":
-                        n = Lib.CheckIfCardExistAtList(cMatchRoom, _DuelAction.playerID, _DuelAction.usedCard.cardNumber, "Arquive");
-                        if (n == -1)
-                        {
-                            ResetResolution(cMatchRoom);
-                            return;
-                        }
-                        playerTempHand.RemoveAt(n);
-                        DuelAction da = new() {playerID = _DuelAction.playerID, usedCard = _DuelAction.usedCard};
-                        await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyFrom", requestObject = JsonSerializer.Serialize(da, Lib.options) });
-                        await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyFrom", requestObject = JsonSerializer.Serialize(da, Lib.options) });
-                        await new AttachEquipamentToHolomemHandler().AttachEquipamentToHolomemHandleAsync(playerRequest, "Arquive");
-                        ResetResolution(cMatchRoom);
-                        break;
-                    case "hBP01-098":
-                        n = Lib.CheckIfCardExistAtList(cMatchRoom, _DuelAction.playerID, _DuelAction.usedCard.cardNumber, "Arquive");
-                        if (n == -1)
-                        {
-                            ResetResolution(cMatchRoom);
-                            return;
-                        }
-                        playerTempHand.RemoveAt(n);
-                        da = new() { playerID = _DuelAction.playerID, usedCard = _DuelAction.usedCard };
-                        await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyFrom", requestObject = JsonSerializer.Serialize(da, Lib.options) });
-                        await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyFrom", requestObject = JsonSerializer.Serialize(da, Lib.options) });
-                        await new AttachCheerEnergyHandler().AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, stage: true, collab: true, back: true, TOPCHEERDECK: false, FULLCHEERDECK: false, ClientEnergyIndex: 0, ARQUIVEFULLDECK: true);
-                        ResetResolution(cMatchRoom);
-                        break;
-                    case "hBP01-094":
-                        if (playerCheer.Count < 1)
-                        {
-                            ResetResolution(cMatchRoom);
-                            return;
-                        }
-
-                        playerTempHand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
-
-                        string[] hasTag = Lib.GetAreasThatContainsCardWithColorOrTagOrName(cMatchRoom, cMatchRoom.currentPlayerTurn, tag: "#Promise");
-
-                        List<string> AvalibleCardColor = new List<string>();
-                        foreach (Card card in playerCheer)
-                        {
-                            if (hasTag.Contains(card.cardTag))
-                            {
-                                AvalibleCardColor.Add(card.color);
-                            }
-                        }
-
-                        listToSend = new();
-                        foreach (Card card in playerCheer)
-                        {
-                            if (AvalibleCardColor.Contains(card.color))
-                            {
-                                listToSend.Add(card);
-                            }
-                        }
-
-                        if (listToSend.Count == 0)
-                        {
-                            ResetResolution(cMatchRoom);
-                            return;
-                        }
-
-                        //hold the card at resolving
-                        cMatchRoom.currentCardResolvingStage = "1";
-                        playerTempHand.AddRange(listToSend);
-
-                        //send the info to the currentplayer so he can pick the card
-                        _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.options);
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-                        await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
-                        break;
-                    case "hBP01-0941":
-                        playerTempHand.Add(playerCheer.Last());
-                        await new AttachCheerEnergyHandler().AttachCheerEnergyHandleAsync(_DuelAction, cMatchRoom, true, true, true, TOPCHEERDECK: true, ENFORCETAG: "#Promise");
-                        ResetResolution(cMatchRoom);
-                        break;
-                    case "hBP01-070":
-                        da = new() { playerID = cMatchRoom.currentPlayerTurn };
-                        foreach (Card card in playerDeck) {
-                            if (card.cardType.Equals("サポート・マスコット"))
-                                da.cardList.Add(card);
-                        }
-                        if (da.cardList.Count == 0)
-                        {
-                            ResetResolution(cMatchRoom);
-                            return;
-                        }
-
-                        cMatchRoom.currentCardResolvingStage = "1";
-                        playerTempHand.AddRange(da.cardList);
-
-                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnBloomEffect", requestObject = JsonSerializer.Serialize(da, Lib.options) };
-                        await Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
-                        break;
-                    case "hBP01-0701":
-                        n = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, _DuelAction.actionObject, "TempHand");
-
-                        if (n == -1)
-                        {
-                            Lib.WriteConsoleMessage($"invalid selection for {_DuelAction.actionObject}");
-                            return;
-                        }
-
-                        playerHand.Add(playerDeck[n]);
-                        playerDeck.RemoveAt(n);
-                        cMatchRoom.ShuffleCards(playerDeck);
-
-                        da = new()
-                        {
-                            playerID = cMatchRoom.currentPlayerTurn,
-                            suffle = true,
-                            zone = "Deck",
-                            cardList = new() { new Card(_DuelAction.actionObject) }
-                        };
-
-                        Lib.SendPlayerData(cMatchRoom, true, da, "DrawBloomEffect");
-                        ResetResolution(cMatchRoom);
-                        break;
-                    case "hBP01-071":
-                        if (!_DuelAction.actionObject.Equals("Yes"))
-                        {
-                            ResetResolution(cMatchRoom);
-                            return;
-                        }
-                        n = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, _DuelAction.SelectedCards.Last(), "Arquive");
-
-                        if (n == -1 && playerArquive[n].GetCardInfo().cardName.Equals("座員"))
-                        {
-                            Lib.WriteConsoleMessage($"invalid selection for {_DuelAction.actionObject}");
-                            return;
-                        }
-                        playerHand.Add(playerArquive[n]);
-
-                        playerArquive[n].playedFrom = "Arquive";
-                        playerArquive[n].cardPosition = "hand";
-
-                        da = new()
-                        {
-                            playerID = cMatchRoom.currentPlayerTurn,
-                            cardList = new() { playerArquive[n]}
-                        };
-                        Lib.SendPlayerData(cMatchRoom, reveal: true, da, "MoveCardToZone");
-                        playerArquive.RemoveAt(n);
-                        break;
-                    case "hBP01-074":
-                        if (!cMatchRoom.BloomedCard.bloomChild.Last().bloomLevel.Equals("Debut"))
-                        {
-                            Lib.WriteConsoleMessage($"invalid activation for {_DuelAction.actionObject}");
-                            return;
-                        }
-
-                        n = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, _DuelAction.actionObject, "Arquive");
-
-                        if (n == -1 && !(playerArquive[n].bloomLevel.Equals("1st") || playerArquive[n].bloomLevel.Equals("Debut")))
-                        {
-                            Lib.WriteConsoleMessage($"invalid selection for {_DuelAction.actionObject}");
-                            return;
-                        }
-
-                        playerHand.Add(playerArquive[n]);
-
-                        playerArquive[n].playedFrom = "Arquive";
-                        playerArquive[n].cardPosition = "hand";
-
-                        da = new()
-                        {
-                            playerID = cMatchRoom.currentPlayerTurn,
-                            cardList = new() { playerArquive[n] }
-                        };
-                        Lib.SendPlayerData(cMatchRoom, reveal: true, da, "MoveCardToZone");
-
-
-                        if (playerArquive[n].cardTag.Contains("#EN")) {
-                        
-                        }
-
-                        playerArquive.RemoveAt(n);
-                        break;
-=======
->>>>>>> parent of 33a33ba (update)
                 }
             }
             catch (Exception e)

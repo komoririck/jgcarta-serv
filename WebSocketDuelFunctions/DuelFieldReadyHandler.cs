@@ -54,15 +54,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 currentPlayerTurn = cMatchRoom.firstPlayer
             };
 
-            //prepare the stages high and phases and stuff
-
 
             //since we were able to update the users table to lock the match, send both players to the match
-            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DuelUpdate", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) };
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
-
-            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DuelUpdate", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.options) }; 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DuelUpdate", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.jsonOptions) }; 
+            cMatchRoom.RecordPlayerRequest(pReturnData);
+            cMatchRoom.PushPlayerRequest(Player.PlayerA);
+            cMatchRoom.PushPlayerRequest(Player.PlayerB);
 
             //update the room phase, so the server can take it automaticaly from here
             cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;

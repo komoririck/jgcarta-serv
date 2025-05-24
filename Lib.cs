@@ -17,7 +17,7 @@ namespace hololive_oficial_cardgame_server
 {
     public class Lib
     {
-        static public JsonSerializerOptions options = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true };
+        static public JsonSerializerOptions jsonOptions = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true };
 
         public static void WriteConsoleMessage(string s)
         {
@@ -55,10 +55,11 @@ namespace hololive_oficial_cardgame_server
                 playerID = PlayerWinner,
             };
 
-            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "Endduel", requestObject = JsonSerializer.Serialize(_duelaction, options) };
+            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "Endduel", requestObject = JsonSerializer.Serialize(_duelaction, jsonOptions) };
 
-            await SendMessage(MessageDispatcher.playerConnections[PlayerWinner], _ReturnData);
-            await SendMessage(MessageDispatcher.playerConnections[oponnent], _ReturnData);
+            cMatchRoom.RecordPlayerRequest(_ReturnData);
+            cMatchRoom.PushPlayerRequest(PlayerWinner);
+            cMatchRoom.PushPlayerRequest(oponnent);
 
             //we need to update the socket, so the players can be paired or enter the pool again
             bool isPlayersnew = new DBConnection().SetWinnerForMatch(PlayerWinner, oponnent);
@@ -119,23 +120,17 @@ namespace hololive_oficial_cardgame_server
             string otherPlayer = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerB.PlayerID : cMatchRoom.playerA.PlayerID;
 
             // Serialize and send data to the current player
-            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
-
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], _ReturnData);
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.jsonOptions) };
+            cMatchRoom.RecordPlayerRequest(_ReturnData);
+            cMatchRoom.PushPlayerRequest(cMatchRoom.currentPlayerTurn);
 
             // Handle reveal logic and send data to the other player
             if (reveal == false)
                 DuelActionResponse.cardList = cMatchRoom.FillCardListWithEmptyCards(DuelActionResponse.cardList);
 
-            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.options) };
-            Lib.SendMessage(MessageDispatcher.playerConnections[otherPlayer.ToString()], _ReturnData);
-        }
-        public static async Task SendMessage(WebSocket webSocket, PlayerRequest data, [CallerMemberName] string callerName = "")
-        {
-
-            WriteConsoleMessage("Send to " + GetKeyByValue(webSocket) + ":\n" + $"{callerName}\n" + JsonSerializer.Serialize(data, options).Replace("\\u0022", "\"") + ":\n");
-
-            webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data, options))), WebSocketMessageType.Text, true, CancellationToken.None);
+            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = description, requestObject = JsonSerializer.Serialize(DuelActionResponse, Lib.jsonOptions) };
+            cMatchRoom.RecordPlayerRequest(_ReturnData, INCREMENTID: false);
+            cMatchRoom.PushPlayerRequest(otherPlayer);
         }
         static public string GetKeyByValue(WebSocket socket)
         {
@@ -218,7 +213,7 @@ namespace hololive_oficial_cardgame_server
             return false;
         }
 
-        public static void SortOrderToAddDeck(List<Card> cardList, List<int> numberList) // FUCKING BUBBLE SORT
+        public static void SortOrderToAddDeck(List<Card> cardList, List<int> numberList)
         {
 
             for (int i = 0; i < numberList.Count; i++)
@@ -354,7 +349,7 @@ namespace hololive_oficial_cardgame_server
                 targetCard = currentOponnentCard,
             };
 
-            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DefeatedHoloMember", requestObject = JsonSerializer.Serialize(_duelaction, options) };
+            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DefeatedHoloMember", requestObject = JsonSerializer.Serialize(_duelaction, jsonOptions) };
 
             cMatchRoom.currentGamePhase = GAMEPHASE.HolomemDefeated;
 
@@ -363,8 +358,10 @@ namespace hololive_oficial_cardgame_server
             List<Card> attackedPlayerLife = _duelaction.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerALife : cMatchRoom.playerBLife;
 
             // if the player didnt win the duel, awnser the player to get his new cheer
-            SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
-            SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
+            cMatchRoom.RecordPlayerRequest(_ReturnData);
+            cMatchRoom.PushPlayerRequest(Player.PlayerA);
+            cMatchRoom.PushPlayerRequest(Player.PlayerB);
+
 
             if (attackedPlayerLife.Count == 1)
             {
@@ -472,9 +469,10 @@ namespace hololive_oficial_cardgame_server
                 };
                 duelAction.usedCard.cardPosition = locall;
 
-                PlayerRequest _ReturnData = new() { type = "DuelUpdate", description = "UnDoCollab", requestObject = JsonSerializer.Serialize(duelAction, options) };
-                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+                PlayerRequest _ReturnData = new() { type = "DuelUpdate", description = "UnDoCollab", requestObject = JsonSerializer.Serialize(duelAction, jsonOptions) };
+                cMatchRoom.RecordPlayerRequest(_ReturnData);
+                cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                cMatchRoom.PushPlayerRequest(Player.PlayerB);
             }
             return true;
         }
@@ -495,20 +493,21 @@ namespace hololive_oficial_cardgame_server
             WriteConsoleMessage(frase);
         }
 
-        static public async Task AddTopDeckToDrawObjectAsync(string playerid, List<Card> PlayerHand, bool result, MatchRoom mr, PlayerRequest ReturnData)
+        static public async Task AddTopDeckToDrawObjectAsync(string playerid, List<Card> PlayerHand, bool result, MatchRoom matchroom, PlayerRequest ReturnData)
         {
             DuelAction newDraw = new DuelAction();
             newDraw.playerID = playerid;
             newDraw.zone = "Deck";
 
             newDraw.cardList = new List<Card>() { PlayerHand[PlayerHand.Count - 1] };
-            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, options);
-
-            SendMessage(MessageDispatcher.playerConnections[newDraw.playerID.ToString()], ReturnData);
+            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, jsonOptions);
+            matchroom.RecordPlayerRequest(ReturnData);
+            matchroom.PushPlayerRequest(newDraw.playerID);
 
             newDraw.cardList = new List<Card>() { new Card() };
-            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, options);
-            SendMessage(MessageDispatcher.playerConnections[GetOtherPlayer(mr, newDraw.playerID).ToString()], ReturnData);
+            ReturnData.requestObject = JsonSerializer.Serialize(newDraw, jsonOptions);
+            matchroom.RecordPlayerRequest(ReturnData, INCREMENTID: false);
+            matchroom.PushPlayerRequest(GetOtherPlayer(matchroom, newDraw.playerID));
         }
 
         static public int CheckIfCardExistAtList(MatchRoom cMatchRoom, string playerId, string UsedCard, string list = "hand")
@@ -635,10 +634,10 @@ namespace hololive_oficial_cardgame_server
                     playerID = cMatchRoom.currentPlayerTurn,
                     usedCard = new(ListToDetach[removePos].cardNumber, seletectedCard.cardPosition),
                 };
-                PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = ENERGY ? "RemoveEnergyAtAndSendToArquive" : "RemoveEquipAtAndSendToArquive", requestObject = JsonSerializer.Serialize(_DisposeAction, options) };
-                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
-
+                PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = ENERGY ? "RemoveEnergyAtAndSendToArquive" : "RemoveEquipAtAndSendToArquive", requestObject = JsonSerializer.Serialize(_DisposeAction, jsonOptions) };
+                cMatchRoom.RecordPlayerRequest(pReturnData);
+                cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                cMatchRoom.PushPlayerRequest(Player.PlayerB);
 
                 //adding the card that should be removed to the arquive, then removing from the player hand
                 List<Card> tempArquive = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
@@ -703,9 +702,10 @@ namespace hololive_oficial_cardgame_server
                     usedCard = new(seletectedCard.attachedEnergy[removePos].cardNumber, seletectedCard.cardPosition),
                 };
 
-                PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyAtAndDestroy", requestObject = JsonSerializer.Serialize(_DisposeAction, options) };
-                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "RemoveEnergyAtAndDestroy", requestObject = JsonSerializer.Serialize(_DisposeAction, jsonOptions) };                cMatchRoom.RecordPlayerRequest(pReturnData);
+                cMatchRoom.RecordPlayerRequest(pReturnData);
+                cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                cMatchRoom.PushPlayerRequest(Player.PlayerB);
 
                 //lets change duelaction just so the assign energy can work, maybe this need to be reworked to not use duelaction
                 _DuelAction.usedCard = Energy;
@@ -721,10 +721,10 @@ namespace hololive_oficial_cardgame_server
                 if (!hasAttached)
                     return false;
 
-                pReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
-
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                pReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
+                cMatchRoom.RecordPlayerRequest(pReturnData);
+                cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                cMatchRoom.PushPlayerRequest(Player.PlayerB);
                 return true;
             }
             return false;
@@ -810,11 +810,12 @@ namespace hololive_oficial_cardgame_server
         {
 
 
-            DuelAction response = new() { actionObject = JsonSerializer.Serialize(diceValue, options) };
-            PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = COUNTFORRESONSE ? "RollDice" : "OnlyDiceRoll", requestObject = JsonSerializer.Serialize(response, Lib.options) };
+            DuelAction response = new() { actionObject = JsonSerializer.Serialize(diceValue, jsonOptions) };
+            PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = COUNTFORRESONSE ? "RollDice" : "OnlyDiceRoll", requestObject = JsonSerializer.Serialize(response, Lib.jsonOptions) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+            cMatchRoom.RecordPlayerRequest(pReturnData);
+            cMatchRoom.PushPlayerRequest(Player.PlayerA);
+            cMatchRoom.PushPlayerRequest(Player.PlayerB);
 
         }
 
@@ -838,11 +839,12 @@ namespace hololive_oficial_cardgame_server
                 {
                     type = "DuelUpdate",
                     description = "RecoverHolomem",
-                    requestObject = JsonSerializer.Serialize(da, Lib.options)
+                    requestObject = JsonSerializer.Serialize(da, Lib.jsonOptions)
                 };
 
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                cMatchRoom.RecordPlayerRequest(pReturnData);
+                cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                cMatchRoom.PushPlayerRequest(Player.PlayerB);
             }
 
             if (COLLAB)
@@ -860,11 +862,12 @@ namespace hololive_oficial_cardgame_server
                 {
                     type = "DuelUpdate",
                     description = "RecoverHolomem",
-                    requestObject = JsonSerializer.Serialize(da, Lib.options)
+                    requestObject = JsonSerializer.Serialize(da, Lib.jsonOptions)
                 };
 
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                cMatchRoom.RecordPlayerRequest(pReturnData);
+                cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                cMatchRoom.PushPlayerRequest(Player.PlayerB);
             }
 
             if (BACKSTAGE)
@@ -887,11 +890,11 @@ namespace hololive_oficial_cardgame_server
                     {
                         type = "DuelUpdate",
                         description = "RecoverHolomem",
-                        requestObject = JsonSerializer.Serialize(da, Lib.options)
+                        requestObject = JsonSerializer.Serialize(da, Lib.jsonOptions)
                     };
-
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+                    cMatchRoom.RecordPlayerRequest(pReturnData);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerA);
+                    cMatchRoom.PushPlayerRequest(Player.PlayerB);
                 }
             }
         }
@@ -1097,8 +1100,11 @@ namespace hololive_oficial_cardgame_server
             };
             backPosition.Add(_DuelActio.usedCard);
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelActio, Lib.options) });
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelActio, Lib.options) });
+            PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelActio, Lib.jsonOptions) };
+
+            cMatchRoom.RecordPlayerRequest(pReturnData);
+            cMatchRoom.PushPlayerRequest(Player.PlayerA);
+            cMatchRoom.PushPlayerRequest(Player.PlayerB);
             cMatchRoom.currentGameHigh++;
         }
         public static async Task UseCardEffectToSummom(MatchRoom cMatchRoom, string zone, string cUsedNumber, string bloomLevel)

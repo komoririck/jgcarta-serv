@@ -71,7 +71,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
 
-            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "ReSetStage", requestObject = JsonSerializer.Serialize(duelAction, Lib.options) };
+            PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "ReSetStage", requestObject = JsonSerializer.Serialize(duelAction, Lib.jsonOptions) };
 
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);

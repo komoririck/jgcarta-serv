@@ -39,7 +39,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 {
                     Lib.getCardFromDeck(cMatchRoom.playerALife, cMatchRoom.playerAHand, cMatchRoom.cheersAssignedThisChainTotal);
                     cardCheerDraw.cardList = cMatchRoom.playerAHand.Skip(Math.Max(0, cMatchRoom.playerAHand.Count - cMatchRoom.cheersAssignedThisChainTotal)).ToList();
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
+                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
 
                     //adding empty objects so the current player can keep track of how much objects the oponent is drawing, may be 1 or 2 depending of the buzz
@@ -47,13 +47,13 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     for (int i = 0; i < cMatchRoom.cheersAssignedThisChainTotal; i++)
                         cardCheerDraw.cardList.Add(new Card());
 
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
+                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }
                 else
                 {
                     cardCheerDraw.cardList = new List<Card>() { new Card("Empty") };
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
+                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }
@@ -64,7 +64,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 {
                     Lib.getCardFromDeck(cMatchRoom.playerBLife, cMatchRoom.playerBHand, cMatchRoom.cheersAssignedThisChainTotal);
                     cardCheerDraw.cardList = cMatchRoom.playerBHand.Skip(Math.Max(0, cMatchRoom.playerBHand.Count - cMatchRoom.cheersAssignedThisChainTotal)).ToList();
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
+                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
 
                     //adding empty objects so the current player can keep track of how much objects the oponent is drawing, may be 1 or 2 depending of the buzz
@@ -72,13 +72,13 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     for (int i = 0; i < cMatchRoom.cheersAssignedThisChainTotal; i++)
                         cardCheerDraw.cardList.Add(new Card());
 
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
+                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
                 }
                 else
                 {
                     cardCheerDraw.cardList = new List<Card>() { new Card("Empty") };
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.options);
+                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
                     Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
                 }

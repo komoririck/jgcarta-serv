@@ -368,8 +368,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             playerTempHand.AddRange(listToSend);
 
                             //send the info to the currentplayer so he can pick the card
-                            _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.options);
-                            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnOshiSPEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+                            _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.jsonOptions);
+                            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnOshiSPEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
                             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
                             break;
                         case "hBP01-0031":
@@ -422,7 +422,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 cardList = returnToPlayer,
             };
 
-            PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PayHoloPowerCost", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PayHoloPowerCost", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
 
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);

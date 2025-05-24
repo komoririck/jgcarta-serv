@@ -1,7 +1,5 @@
 ﻿using hololive_oficial_cardgame_server;
 using hololive_oficial_cardgame_server.SerializableObjects;
-using System.Diagnostics;
-using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -43,7 +41,6 @@ app.MapControllers();
 
 DBConnection.StartServerClearQueue();
 
-// Add WebSocket handling middleware before other middlewares
 app.UseWebSockets();
 
 app.Use(async (context, next) =>
@@ -54,7 +51,7 @@ app.Use(async (context, next) =>
     }
     else
     {
-        await next(); // Continue to the next middleware
+        await next(); 
     }
 });
 
@@ -165,5 +162,4 @@ async Task HandleWebSocketAsync(HttpContext context)
     }
 }
 
-// Run the application
 app.Run();

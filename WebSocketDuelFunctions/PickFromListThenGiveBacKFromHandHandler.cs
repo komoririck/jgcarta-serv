@@ -95,7 +95,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //remove card from resolving
             cMatchRoom.currentCardResolving = "";
 
-            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PickFromListThenGiveBacKFromHandDone", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PickFromListThenGiveBacKFromHandDone", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
             Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
 

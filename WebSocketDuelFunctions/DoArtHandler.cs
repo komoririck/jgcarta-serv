@@ -84,7 +84,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (cMatchRoom.DeclaringAttackCard.cardPosition.Equals("Collaboration"))
                 cMatchRoom.collabStageArtUsed = true;
 
-            PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ActiveArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.options) };
+            PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ActiveArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
             Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
 
             cMatchRoom.currentGameHigh++;
