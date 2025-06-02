@@ -61,18 +61,16 @@ namespace hololive_oficial_cardgame_server
                         break;
 
                     PlayerRequest pRequestContinueCurrentPlayerTurn = new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" };
-                    cMatchRoom.RecordPlayerRequest(pRequestContinueCurrentPlayerTurn);
-                    cMatchRoom.PushPlayerRequest(Player.PlayerA);
-                    cMatchRoom.PushPlayerRequest(Player.PlayerB);
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), playerRequest: pRequestContinueCurrentPlayerTurn));
+                    cMatchRoom.PushPlayerAnswer();
                     break;
                 case "MainStartRequest":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn)
                         break;
 
                     PlayerRequest pRequestMainStartRequest = new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" };
-                    cMatchRoom.RecordPlayerRequest(pRequestMainStartRequest);
-                    cMatchRoom.PushPlayerRequest(Player.PlayerA);
-                    cMatchRoom.PushPlayerRequest(Player.PlayerB);
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), playerRequest: pRequestMainStartRequest));
+                    cMatchRoom.PushPlayerAnswer();
                     break;
                 case "PlayHolomem":
                     if (playerRequest.playerID != cMatchRoom.currentPlayerTurn || cMatchRoom.currentGamePhase != GAMEPHASE.MainStep)
@@ -144,9 +142,8 @@ namespace hololive_oficial_cardgame_server
 
                     Lib.WriteConsoleMessage("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ NEW TURN (\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ \n New player turn:" + cMatchRoom.currentPlayerTurn);
                     PlayerRequest pRequest = new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" };
-                    cMatchRoom.RecordPlayerRequest(pRequest);
-                    cMatchRoom.PushPlayerRequest(Player.PlayerA);
-                    cMatchRoom.PushPlayerRequest(Player.PlayerB);
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), playerRequest:pRequest ));
+                    cMatchRoom.PushPlayerAnswer();
 
                     cMatchRoom.currentGameHigh++;
                     break;
@@ -203,28 +200,27 @@ namespace hololive_oficial_cardgame_server
                         return;
                     }
                     //paying the cost for retrat
-                    bool energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
+                    bool energyPaid = cMatchRoom.PayCardEffectCheerOrEquipCost(_DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
                     if (!energyPaid)
                         break;
 
                     //since retreated, cannot use art anymore
                     cMatchRoom.centerStageArtUsed = true;
 
-                    if (Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.targetCard.cardPosition) || Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.usedCard.cardPosition))
+                    if (cMatchRoom.IsSwitchBlocked(_DuelAction.targetCard.cardPosition) || cMatchRoom.IsSwitchBlocked(_DuelAction.usedCard.cardPosition))
                     {
                         Lib.WriteConsoleMessage("Cannot retreat by effect");
                         return;
                     }
 
-                    Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, playerRequest.playerID, _DuelAction.targetCard);
+                    cMatchRoom.SwittchCardXToCardYButKeepPosition(playerRequest.playerID, _DuelAction.targetCard);
 
                     PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "SwitchStageCardByRetreat", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) }; 
                     
                     //i removed this by mistake ?
                     //PlayerRequest pRequest = new PlayerRequest { type = "DuelUpdate", description = "Endturn", requestObject = "" };
-                    cMatchRoom.RecordPlayerRequest(_ReturnData);
-                    cMatchRoom.PushPlayerRequest(Player.PlayerA);
-                    cMatchRoom.PushPlayerRequest(Player.PlayerB);
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), playerRequest: _ReturnData));
+                    cMatchRoom.PushPlayerAnswer();
 
                     break;
                 case "ResolveRerollEffect":
@@ -233,15 +229,15 @@ namespace hololive_oficial_cardgame_server
                     //                      return;
 
                     _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
-                    bool canContinue = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, ENERGY: false);
+                    bool canContinue = cMatchRoom.PayCardEffectCheerOrEquipCost(_DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber, ENERGY: false);
 
                     if (canContinue)
                     {
                         List<int> diceRollList = playerRequest.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollList : cMatchRoom.playerBDiceRollList;
                         int diceRollCount = playerRequest.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollCount : cMatchRoom.playerBDiceRollCount;
 
-                        int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn, diceRollCount);
-                        Lib.SendDiceRoll(cMatchRoom, diceRollList.GetRange(Math.Max(0, diceRollList.Count - 3), Math.Min(3, diceRollList.Count)), COUNTFORRESONSE: true);
+                        int diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn, diceRollCount);
+                        cMatchRoom.SendDiceRoll(diceRollList.GetRange(Math.Max(0, diceRollList.Count - 3), Math.Min(3, diceRollList.Count)), COUNTFORRESONSE: true);
                     }
                     break;
 

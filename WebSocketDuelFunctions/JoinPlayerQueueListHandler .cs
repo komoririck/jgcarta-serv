@@ -80,30 +80,29 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             if (!isPlayersnew)
                 return;
 
-            var matchRoom = CreateMatchRoom(pList);
+            var cMatchRoom = CreateMatchRoom(pList);
 
             returnData = new PlayerRequest { type = "matchFound", description = "matchFound", requestObject = "matchFound" };
-            matchRoom.RecordPlayerRequest(returnData);
-            matchRoom.PushPlayerRequest(Player.PlayerA);
-            matchRoom.PushPlayerRequest(Player.PlayerB);
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), playerRequest: returnData));
+            cMatchRoom.PushPlayerAnswer();
 
             // SUFFLE ENERGY
-            matchRoom.ShuffleCards(Player.PlayerA, PlayerZone.Cheer);
-            matchRoom.ShuffleCards(Player.PlayerB, PlayerZone.Cheer);
+            cMatchRoom.ShuffleCards(Player.PlayerA, PlayerZone.Cheer);
+            cMatchRoom.ShuffleCards(Player.PlayerB, PlayerZone.Cheer);
             //SUFFLE DECK
-            matchRoom.ShuffleCards(Player.PlayerA, PlayerZone.Cheer);
-            matchRoom.ShuffleCards(Player.PlayerB, PlayerZone.Cheer);
+            cMatchRoom.ShuffleCards(Player.PlayerA, PlayerZone.Cheer);
+            cMatchRoom.ShuffleCards(Player.PlayerB, PlayerZone.Cheer);
 
-            matchRoom.SnapShotInitialBoard();
-            _MatchRooms.Add(matchRoom);
+            cMatchRoom.SnapShotInitialBoard();
+            _MatchRooms.Add(cMatchRoom);
 
             // Handle drawing cards and sending initial hands
-            await SetupInitialHands(matchRoom);
-            Lib.PrintPlayerHand(matchRoom);
+            await SetupInitialHands(cMatchRoom);
+            cMatchRoom.PrintPlayerHand();
 
 
-            matchRoom.StartOrResetTimer(matchRoom.firstPlayer.ToString(), enduel => Lib.EndDuelAsync(matchRoom, MatchRoom.GetOtherPlayer(matchRoom, matchRoom.firstPlayer)));
-            matchRoom.StartOrResetTimer(matchRoom.secondPlayer.ToString(), enduel => Lib.EndDuelAsync(matchRoom, MatchRoom.GetOtherPlayer(matchRoom, matchRoom.secondPlayer)));
+            cMatchRoom.StartOrResetTimer(cMatchRoom.firstPlayer.ToString(), enduel => Lib.EndDuelAsync(cMatchRoom, MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.firstPlayer)));
+            cMatchRoom.StartOrResetTimer(cMatchRoom.secondPlayer.ToString(), enduel => Lib.EndDuelAsync(cMatchRoom, MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.secondPlayer)));
         }
         public static async Task SendMessage(WebSocket webSocket, PlayerRequest data, [CallerMemberName] string callerName = "")
         {
@@ -170,22 +169,18 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             };
 
             //since we were able to update the users table to lock the match, send both players to the match
-            PlayerRequest pReturnData = new PlayerRequest { type = "goToRoom", description = "goToRoom", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, options) };
-            cMatchRoom.RecordPlayerRequest(pReturnData);
-            cMatchRoom.PushPlayerRequest(Player.PlayerA);
-
-            pReturnData = new PlayerRequest { type = "goToRoom", description = "goToRoom", requestObject = JsonSerializer.Serialize(_DuelFieldDataB, options) };
-            cMatchRoom.RecordPlayerRequest(pReturnData, INCREMENTID: false);
-            cMatchRoom.PushPlayerRequest(Player.PlayerB);
-
+            PlayerRequest requestPA = new PlayerRequest { type = "goToRoom", description = "goToRoom", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, options) };
+            PlayerRequest requestPB = new PlayerRequest { type = "goToRoom", description = "goToRoom", requestObject = JsonSerializer.Serialize(_DuelFieldDataB, options) };
+            cMatchRoom.RecordPlayerRequest(new List<PlayerRequest> { requestPA, requestPB });
+            cMatchRoom.PushPlayerAnswer();
 
             cMatchRoom.currentGameHigh = 1;
             //END OF LOADING GAME SCENE
 
 
             //GET PLAYERS STARTER HAND
-            Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 7);
-            Lib.getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 7);
+            Lib.MoveTopCardFromXToY(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 7);
+            Lib.MoveTopCardFromXToY(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 7);
 
 
             //BEGIN - SEND FIRST PLAYER STARTER HAND 
@@ -196,14 +191,15 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 zone = "Deck",
                 cardList = cMatchRoom.playerAHand
             };
-            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "InitialDraw", requestObject = JsonSerializer.Serialize(draw, options) };
-            cMatchRoom.RecordPlayerRequest(pReturnData);
-            cMatchRoom.PushPlayerRequest(Player.PlayerA);
 
+
+
+            PlayerRequest PlayerA = new PlayerRequest { type = "DuelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw, options) };
             draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerAHand);
-            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "InitialDraw", requestObject = JsonSerializer.Serialize(draw, options) };
-            cMatchRoom.RecordPlayerRequest(pReturnData, INCREMENTID: false);
-            cMatchRoom.PushPlayerRequest(Player.PlayerB);
+            PlayerRequest PlayerB = new PlayerRequest { type = "DuelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw, options) };
+
+            cMatchRoom.RecordPlayerRequest(new List<PlayerRequest>() { PlayerA, PlayerB });
+            cMatchRoom.PushPlayerAnswer();
 
             cMatchRoom.currentGameHigh = 2;
 
@@ -216,14 +212,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cardList = cMatchRoom.playerBHand
             };
 
-            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw, options) };
-            cMatchRoom.RecordPlayerRequest(pReturnData);
-            cMatchRoom.PushPlayerRequest(Player.PlayerB);
-
+            PlayerB = new PlayerRequest { type = "DuelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw, options) };
             draw.cardList = cMatchRoom.FillCardListWithEmptyCards(cMatchRoom.playerBHand);
-            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw, options) };
-            cMatchRoom.RecordPlayerRequest(pReturnData, INCREMENTID: false);
-            cMatchRoom.PushPlayerRequest(Player.PlayerA);
+            PlayerA = new PlayerRequest { type = "DuelUpdate", description = "InitialDrawP2", requestObject = JsonSerializer.Serialize(draw, options) };
+
+            cMatchRoom.RecordPlayerRequest(new List<PlayerRequest>(){ PlayerB, PlayerA});
+            cMatchRoom.PushPlayerAnswer();
 
             cMatchRoom.currentGameHigh = 3;
         }

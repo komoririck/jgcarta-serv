@@ -48,10 +48,10 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
            
             //checking if the player has the card in the hand and getting the pos
-            int handPos = Lib.CheckIfCardExistAtList(cMatchRoom, playerRequest.playerID, _DuelAction.usedCard.cardNumber);
+            int handPos = cMatchRoom.CheckIfCardExistAtZone(playerRequest.playerID, _DuelAction.usedCard.cardNumber, MatchRoom.PlayerZone.Hand);
             if (handPos == -1)
             {
-                Lib.PrintPlayerHand(cMatchRoom);
+                cMatchRoom.PrintPlayerHand();
                 Lib.WriteConsoleMessage("No match found in the player hand");
                 return;
             }
@@ -135,8 +135,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
             _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerB.PlayerID.ToString()], _ReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.playerA.PlayerID.ToString()], _ReturnData);
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), _ReturnData));
+            cMatchRoom.PushPlayerAnswer();
 
             cMatchRoom.currentGameHigh++;
         }

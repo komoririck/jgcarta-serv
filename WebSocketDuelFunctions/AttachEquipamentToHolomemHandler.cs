@@ -8,12 +8,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class AttachEquipamentToHolomemHandler
     {
-        internal async Task AttachEquipamentToHolomemHandleAsync(PlayerRequest playerRequest, string local = "hand")
+        internal async Task AttachEquipamentToHolomemHandleAsync(PlayerRequest playerRequest, PlayerZone local = PlayerZone.Hand)
         {
             MatchRoom cMatchRoom = MatchRoom.FindPlayerMatchRoom(playerRequest.playerID);
             DuelAction _DuelAction = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
 
-            if (Lib.CheckIfCardExistAtList(cMatchRoom, playerRequest.playerID, _DuelAction.usedCard.cardNumber, local) == -1)
+            if (cMatchRoom.CheckIfCardExistAtZone(playerRequest.playerID, _DuelAction.usedCard.cardNumber, local) == -1)
             {
                 Lib.WriteConsoleMessage("Dont have this card to use it");
                 return;
@@ -49,7 +49,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             Card stage = ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
             Card collab = ISFIRSTPLAYER ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
 
-            if (!Lib.CanBeAttached(cMatchRoom, _DuelAction.usedCard, _DuelAction.targetCard))
+            if (!cMatchRoom.CanBeAttached(_DuelAction.usedCard, _DuelAction.targetCard))
             {
                 Lib.WriteConsoleMessage("didnt match the criteria");
                 return;
@@ -94,9 +94,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachSupportItem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
 
-            cMatchRoom.RecordPlayerRequest(_ReturnData);
-            cMatchRoom.PushPlayerRequest(Player.PlayerA);
-            cMatchRoom.PushPlayerRequest(Player.PlayerB);
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), playerRequest: _ReturnData));
+            cMatchRoom.PushPlayerAnswer();
 
             cMatchRoom.currentCardResolving = _DuelAction.usedCard.cardNumber;
             cMatchRoom.currentGamePhase = GAMEPHASE.RevolingAttachEffect;

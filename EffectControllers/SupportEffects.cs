@@ -23,8 +23,6 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 _DuelAction.cheerCostCard.GetCardInfo();
 
             PlayerRequest pReturnData;
-            List<Card> holoPowerList = new();
-            List<Card> backPos = new();
             List<string> returnToclient = new();
 
             List<Card> playerHand = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
@@ -50,7 +48,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             }
 
             //checking if the player has the card in the hand and getting the pos
-            int handPos = Lib.CheckIfCardExistAtList(cMatchRoom, playerRequest.playerID, _DuelAction.usedCard.cardNumber);
+
+            int handPos = cMatchRoom.CheckIfCardExistAtZone(playerRequest.playerID, _DuelAction.usedCard.cardNumber, PlayerZone.Hand);
             if (handPos == -1)
             {
                 Lib.WriteConsoleMessage("No match found in the player hand");
@@ -73,7 +72,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 {
                     case "hBP01-103":
 
-                        energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
+                        energyPaid = cMatchRoom.PayCardEffectCheerOrEquipCost(_DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
 
                         if (!energyPaid)
                             break;
@@ -93,8 +92,18 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         playerTempHand.AddRange(queryy);
 
-                        //send to player the info
-                        Lib.UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, queryy, _DuelAction, false);
+                        DuelAction DuelActionResponse = new DuelAction()
+                        {
+                            playerID = cMatchRoom.currentPlayerTurn,
+                            usedCard = new Card(_DuelAction.usedCard.cardNumber),
+                            targetCard = _DuelAction.targetCard,
+                            cheerCostCard = _DuelAction.cheerCostCard,
+                            suffle = false,
+                            zone = "Deck",
+                            cardList = queryy
+                        };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: DuelActionResponse, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
                         break;
                     case "hBP01-1031":
                         Card selected = new Card(_DuelAction.actionObject);
@@ -134,7 +143,9 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         _DuelAction.cardList.Add(selected);
                         playerHand.Add(selected);
 
-                        Lib.SendPlayerData(cMatchRoom, true, _DuelAction, "SupportEffectDraw");
+
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: _DuelAction, type: "DuelUpdate", description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
 
                         ResetResolution();
                         break;
@@ -148,7 +159,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         cMatchRoom.currentCardResolvingStage = "1";
                         cMatchRoom.currentGamePhase = GAMEPHASE.ConditionedDraw;
 
-                        Lib.UseCardEffectDrawXAmountAddAnyIfConditionMatchThenReorderToBottom(cMatchRoom, 4, 0, false);
+                        int HandMustHave = 0;
+                        if (playerDeck.Count < HandMustHave && HandMustHave > 0)
+                        {
+                            Lib.WriteConsoleMessage("Error 02062025");
+                            return;
+                        }
+
+                        Lib.MoveTopCardFromXToY(playerDeck, playerTempHand, 4);
+                        DuelAction _duelActionResponse = new DuelAction(){playerID = cMatchRoom.currentPlayerTurn,usedCard = new Card(cMatchRoom.currentCardResolving),suffle = false,zone = "Deck",cardList = playerTempHand};
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _duelActionResponse, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
                         break;
                     case "hBP01-1021":
                         List<Record> limitedSuport = FileReader.QueryRecords(null, null, null, "歌");
@@ -165,11 +186,24 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             Lib.WriteConsoleMessage("select cards didnt match the server info");
                             return;
                         }
-                        Lib.FromTheListAddFirstToHandThenAddRemainingToBottom(cMatchRoom, possibleDraw, _DuelAction, true, possibleDraw.Count, "number");
+                        //reorder the recieved cards from the player selection, cliente sends a DuelAction.Order where the lowerest numbers are the ones picked, we reorder the temp hand based on the selection
+                        Lib.SortOrderToAddDeck(playerTempHand, _DuelAction.Order);
+                        //Check if the selected cards are a fair play, and sort which one shold be add to hand or deck
+                        var filteredLists = cMatchRoom.CheckForSelectionInTempHandAndReorder(possibleDraw, possibleDraw.Count, "number");
+                        playerHand.AddRange(filteredLists.Item1);
+                        playerDeck.InsertRange(0, filteredLists.Item2);
+                        playerTempHand.Clear();
+
+                        DuelAction _drawReturn = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, suffle = false, zone = "Deck", cardList = filteredLists.Item1 };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _drawReturn, description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hSD01-016":
-                        Lib.UseCardEffectDrawAnyAsync(cMatchRoom, 3, "hSD01-016");
+                        Lib.MoveTopCardFromXToY(playerDeck, playerHand, 3);
+                        DuelAction draw_hSD01 = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, usedCard = new Card("hSD01-016"), suffle = false, zone = "Deck" }.DrawTopCardFromXToY(playerHand, "Deck", 3);
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: draw_hSD01, description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hSD01-017":
@@ -183,7 +217,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         cMatchRoom.SuffleHandToTheDeck(playerDeck, playerHand);
                         cMatchRoom.ShuffleCards(playerDeck);
-                        Lib.getCardFromDeck(playerDeck, playerHand, 5);
+                        Lib.MoveTopCardFromXToY(playerDeck, playerHand, 5);
 
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
                         _DuelAction.suffle = true;
@@ -192,14 +226,25 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         _DuelAction.usedCard = new Card("hSD01-017");
                         _DuelAction.suffleBackToDeck = true;
 
-                        Lib.SendPlayerData(cMatchRoom, false, _DuelAction, "SupportEffectDraw");
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _DuelAction, type: "DuelUpdate", description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hSD01-018":
                         cMatchRoom.currentCardResolvingStage = "1";
                         cMatchRoom.currentGamePhase = GAMEPHASE.ConditionedDraw;
 
-                        Lib.UseCardEffectDrawXAmountAddAnyIfConditionMatchThenReorderToBottom(cMatchRoom, 5, 0, false);
+                        HandMustHave = 0;
+                        if (playerDeck.Count < HandMustHave && HandMustHave > 0)
+                        {
+                            Lib.WriteConsoleMessage("Error 02062025");
+                            return;
+                        }
+
+                        Lib.MoveTopCardFromXToY(playerDeck, playerTempHand, 5);
+                        _duelActionResponse = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, usedCard = new Card(cMatchRoom.currentCardResolving), suffle = false, zone = "Deck", cardList = playerTempHand };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _duelActionResponse, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
                         break;
                     case "hSD01-0181":
                         limitedSuport = FileReader.QueryRecords(null, "サポート・アイテム・LIMITED", null, null);
@@ -218,12 +263,23 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             Lib.WriteConsoleMessage("select cards didnt match the server info");
                             return;
                         }
-                        Lib.FromTheListAddFirstToHandThenAddRemainingToBottom(cMatchRoom, possibleDraw, _DuelAction, true, possibleDraw.Count, "number");
+
+                        //reorder the recieved cards from the player selection, cliente sends a DuelAction.Order where the lowerest numbers are the ones picked, we reorder the temp hand based on the selection
+                        Lib.SortOrderToAddDeck(playerTempHand, _DuelAction.Order);
+                        //Check if the selected cards are a fair play, and sort which one shold be add to hand or deck
+                        var _filteredLists = cMatchRoom.CheckForSelectionInTempHandAndReorder(possibleDraw, possibleDraw.Count, "number");
+                        playerHand.AddRange(_filteredLists.Item1);
+                        playerDeck.InsertRange(0, _filteredLists.Item2);
+                        playerTempHand.Clear();
+
+                        DuelAction __drawReturn = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, suffle = false, zone = "Deck", cardList = _filteredLists.Item1 };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: __drawReturn, description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hSD01-019":
 
-                        energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
+                        energyPaid = cMatchRoom.PayCardEffectCheerOrEquipCost(_DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
 
                         if (!energyPaid)
                             break;
@@ -243,8 +299,19 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         playerTempHand.AddRange(queryy);
 
-                        //send to player the info
-                        Lib.UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, queryy, _DuelAction, false);
+                        _DuelAction = new DuelAction()
+                        {
+                            playerID = cMatchRoom.currentPlayerTurn,
+                            usedCard = new Card(_DuelAction.usedCard.cardNumber),
+                            targetCard = _DuelAction.targetCard,
+                            cheerCostCard = _DuelAction.cheerCostCard,
+                            suffle = false,
+                            zone = "Deck",
+                            cardList = queryy
+                        };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _DuelAction, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
+
                         break;
                     case "hSD01-0191":
                         selected = new Card(_DuelAction.actionObject);
@@ -284,16 +351,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         _DuelAction.cardList.Add(selected);
                         playerHand.Add(selected);
 
-                        Lib.SendPlayerData(cMatchRoom, true, _DuelAction, "SupportEffectDraw");
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: false, duelAction: _DuelAction, type: "DuelUpdate", description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
 
                         ResetResolution();
                         break;
 
                     case "hSD01-020":
-                        int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                        int diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn);
                         cMatchRoom.currentCardResolvingStage = "1";
 
-                        Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
+                        cMatchRoom.SendDiceRoll(new List<int>() { diceValue }, COUNTFORRESONSE: true);
                         break;
                     case "hSD01-0201":
                         diceValue = diceList.Last();
@@ -330,8 +398,9 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         _DuelAction.cardList = playerTempHand;
                         pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnSupportEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
 
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
-                        Lib.SendMessage(MessageDispatcher.playerConnections[MatchRoom.GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn).ToString()], pReturnData);
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(),pReturnData));
+                        cMatchRoom.PushPlayerAnswer();
+
                         break;
                     case "hSD01-0202":
                         var handler190 = new AttachTopCheerEnergyToBackHandler();
@@ -342,7 +411,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         cMatchRoom.currentCardResolvingStage = "1";
                         cMatchRoom.currentGamePhase = GAMEPHASE.ConditionedDraw;
 
-                        Lib.UseCardEffectDrawXAmountAddAnyIfConditionMatchThenReorderToBottom(cMatchRoom, 4, 0, true);
+                        HandMustHave = 0;
+                        if (playerDeck.Count < HandMustHave && HandMustHave > 0)
+                        {
+                            Lib.WriteConsoleMessage("Error 02062025");
+                            return;
+                        }
+
+                        Lib.MoveTopCardFromXToY(playerDeck, playerTempHand, 4);
+                        _duelActionResponse = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, usedCard = new Card(cMatchRoom.currentCardResolving), suffle = false, zone = "Deck", cardList = playerTempHand };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: false, duelAction: _duelActionResponse, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
                         break;
                     case "hSD01-0211":
                         List<string> selectableList = new() { "ときのそら", "AZKi", "SorAZ" };
@@ -354,15 +433,25 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             Lib.WriteConsoleMessage("select cards didnt match the server info");
                             return;
                         }
+                        //reorder the recieved cards from the player selection, cliente sends a DuelAction.Order where the lowerest numbers are the ones picked, we reorder the temp hand based on the selection
+                        Lib.SortOrderToAddDeck(playerTempHand, _DuelAction.Order);
+                        //Check if the selected cards are a fair play, and sort which one shold be add to hand or deck
+                        var ___filteredLists = cMatchRoom.CheckForSelectionInTempHandAndReorder(selectableList, 4, "name");
+                        playerHand.AddRange(___filteredLists.Item1);
+                        playerDeck.InsertRange(0, ___filteredLists.Item2);
+                        playerTempHand.Clear();
 
-                        Lib.FromTheListAddFirstToHandThenAddRemainingToBottom(cMatchRoom, selectableList, _DuelAction, true, 4, "name");
+                        DuelAction ___drawReturn = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, suffle = false, zone = "Deck", cardList = ___filteredLists.Item1 };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: ___drawReturn, description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hBP01-104":
                         cMatchRoom.currentCardResolvingStage = "1";
                         cMatchRoom.currentGamePhase = GAMEPHASE.ConditionedDraw;
-
-                        Lib.UseCardEffectToSummom(cMatchRoom, "Deck", _DuelAction.usedCard.cardNumber, "Debut");
+                        DuelAction __draw = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, usedCard = new Card() { cardNumber = _DuelAction.usedCard.cardNumber }, suffle = false, zone = "Deck", cardList = cMatchRoom.GetListOfCardWithTag(Player.TurnPlayer, PlayerZone.Deck, "Debut")};
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: __draw, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
                         break;
                     case "hBP01-1041":
                         int n = -1;
@@ -382,11 +471,16 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         playerDeck.RemoveAt(n);
                         cMatchRoom.playerBDeck = cMatchRoom.ShuffleCards(cMatchRoom.playerBDeck);
-                        Lib.MainConditionedSummomResponseHandleAsync(cMatchRoom, playerRequest.playerID, _DuelAction.actionObject);
+                        DuelAction recordedAction = cMatchRoom.PlayHolomemToBackStage(playerRequest.playerID, _DuelAction.actionObject);
+
+                        pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(recordedAction, Lib.jsonOptions) };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), playerRequest: pReturnData));
+                        cMatchRoom.PushPlayerAnswer();
+
                         ResetResolution();
                         break;
                     case "hBP01-105":
-                        energyPaid = Lib.PayCardEffectCheerOrEquipCost(cMatchRoom, _DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
+                        energyPaid = cMatchRoom.PayCardEffectCheerOrEquipCost(_DuelAction.cheerCostCard.cardPosition, _DuelAction.cheerCostCard.cardNumber);
 
                         if (!energyPaid)
                             break;
@@ -414,11 +508,21 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             ResetResolution();
                             return;
                         }
-
                         playerTempHand.AddRange(cardListToRreturn);
 
-                        //send to player the info
-                        Lib.UseCardEffectDrawXAddIfMatchCondition(cMatchRoom, cardListToRreturn, _DuelAction, false);
+                        DuelActionResponse = new DuelAction()
+                        {
+                            playerID = cMatchRoom.currentPlayerTurn,
+                            usedCard = new Card(_DuelAction.usedCard.cardNumber),
+                            targetCard = _DuelAction.targetCard,
+                            cheerCostCard = _DuelAction.cheerCostCard,
+                            suffle = false,
+                            zone = "Deck",
+                            cardList = cardListToRreturn
+                        };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: DuelActionResponse, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
+
                         break;
                     case "hBP01-1051":
                         var handler1051 = new AttachTopCheerEnergyToBackHandler();
@@ -433,15 +537,16 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             return;
                         }
 
-                        if (Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.targetCard.cardPosition) || Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.usedCard.cardPosition))
+                        if (cMatchRoom.IsSwitchBlocked(_DuelAction.targetCard.cardPosition) || cMatchRoom.IsSwitchBlocked(_DuelAction.usedCard.cardPosition))
                         {
                             Lib.WriteConsoleMessage("Cannot retreat by effect");
                             return;
                         }
 
-                        Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, playerRequest.playerID, _DuelAction.targetCard);
+                        cMatchRoom.SwittchCardXToCardYButKeepPosition(playerRequest.playerID, _DuelAction.targetCard);
 
-                        Lib.SendPlayerData(cMatchRoom, false, _DuelAction, "SwitchStageCard");
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _DuelAction, type: "DuelUpdate", description: "SwitchStageCard"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hBP01-108":
@@ -452,15 +557,16 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             return;
                         }
 
-                        if (Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.targetCard.cardPosition) || Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.usedCard.cardPosition))
+                        if (cMatchRoom.IsSwitchBlocked(_DuelAction.targetCard.cardPosition) || cMatchRoom.IsSwitchBlocked(_DuelAction.usedCard.cardPosition))
                         {
                             Lib.WriteConsoleMessage("Cannot retreat by effect");
                             return;
                         }
 
-                        Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, MatchRoom.GetOtherPlayer(cMatchRoom, playerRequest.playerID), _DuelAction.targetCard);
+                        cMatchRoom.SwittchCardXToCardYButKeepPosition(MatchRoom.GetOtherPlayer(cMatchRoom, playerRequest.playerID), _DuelAction.targetCard);
 
-                        Lib.SendPlayerData(cMatchRoom, false, _DuelAction, "SwitchOpponentStageCard");
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _DuelAction, type: "DuelUpdate", description: "SwitchOpponentStageCard"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hBP01-109":
@@ -473,7 +579,18 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         cMatchRoom.currentCardResolvingStage = "1";
                         cMatchRoom.currentGamePhase = GAMEPHASE.ConditionedDraw;
 
-                        Lib.UseCardEffectDrawXAmountAddAnyIfConditionMatchThenReorderToBottom(cMatchRoom, 4, 0, false);
+                        HandMustHave = 0;
+                        if (playerDeck.Count < HandMustHave && HandMustHave > 0)
+                        {
+                            Lib.WriteConsoleMessage("Error 02062025");
+                            return;
+                        }
+
+                        Lib.MoveTopCardFromXToY(playerDeck, playerTempHand, 4);
+                        _duelActionResponse = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, usedCard = new Card(cMatchRoom.currentCardResolving), suffle = false, zone = "Deck", cardList = playerTempHand };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _duelActionResponse, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
+
                         break;
                     case "hBP01-1091":
                         limitedSuport = FileReader.QueryRecords("兎田ぺこら", null, null, null);
@@ -491,7 +608,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             Lib.WriteConsoleMessage("select cards didnt match the server info");
                             return;
                         }
-                        Lib.FromTheListAddFirstToHandThenAddRemainingToBottom(cMatchRoom, possibleDraw, _DuelAction, true, possibleDraw.Count, "number");
+                        //reorder the recieved cards from the player selection, cliente sends a DuelAction.Order where the lowerest numbers are the ones picked, we reorder the temp hand based on the selection
+                        Lib.SortOrderToAddDeck(playerTempHand, _DuelAction.Order);
+                        //Check if the selected cards are a fair play, and sort which one shold be add to hand or deck
+                        var x_filteredLists = cMatchRoom.CheckForSelectionInTempHandAndReorder(possibleDraw, possibleDraw.Count, "number");
+                        playerHand.AddRange(x_filteredLists.Item1);
+                        playerDeck.InsertRange(0, x_filteredLists.Item2);
+                        playerTempHand.Clear();
+
+                        DuelAction x__drawReturn = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, suffle = false, zone = "Deck", cardList = x_filteredLists.Item1 };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: x__drawReturn, description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hBP01-111":
@@ -504,7 +631,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         cMatchRoom.currentCardResolvingStage = "1";
                         cMatchRoom.currentGamePhase = GAMEPHASE.ConditionedDraw;
 
-                        Lib.UseCardEffectDrawXAmountAddAnyIfConditionMatchThenReorderToBottom(cMatchRoom, 4, 0, false);
+                        HandMustHave = 0;
+                        if (playerDeck.Count < HandMustHave && HandMustHave > 0)
+                        {
+                            Lib.WriteConsoleMessage("Error 02062025");
+                            return;
+                        }
+
+                        Lib.MoveTopCardFromXToY(playerDeck, playerTempHand, 4);
+                        _duelActionResponse = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, usedCard = new Card(cMatchRoom.currentCardResolving), suffle = false, zone = "Deck", cardList = playerTempHand };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _duelActionResponse, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
                         break;
                     case "hBP01-1111":
                         limitedSuport = FileReader.QueryRecords(null, null, null, "#ID３期生");
@@ -521,7 +658,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             Lib.WriteConsoleMessage("select cards didnt match the server info");
                             return;
                         }
-                        Lib.FromTheListAddFirstToHandThenAddRemainingToBottom(cMatchRoom, possibleDraw, _DuelAction, true, possibleDraw.Count, "number");
+                        //reorder the recieved cards from the player selection, cliente sends a DuelAction.Order where the lowerest numbers are the ones picked, we reorder the temp hand based on the selection
+                        Lib.SortOrderToAddDeck(playerTempHand, _DuelAction.Order);
+                        //Check if the selected cards are a fair play, and sort which one shold be add to hand or deck
+                        var ____filteredLists = cMatchRoom.CheckForSelectionInTempHandAndReorder(possibleDraw, possibleDraw.Count, "number");
+                        playerHand.AddRange(____filteredLists.Item1);
+                        playerDeck.InsertRange(0, ____filteredLists.Item2);
+                        playerTempHand.Clear();
+
+                        DuelAction ______drawReturn = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, suffle = false, zone = "Deck", cardList = ____filteredLists.Item1 };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: ______drawReturn, description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hBP01-113":
@@ -534,7 +681,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         cMatchRoom.currentCardResolvingStage = "1";
                         cMatchRoom.currentGamePhase = GAMEPHASE.ConditionedDraw;
 
-                        Lib.UseCardEffectDrawXAmountAddAnyIfConditionMatchThenReorderToBottom(cMatchRoom, 4, 0, false);
+                        HandMustHave = 0;
+                        if (playerDeck.Count < HandMustHave && HandMustHave > 0)
+                        {
+                            Lib.WriteConsoleMessage("Error 02062025");
+                            return;
+                        }
+
+                        Lib.MoveTopCardFromXToY(playerDeck, playerTempHand, 4);
+                        _duelActionResponse = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, usedCard = new Card(cMatchRoom.currentCardResolving), suffle = false, zone = "Deck", cardList = playerTempHand };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: _duelActionResponse, description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
                         break;
                     case "hBP01-1131":
                         limitedSuport = FileReader.QueryRecords(null, null, null, "#Promise");
@@ -551,7 +708,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             Lib.WriteConsoleMessage("select cards didnt match the server info");
                             return;
                         }
-                        Lib.FromTheListAddFirstToHandThenAddRemainingToBottom(cMatchRoom, possibleDraw, _DuelAction, true, possibleDraw.Count, "number");
+                        //reorder the recieved cards from the player selection, cliente sends a DuelAction.Order where the lowerest numbers are the ones picked, we reorder the temp hand based on the selection
+                        Lib.SortOrderToAddDeck(playerTempHand, _DuelAction.Order);
+                        //Check if the selected cards are a fair play, and sort which one shold be add to hand or deck
+                        var xx_filteredLists = cMatchRoom.CheckForSelectionInTempHandAndReorder(possibleDraw, possibleDraw.Count, "number");
+                        playerHand.AddRange(xx_filteredLists.Item1);
+                        playerDeck.InsertRange(0, xx_filteredLists.Item2);
+                        playerTempHand.Clear();
+
+                        DuelAction xx__drawReturn = new DuelAction() { playerID = cMatchRoom.currentPlayerTurn, suffle = false, zone = "Deck", cardList = xx_filteredLists.Item1 };
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: true, duelAction: xx__drawReturn, description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hBP01-107":
@@ -580,7 +747,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             return;
                         }
 
-                        DuelAction DuelActionResponse = new DuelAction()
+                        DuelActionResponse = new DuelAction()
                         {
                             playerID = cMatchRoom.currentPlayerTurn,
                             usedCard = new Card(cMatchRoom.currentCardResolving),
@@ -589,7 +756,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             cardList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand
                         };
 
-                        Lib.SendPlayerData(cMatchRoom, true, DuelActionResponse, "ResolveOnSupportEffect");
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: false, duelAction: DuelActionResponse, type: "DuelUpdate", description: "ResolveOnSupportEffect"));
+                        cMatchRoom.PushPlayerAnswer();
                         break;
                     case "hBP01-1071":
                         n = -1;
@@ -619,14 +787,15 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         }
                         _DuelAction.zone = "Arquive";
 
-                        Lib.SendPlayerData(cMatchRoom, reveal: true, _DuelAction, "SupportEffectDraw");
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(cMatchRoom.currentPlayerTurn), hidden: false, duelAction: _DuelAction, type: "DuelUpdate", description: "SupportEffectDraw"));
+                        cMatchRoom.PushPlayerAnswer();
                         ResetResolution();
                         break;
                     case "hBP01-112":
-                        diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                        diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn);
                         cMatchRoom.currentCardResolvingStage = "1";
 
-                        Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
+                        cMatchRoom.SendDiceRoll(new List<int>() { diceValue }, COUNTFORRESONSE: false);
                         break;
                     case "hBP01-1121":
                         diceValue = diceList.Last();
@@ -679,8 +848,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                         // Serialize and send data to the current player
                         PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
+
+
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), _ReturnData));
+                        cMatchRoom.PushPlayerAnswer();
 
                         ResetResolution();
                         break;
@@ -688,10 +859,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         // MUMEI SUPORT NOT DONE YET// MUMEI SUPORT NOT DONE YET// MUMEI SUPORT NOT DONE YET
                         // MUMEI SUPORT NOT DONE YET// MUMEI SUPORT NOT DONE YET// MUMEI SUPORT NOT DONE YET
                         //random dice number
-                        diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                        diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn);
                         cMatchRoom.currentCardResolvingStage = "1";
 
-                        Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
+                        cMatchRoom.SendDiceRoll(new List<int>() { diceValue }, COUNTFORRESONSE: false);
                         break;
                     case "hBP01-1101":
                         diceValue = diceList.Last();
@@ -706,7 +877,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         };
 
                         pReturnData = new PlayerRequest { type = "DuelUpdate", description = "RollDice", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                        Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
+
+
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), pReturnData));
+                        cMatchRoom.PushPlayerAnswer();
 
                         if (diceValue > 3)
                         {
@@ -736,7 +910,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             }
             void ResetResolution()
             {
-                int indexInHand = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, cMatchRoom.currentCardResolving);
+                int indexInHand = cMatchRoom.CheckIfCardExistAtZone(cMatchRoom.currentPlayerTurn, cMatchRoom.currentCardResolving, PlayerZone.Hand);
                 if (indexInHand > -1)
                 {
                     playerArquive.Add(playerHand[indexInHand]);
@@ -751,8 +925,9 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 };
 
                 pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DisposeUsedSupport", requestObject = JsonSerializer.Serialize(_DisposeAction, Lib.jsonOptions) };
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+
+                cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(),pReturnData));
+                cMatchRoom.PushPlayerAnswer();
 
                 cMatchRoom.currentCardResolving = "";
                 cMatchRoom.currentCardResolvingStage = "";

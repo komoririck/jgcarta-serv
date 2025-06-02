@@ -42,7 +42,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
                 currentCollabCardd.suspended = true;
 
-                string locall = AssignCardToBackStage(places, cMatchRoom);
+                string locall = cMatchRoom.AssignCardToBackStage(places);
                 if (locall.Equals("failToAssignToBackStage")) {
                     WriteConsoleMessage("Error assign the card to the backposition");
                     return;
@@ -79,8 +79,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResetStep", requestObject = JsonSerializer.Serialize(duelAction, Lib.jsonOptions) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), _ReturnData));
+            cMatchRoom.PushPlayerAnswer();
 
             cMatchRoom.currentGameHigh++;
 

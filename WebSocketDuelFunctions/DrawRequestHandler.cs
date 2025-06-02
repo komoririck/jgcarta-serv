@@ -10,8 +10,6 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
         internal async Task DrawRequestHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
-             Task task;
-
             if (playerRequest.playerID != cMatchRoom.currentPlayerTurn) 
             {
                 Lib.WriteConsoleMessage("Wrong player calling");
@@ -23,24 +21,19 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 return;
             }
 
+            string playerId = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
+
+            List<Card> playerHand = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
+            List<Card> playerArquive = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
+            List<Card> playerDeck = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerADeck : cMatchRoom.playerBDeck;
+
 
             PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DrawPhase", requestObject = "" };
-            if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
-            {
-                if (cMatchRoom.playerADeck.Count == 0)
-                    _ = Lib.EndDuelAsync(cMatchRoom);
+            Lib.MoveTopCardFromXToY(playerDeck, playerHand, 1);
 
-                Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
-                task = Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.firstPlayer, cMatchRoom.playerAHand, true, cMatchRoom, ReturnData);
-            }
-            else
-            {
-                if (cMatchRoom.playerBDeck.Count == 0)
-                    _ = Lib.EndDuelAsync(cMatchRoom);
-
-                Lib.getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 1);
-                task = Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.secondPlayer, cMatchRoom.playerBHand, true, cMatchRoom, ReturnData);
-            }
+            DuelAction newDraw = new DuelAction().SetID(playerId).DrawTopCardFromXToY(playerHand, "Deck", 1);
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(playerId), hidden:true , playerRequest: ReturnData, duelAction: newDraw));
+            cMatchRoom.PushPlayerAnswer();
 
             cMatchRoom.currentGamePhase = GAMEPHASE.CheerStep;
             cMatchRoom.currentGameHigh++;

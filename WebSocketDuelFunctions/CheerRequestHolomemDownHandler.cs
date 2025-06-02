@@ -8,15 +8,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {
     internal class CheerRequestHolomemDownHandler
     {
-        private DuelAction cardCheerDraw;
-
-        public PlayerRequest ReturnData { get; private set; }
-
         internal async Task CheerRequestHolomemDownHandleAsync(PlayerRequest playerRequest, MatchRoom cMatchRoom)
         {
             string otherPlayer = GetOtherPlayer(cMatchRoom, cMatchRoom.currentPlayerTurn);
 
-            if (!playerRequest.playerID.Equals(otherPlayer)) {
+            if (!playerRequest.playerID.Equals(otherPlayer))
+            {
                 Lib.WriteConsoleMessage("wrong player calling");
                 return;
             }
@@ -27,61 +24,30 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 return;
             }
 
-            cardCheerDraw = new DuelAction();
-            cardCheerDraw.playerID = otherPlayer;
-            cardCheerDraw.zone = "Life";
+            bool ISFIRSTPLAYER = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer;
+            List<Card> playerHand = ISFIRSTPLAYER ? cMatchRoom.playerBHand : cMatchRoom.playerAHand;
+            List<Card> playerCheer = ISFIRSTPLAYER ? cMatchRoom.playerBCardCheer : cMatchRoom.playerACardCheer;
+            List<Card> playerLife = ISFIRSTPLAYER ? cMatchRoom.playerBLife : cMatchRoom.playerALife;
 
-            ReturnData = new PlayerRequest { type = "DuelUpdate", description = "HolomemDefatedSoGainCheer", requestObject = "" };
+            PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "HolomemDefatedSoGainCheer", requestObject = "" };
+            DuelAction cardCheerDraw = new DuelAction() { playerID = otherPlayer, zone = "Life" };
 
-            if (otherPlayer.Equals(cMatchRoom.firstPlayer))
+            if (playerCheer.Count != 0)
             {
-                if (cMatchRoom.playerACardCheer.Count != 0)
-                {
-                    Lib.getCardFromDeck(cMatchRoom.playerALife, cMatchRoom.playerAHand, cMatchRoom.cheersAssignedThisChainTotal);
-                    cardCheerDraw.cardList = cMatchRoom.playerAHand.Skip(Math.Max(0, cMatchRoom.playerAHand.Count - cMatchRoom.cheersAssignedThisChainTotal)).ToList();
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
+                Lib.MoveTopCardFromXToY(playerLife, playerHand, cMatchRoom.cheersAssignedThisChainTotal);
+                cardCheerDraw.cardList = playerHand.Skip(Math.Max(0, playerHand.Count - cMatchRoom.cheersAssignedThisChainTotal)).ToList();
+                ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
 
-                    //adding empty objects so the current player can keep track of how much objects the oponent is drawing, may be 1 or 2 depending of the buzz
-                    cardCheerDraw.cardList = new List<Card>();
-                    for (int i = 0; i < cMatchRoom.cheersAssignedThisChainTotal; i++)
-                        cardCheerDraw.cardList.Add(new Card());
-
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
-                }
-                else
-                {
-                    cardCheerDraw.cardList = new List<Card>() { new Card("Empty") };
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
-                }
+                cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(otherPlayer), hidden: true, duelAction: cardCheerDraw, type: "DuelUpdate", description: "HolomemDefatedSoGainCheer"));
+                cMatchRoom.PushPlayerAnswer();
             }
             else
             {
-                if (cMatchRoom.playerBCardCheer.Count != 0)
-                {
-                    Lib.getCardFromDeck(cMatchRoom.playerBLife, cMatchRoom.playerBHand, cMatchRoom.cheersAssignedThisChainTotal);
-                    cardCheerDraw.cardList = cMatchRoom.playerBHand.Skip(Math.Max(0, cMatchRoom.playerBHand.Count - cMatchRoom.cheersAssignedThisChainTotal)).ToList();
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
+                cardCheerDraw.cardList = new List<Card>() { new Card("Empty") };
+                ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
 
-                    //adding empty objects so the current player can keep track of how much objects the oponent is drawing, may be 1 or 2 depending of the buzz
-                    cardCheerDraw.cardList = new List<Card>();
-                    for (int i = 0; i < cMatchRoom.cheersAssignedThisChainTotal; i++)
-                        cardCheerDraw.cardList.Add(new Card());
-
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
-                }
-                else
-                {
-                    cardCheerDraw.cardList = new List<Card>() { new Card("Empty") };
-                    ReturnData.requestObject = JsonSerializer.Serialize(cardCheerDraw, Lib.jsonOptions);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], ReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], ReturnData);
-                }
+                cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), ReturnData));
+                cMatchRoom.PushPlayerAnswer();
             }
 
             cMatchRoom.currentGamePhase = GAMEPHASE.HolomemDefeatedCheerChoose;

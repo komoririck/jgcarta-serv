@@ -23,4 +23,23 @@ public class DuelAction
     public string zone { get; set; }
     public List<Card> cardList { get; set; }
     // END OF DRAW variables
+
+    public DuelAction SetID(string playerID) {
+        this.playerID = playerID;
+        return this;
+    }
+
+    public DuelAction DrawTopCardFromXToY(List<Card> listToDraw, string drawFrom, int amount) 
+    {
+        if (cardList == null)
+            cardList = new List<Card>();
+
+        zone = drawFrom;
+
+        for (int i = amount; i > 0; i--) 
+        {
+            cardList.Add(listToDraw[i]);
+        }
+        return this;    
+    }
 }

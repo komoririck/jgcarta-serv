@@ -1,12 +1,9 @@
-﻿using hololive_oficial_cardgame_server;
-using hololive_oficial_cardgame_server.SerializableObjects;
+﻿using hololive_oficial_cardgame_server.SerializableObjects;
 using hololive_oficial_cardgame_server.WebSocketDuelFunctions;
-using System;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
-using static Org.BouncyCastle.Asn1.Cmp.Challenge;
-
+using static hololive_oficial_cardgame_server.SerializableObjects.MatchRoom;
 namespace hololive_oficial_cardgame_server.EffectControllers
 {
     class ArtEffects
@@ -48,17 +45,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
             cMatchRoom.ResolvingEffectChain.Add(_DuelAction);
 
-            List<Card> tempHandList = new();
-            List<Card> EnergyList = new();
-            List<Card> backPos = new();
             List<string> returnToclient = new();
 
-            List<Card> playerHand = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
+            string playerId = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
+
+            List <Card> playerHand = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
+            List<Card> playerDeck = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerADeck : cMatchRoom.playerBDeck;
             Card stage = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
             Card collab = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
-            EnergyList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
-            tempHandList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
-            backPos = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
+            List<Card> EnergyList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
+            List<Card> tempHandList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
+            List<Card> backPos = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
             List<int> diceList = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.playerADiceRollList : cMatchRoom.playerBDiceRollList;
 
             cMatchRoom.currentGamePhase = MatchRoom.GAMEPHASE.ResolvingDeclaringAttackEffects;
@@ -74,7 +71,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 case "hBP01-062-キッケリキー！":
                     string SelectedCard = _DuelAction.actionObject;
 
-                    int n = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, SelectedCard);
+                    int n = cMatchRoom.CheckIfCardExistAtZone(cMatchRoom.currentPlayerTurn, SelectedCard, PlayerZone.Hand);
                     if (n > -1)
                     {
                         DuelAction duelAction = new()
@@ -85,7 +82,8 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                         playerHand.RemoveAt(n);
 
-                        Lib.SendPlayerData(cMatchRoom, false, duelAction, "RemoveCardsFromHand");
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: duelAction, type: "DuelUpdate", description: "RemoveCardsFromHand"));
+                        cMatchRoom.PushPlayerAnswer();
 
                         _CardEffect = new CardEffect
                         {
@@ -103,11 +101,15 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     break;
                 case "hBP01-043-全人類兎化計画":
                     //random dice number
-                    int diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn, Amount: 3);
+                    int diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn, Amount: 3);
                     cMatchRoom.currentCardResolvingStage = "1";
-                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
+                    cMatchRoom.SendDiceRoll(new List<int>() { diceValue }, COUNTFORRESONSE: true);
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+
+
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), pReturnData));
+                    cMatchRoom.PushPlayerAnswer();
+
                     break;
                 case "hBP01-0431-全人類兎化計画":
                     List<int> diceRollList = playerRequest.playerID.Equals(cMatchRoom.firstPlayer) ? cMatchRoom.playerADiceRollList : cMatchRoom.playerBDiceRollList;
@@ -133,11 +135,14 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                 case "hSD01-013-越えたい未来":
 
                     //random dice number
-                     diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                     diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn);
                     cMatchRoom.currentCardResolvingStage = "1";
-                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
+                    cMatchRoom.SendDiceRoll(new List<int>() { diceValue }, COUNTFORRESONSE: true);
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), pReturnData));
+                    cMatchRoom.PushPlayerAnswer();
+
                     break;
                 case "hSD01-0131-越えたい未来":
                     diceValue = diceList.Last();
@@ -162,16 +167,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     else
                     {
                         PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DrawArtEffect", requestObject = "" };
-                        if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
-                        {
-                            Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
-                            Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.firstPlayer, cMatchRoom.playerAHand, true, cMatchRoom, ReturnData);
-                        }
-                        else
-                        {
-                            Lib.getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 1);
-                            Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.secondPlayer, cMatchRoom.playerBHand, true, cMatchRoom, ReturnData);
-                        }
+                        Lib.MoveTopCardFromXToY(playerDeck, playerHand, 1);
+
+                        DuelAction newDraw = new DuelAction().SetID(playerId).DrawTopCardFromXToY(playerHand, "Deck", 1);
+                        cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(playerId), hidden: true, playerRequest: ReturnData, duelAction: newDraw));
+                        cMatchRoom.PushPlayerAnswer();
                     }
                     ResetResolutionAsync();
                     break;
@@ -201,8 +201,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     //send the info to the currentplayer so he can pick the card
                     _DuelAction.actionObject = JsonSerializer.Serialize(returnToclient, Lib.jsonOptions);
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], pReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], pReturnData);
+
+
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), pReturnData));
+                    cMatchRoom.PushPlayerAnswer();
+
                     break;
                 case "hSD01-0111-SorAZ グラビティ":
                     var handler19 = new AttachTopCheerEnergyToBackHandler();
@@ -211,10 +214,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     break;
                 case "hSD01-011-デスティニーソング":
                     //random dice number
-                    diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                    diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn);
                     cMatchRoom.currentCardResolvingStage = "1";
 
-                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: true);
+                    cMatchRoom.SendDiceRoll(new List<int>() { diceValue }, COUNTFORRESONSE: true);
                     break;
                 case "hSD01-0111-デスティニーソング":
                     diceValue = diceList.Last();
@@ -236,14 +239,17 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     ResetResolutionAsync();
                     break;
                 case "hBP01-038-こんぺこー！":
-                    diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                    diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn);
 
                     cMatchRoom.currentCardResolvingStage = "1";
 
-                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
+                    cMatchRoom.SendDiceRoll(new List<int>() { diceValue }, COUNTFORRESONSE: false);
 
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), pReturnData));
+                    cMatchRoom.PushPlayerAnswer();
+
                     break;
                 case "hBP01-0381-こんぺこー！":
                     diceValue = diceList.Last();
@@ -265,14 +271,18 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     ResetResolutionAsync();
                     break;
                 case "hBP01-042-きｔらあああ":
-                    diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                    diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn);
 
                     cMatchRoom.currentCardResolvingStage = "1";
 
-                    Lib.SendDiceRoll(cMatchRoom, new List<int>() { diceValue }, COUNTFORRESONSE: false);
+                    cMatchRoom.SendDiceRoll(new List<int>() { diceValue }, COUNTFORRESONSE: false);
 
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+
+
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), pReturnData));
+                    cMatchRoom.PushPlayerAnswer();
+
                     break;
                 case "hBP01-0421-きｔらあああ":
                     diceValue = diceList.Last();
@@ -416,8 +426,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                     // Serialize and send data to the current player
                     PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
+
+
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(),_ReturnData ));
+                    cMatchRoom.PushPlayerAnswer();
+
                     ResetResolutionAsync();
                     break;
                 case "hBP01-071-ポルカサーカス":
@@ -433,14 +446,18 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     });
                     break;
                 case "hBP01-072-WAZZUP!!":
-                    diceValue = Lib.GetDiceNumber(cMatchRoom, cMatchRoom.currentPlayerTurn);
+                    diceValue = cMatchRoom.GetDiceNumber(cMatchRoom.currentPlayerTurn);
 
                     cMatchRoom.currentCardResolvingStage = "1";
 
-                    Lib.SendDiceRoll(cMatchRoom, new() { diceValue }, COUNTFORRESONSE: false);
+                    cMatchRoom.SendDiceRoll( new() { diceValue }, COUNTFORRESONSE: false);
 
                     pReturnData = new PlayerRequest { type = "DuelUpdate", description = "OnArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+
+
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), pReturnData));
+                    cMatchRoom.PushPlayerAnswer();
+
                     break;
                 case "hBP01-0721-WAZZUP!!":
                     opsCollab = !(cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer) ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration;
@@ -474,8 +491,11 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     _DuelAction.playerID = cMatchRoom.currentPlayerTurn;
                     // Serialize and send data to the current player
                     _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "InflicDamageToHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer], _ReturnData);
-                    Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer], _ReturnData);
+
+
+                    cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), _ReturnData));
+                    cMatchRoom.PushPlayerAnswer();
+
                     ResetResolutionAsync();
                     break;
                 case "hBP01-035-アキロゼ幻想曲":

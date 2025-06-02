@@ -135,12 +135,12 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             break;
                         case "hBP01-003":
                             if (playerStage.color.Equals("緑"))
-                                Lib.RecoveryHP(cMatchRoom, STAGE: true, COLLAB: false, BACKSTAGE: false, RecoveryAmount: 9999, targetPlayerID: cMatchRoom.currentPlayerTurn);
+                                cMatchRoom.RecoveryHP(STAGE: true, COLLAB: false, BACKSTAGE: false, RecoveryAmount: 9999, targetPlayerID: cMatchRoom.currentPlayerTurn);
                             ResetResolution(cMatchRoom, SPSKILL);
                             break;
                         case "hYS01-003":
                             string SelectedCard = _DuelAction.actionObject;
-                            int n = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, SelectedCard, "Arquive");
+                            int n = cMatchRoom.CheckIfCardExistAtZone(cMatchRoom.currentPlayerTurn, SelectedCard, PlayerZone.Arquive);
                             if (n > -1)
                             {
                                 Card card = new Card(SelectedCard).GetCardInfo();
@@ -156,8 +156,14 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                                     cardList = new() { new Card(SelectedCard) }
                                 };
                                 playerHand.RemoveAt(n);
-                                Lib.SendPlayerData(cMatchRoom, false, duelAction, "RemoveCardsFromHand");
-                                Lib.SendPlayerData(cMatchRoom, false, duelAction, "DrawOshiEffect");
+
+
+                                cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: duelAction, type: "DuelUpdate", description: "RemoveCardsFromHand"));
+                                cMatchRoom.PushPlayerAnswer();
+
+                                cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: duelAction, type: "DuelUpdate", description: "DrawOshiEffect"));
+                                cMatchRoom.PushPlayerAnswer();
+
                             }
                             ResetResolution(cMatchRoom, SPSKILL);
                             break;
@@ -170,13 +176,13 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                                 return;
                             }
 
-                            if(Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.targetCard.cardPosition) || Lib.IsSwitchBlocked(cMatchRoom, _DuelAction.usedCard.cardPosition))
+                            if(cMatchRoom.IsSwitchBlocked(_DuelAction.targetCard.cardPosition) || cMatchRoom.IsSwitchBlocked(_DuelAction.usedCard.cardPosition))
                             {
                                 Lib.WriteConsoleMessage("Cannot retreat by effect");
                                 return;
                             }
 
-                            Lib.SwittchCardYToCardZButKeepPosition(cMatchRoom, MatchRoom.GetOtherPlayer(cMatchRoom, playerRequest.playerID), _DuelAction.targetCard);
+                            cMatchRoom.SwittchCardXToCardYButKeepPosition(MatchRoom.GetOtherPlayer(cMatchRoom, playerRequest.playerID), _DuelAction.targetCard);
 
                             cMatchRoom.ActiveEffects.Add(new CardEffect
                             {
@@ -190,7 +196,9 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                                 activatedTurn = cMatchRoom.currentTurn
                             });
 
-                            Lib.SendPlayerData(cMatchRoom, false, _DuelAction, "SwitchOpponentStageCard");
+                            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: _DuelAction, type: "DuelUpdate", description: "SwitchOpponentStageCard"));
+                            cMatchRoom.PushPlayerAnswer();
+
                             ResetResolution(cMatchRoom, SPSKILL);
                             break;
                         case "hYS01-002":
@@ -291,7 +299,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                                 return;
                             }
                             Card energy = JsonSerializer.Deserialize<Card>(_DuelAction.actionObject);
-                            bool energyRemoved = Lib.TransferEnergyFromCardAToTarget(cMatchRoom, CardA: (ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage), Energy: energy, _DuelAction);
+                            bool energyRemoved = cMatchRoom.TransferEnergyFromCardAToTarget(CardA: (ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage), Energy: energy, _DuelAction);
 
                             if (!energyRemoved)
                             {
@@ -302,7 +310,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             ResetResolution(cMatchRoom, SPSKILL);
                             break;
                         case "hYS01-002":
-                            Lib.RecoveryHP(cMatchRoom, STAGE: true, COLLAB: true, BACKSTAGE: true, RecoveryAmount: 20, targetPlayerID: cMatchRoom.currentPlayerTurn);
+                            cMatchRoom.RecoveryHP(STAGE: true, COLLAB: true, BACKSTAGE: true, RecoveryAmount: 20, targetPlayerID: cMatchRoom.currentPlayerTurn);
                             break;
                         case "hBP01-001":
                             Card opsStage = !ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
@@ -323,12 +331,15 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                                 playerID = cMatchRoom.currentPlayerTurn,
                                 actionObject = 50.ToString()
                             };
-                            Lib.SendPlayerData(cMatchRoom, false, duelAction, "SetHPToFixedValue");
+
+                            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: duelAction, type: "DuelUpdate", description: "SetHPToFixedValue"));
+                            cMatchRoom.PushPlayerAnswer();
+
                             ResetResolution(cMatchRoom, SPSKILL);
                             break;
                         case "hBP01-006":
                             string SelectedCard = _DuelAction.actionObject;
-                            int n = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, SelectedCard, "Arquive");
+                            int n = cMatchRoom.CheckIfCardExistAtZone(cMatchRoom.currentPlayerTurn, SelectedCard, PlayerZone.Arquive);
                             if (n > -1)
                             {
                                 Card card = new Card(SelectedCard).GetCardInfo();
@@ -344,8 +355,12 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                                     cardList = new() { card }
                                 };
                                 playerHand.RemoveAt(n);
-                                Lib.SendPlayerData(cMatchRoom, false, duelAction, "RemoveCardsFromArquive");
-                                Lib.SendPlayerData(cMatchRoom, false, duelAction, "DrawOshiEffect");
+
+                                cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: duelAction, type: "DuelUpdate", description: "RemoveCardsFromArquive"));
+                                cMatchRoom.PushPlayerAnswer();
+
+                                cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: duelAction, type: "DuelUpdate", description: "DrawOshiEffect"));
+                                cMatchRoom.PushPlayerAnswer();
                             }
                             ResetResolution(cMatchRoom, SPSKILL);
                             break;
@@ -370,13 +385,18 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             //send the info to the currentplayer so he can pick the card
                             _DuelAction.actionObject = JsonSerializer.Serialize(listToSend, Lib.jsonOptions);
                             pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ResolveOnOshiSPEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-                            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn.ToString()], pReturnData);
+
+                            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), pReturnData));
+                            cMatchRoom.PushPlayerAnswer();
                             break;
                         case "hBP01-0031":
                             cMatchRoom.ShuffleCards(playerDeck);
-                            Lib.SendPlayerData(cMatchRoom, false, new() { playerID = playerRequest.playerID}, "SuffleDeck");
+
+                            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: new() { playerID = playerRequest.playerID}, type: "DuelUpdate", description: "SuffleDeck"));
+                            cMatchRoom.PushPlayerAnswer();
+
                             var handler151 = new AttachEquipamentToHolomemHandler();
-                            await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest, "Deck");
+                            await handler151.AttachEquipamentToHolomemHandleAsync(playerRequest, PlayerZone.Deck);
                             break;
                     }
                 }
@@ -401,7 +421,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
             if (ISFIRSTPLAYER)
             {
-                Lib.getCardFromDeck(cMatchRoom.playerAHoloPower, cMatchRoom.playerAArquive, HoloPowerAmount);
+                Lib.MoveTopCardFromXToY(cMatchRoom.playerAHoloPower, cMatchRoom.playerAArquive, HoloPowerAmount);
                 for (; HoloPowerAmount > 0; HoloPowerAmount--)
                 {
                     returnToPlayer.Add(cMatchRoom.playerAArquive.Last());
@@ -409,7 +429,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             }
             else
             {
-                Lib.getCardFromDeck(cMatchRoom.playerBHoloPower, cMatchRoom.playerBArquive, HoloPowerAmount);
+                Lib.MoveTopCardFromXToY(cMatchRoom.playerBHoloPower, cMatchRoom.playerBArquive, HoloPowerAmount);
                 for (; HoloPowerAmount > 0; HoloPowerAmount--)
                 {
                     returnToPlayer.Add(cMatchRoom.playerBArquive.Last());
@@ -424,12 +444,10 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PayHoloPowerCost", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], pReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], pReturnData);
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(),pReturnData));
+            cMatchRoom.PushPlayerAnswer();
 
-
-
-            int indexInHand = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, cMatchRoom.currentCardResolving);
+            int indexInHand = cMatchRoom.CheckIfCardExistAtZone(cMatchRoom.currentPlayerTurn, cMatchRoom.currentCardResolving, PlayerZone.Hand);
             if (indexInHand > -1)
             {
                 playerArquive.Add(playerHand[indexInHand]);

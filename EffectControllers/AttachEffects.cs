@@ -19,7 +19,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
             PlayerRequest pReturnData;
 
             bool ISFIRSTPLAYER = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer;
-
+            string playerId = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
             List<Card> playerHand = ISFIRSTPLAYER ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
             List<Card> playerArquive = ISFIRSTPLAYER ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
             List<Card> playerDeck = ISFIRSTPLAYER ? cMatchRoom.playerADeck : cMatchRoom.playerBDeck;
@@ -44,7 +44,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                     case "hBP01-125":
                         string SelectedCard = _DuelAction.actionObject;
 
-                        int n = Lib.CheckIfCardExistAtList(cMatchRoom, cMatchRoom.currentPlayerTurn, SelectedCard);
+                        int n = cMatchRoom.CheckIfCardExistAtZone(cMatchRoom.currentPlayerTurn, SelectedCard, PlayerZone.Hand);
                         if (n > -1)
                         {
                             DuelAction duelAction = new() {
@@ -54,19 +54,15 @@ namespace hololive_oficial_cardgame_server.EffectControllers
 
                             playerHand.RemoveAt(n);
 
-                            Lib.SendPlayerData(cMatchRoom, false, duelAction, "RemoveCardsFromHand");
+                            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: duelAction, type: "DuelUpdate", description: "RemoveCardsFromHand"));
+                            cMatchRoom.PushPlayerAnswer();
 
                             PlayerRequest ReturnData = new PlayerRequest { type = "DuelUpdate", description = "DrawAttachEffect", requestObject = "" };
-                            if (cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer)
-                            {
-                                Lib.getCardFromDeck(cMatchRoom.playerADeck, cMatchRoom.playerAHand, 1);
-                                Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.firstPlayer, cMatchRoom.playerAHand, true, cMatchRoom, ReturnData);
-                            }
-                            else
-                            {
-                                Lib.getCardFromDeck(cMatchRoom.playerBDeck, cMatchRoom.playerBHand, 1);
-                                Lib.AddTopDeckToDrawObjectAsync(cMatchRoom.secondPlayer, cMatchRoom.playerBHand, true, cMatchRoom, ReturnData);
-                            }
+                            Lib.MoveTopCardFromXToY(playerDeck, playerHand, 1);
+
+                            DuelAction newDraw = new DuelAction().SetID(playerId).DrawTopCardFromXToY(playerHand, "Deck", 1);
+                            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(playerId), hidden: true, playerRequest: ReturnData, duelAction: newDraw));
+                            cMatchRoom.PushPlayerAnswer();
                         }
                         ResetResolution(cMatchRoom);
                         break;

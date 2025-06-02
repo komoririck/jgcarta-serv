@@ -37,12 +37,12 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 if (cMatchRoom.playerA.PlayerID == playerRequest.playerID)
                 {
                     cMatchRoom.playerAHand.RemoveAt(cMatchRoom.playerAHand.Count - 1);
-                    hasAttached = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, cMatchRoom.playerAStage, cMatchRoom.playerACollaboration, cMatchRoom.playerABackPosition); // we are saving attached to the list only the name of the Cheer, add other information later i needded 
+                    hasAttached = cMatchRoom.AssignEnergyToZone(_DuelAction, cMatchRoom.playerAStage, cMatchRoom.playerACollaboration, cMatchRoom.playerABackPosition); // we are saving attached to the list only the name of the Cheer, add other information later i needded 
                 }
                 if (cMatchRoom.playerB.PlayerID == playerRequest.playerID)
                 {
                     cMatchRoom.playerBHand.RemoveAt(cMatchRoom.playerBHand.Count - 1);
-                    hasAttached = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, cMatchRoom.playerBStage, cMatchRoom.playerBCollaboration, cMatchRoom.playerBBackPosition);
+                    hasAttached = cMatchRoom.AssignEnergyToZone(_DuelAction, cMatchRoom.playerBStage, cMatchRoom.playerBCollaboration, cMatchRoom.playerBBackPosition);
                 }
 
                 if (!hasAttached)
@@ -56,8 +56,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "CheerStepEndDefeatedHolomem", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), _ReturnData));
+            cMatchRoom.PushPlayerAnswer();
 
 
             cMatchRoom.currentGameHigh++;

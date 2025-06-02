@@ -35,8 +35,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             cMatchRoom.playerAOshi.GetCardInfo();
             cMatchRoom.playerBOshi.GetCardInfo();
 
-            Lib.getCardFromDeck(cMatchRoom.playerACardCheer, cMatchRoom.playerALife, int.Parse(cMatchRoom.playerAOshi.life));
-            Lib.getCardFromDeck(cMatchRoom.playerBCardCheer, cMatchRoom.playerBLife, int.Parse(cMatchRoom.playerBOshi.life));
+            Lib.MoveTopCardFromXToY(cMatchRoom.playerACardCheer, cMatchRoom.playerALife, int.Parse(cMatchRoom.playerAOshi.life));
+            Lib.MoveTopCardFromXToY(cMatchRoom.playerBCardCheer, cMatchRoom.playerBLife, int.Parse(cMatchRoom.playerBOshi.life));
 
             //place the life counter acording to the oshiiiiii
             _DuelFieldDataA = new DuelFieldData
@@ -56,10 +56,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
 
             //since we were able to update the users table to lock the match, send both players to the match
-            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DuelUpdate", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.jsonOptions) }; 
-            cMatchRoom.RecordPlayerRequest(pReturnData);
-            cMatchRoom.PushPlayerRequest(Player.PlayerA);
-            cMatchRoom.PushPlayerRequest(Player.PlayerB);
+            pReturnData = new PlayerRequest { type = "DuelUpdate", description = "DuelUpdate", requestObject = JsonSerializer.Serialize(_DuelFieldDataA, Lib.jsonOptions) };
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), playerRequest: pReturnData));
+            cMatchRoom.PushPlayerAnswer();
 
             //update the room phase, so the server can take it automaticaly from here
             cMatchRoom.currentGamePhase = GAMEPHASE.DrawStep;
@@ -130,7 +129,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 }
                 if (i == -1)
                 {
-                    Lib.PrintPlayerHand(matchroom);
+                    matchroom.PrintPlayerHand();
                     Lib.WriteConsoleMessage("\nInvalid play, there card in the field that are not at player hand: " + playedThisTurn.cardNumber);
                     return false;
                 }

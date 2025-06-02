@@ -16,6 +16,16 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             DuelAction _DuelActionRecieved = JsonSerializer.Deserialize<DuelAction>(playerRequest.requestObject);
             List<object> ResponseObjList = JsonSerializer.Deserialize<List<object>>(_DuelActionRecieved.actionObject);
 
+            bool ISFIRSTPLAYER = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer;
+            string playerId = cMatchRoom.currentPlayerTurn == cMatchRoom.firstPlayer ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
+            List<Card> playerHand = ISFIRSTPLAYER ? cMatchRoom.playerAHand : cMatchRoom.playerBHand;
+            List<Card> playerArquive = ISFIRSTPLAYER ? cMatchRoom.playerAArquive : cMatchRoom.playerBArquive;
+            List<Card> playerDeck = ISFIRSTPLAYER ? cMatchRoom.playerADeck : cMatchRoom.playerBDeck;
+            List<Card> playerTempHand = ISFIRSTPLAYER ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
+            List<Card> playerCheer = ISFIRSTPLAYER ? cMatchRoom.playerACardCheer : cMatchRoom.playerBCardCheer;
+            Card playerStage = ISFIRSTPLAYER ? cMatchRoom.playerAStage : cMatchRoom.playerBStage;
+            List<Card> playerBackstage = ISFIRSTPLAYER ? cMatchRoom.playerABackPosition : cMatchRoom.playerBBackPosition;
+
             DuelAction _ConditionedDraw = new()
             {
 
@@ -24,8 +34,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             };
 
             List<string> ChosedCardList = _ConditionedDraw.SelectedCards;
-
-            List<Card> TempHand = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.playerATempHand : cMatchRoom.playerBTempHand;
+            Lib.SortOrderToAddDeck(playerTempHand, _ConditionedDraw.Order);
 
             //filtering the used card condition to draw
             bool canProguess = false;
@@ -40,7 +49,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     possibleDraw.Add("ムーナ・ホシノヴァ");
                     shouldUseToCompareWithTempHand = "name";
                     canProguess = true;
-                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(TempHand), ChosedCardList);
+                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(playerTempHand), ChosedCardList);
                     shouldUseTempHandValidation = true;
                     break;
                 case "hSD01-018":
@@ -54,7 +63,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     }
                     canProguess = true;
                     shouldUseToCompareWithTempHand = "number";
-                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(TempHand), ChosedCardList);
+                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(playerTempHand), ChosedCardList);
                     shouldUseTempHandValidation = true;
                     break;
                 case "hBP01-104":
@@ -66,7 +75,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     }
                     canProguess = true;
                     shouldUseToCompareWithTempHand = "number";
-                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(TempHand), ChosedCardList);
+                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(playerTempHand), ChosedCardList);
                     shouldUseTempHandValidation = true;
                     break;
                 case "hBP01-102":
@@ -78,7 +87,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     }
                     canProguess = true;
                     shouldUseToCompareWithTempHand = "number";
-                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(TempHand), ChosedCardList);
+                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(playerTempHand), ChosedCardList);
                     shouldUseTempHandValidation = true;
                     break;
                 case "hSD01-021":
@@ -86,7 +95,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     possibleDraw.Add("AZKi");
                     shouldUseToCompareWithTempHand = "name";
                     canProguess = true;
-                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(TempHand), ChosedCardList);
+                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(playerTempHand), ChosedCardList);
                     shouldUseTempHandValidation = true;
                     break;
                 case "hBP01-111":
@@ -98,7 +107,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     }
                     canProguess = true;
                     shouldUseToCompareWithTempHand = "number";
-                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(TempHand), ChosedCardList);
+                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(playerTempHand), ChosedCardList);
                     shouldUseTempHandValidation = true;
                     break;
                 case "hBP01-113":
@@ -110,7 +119,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     }
                     canProguess = true;
                     shouldUseToCompareWithTempHand = "number";
-                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(TempHand), ChosedCardList);
+                    canProguess = Lib.HaveSameWords(Lib.CardListToStringList(playerTempHand), ChosedCardList);
                     shouldUseTempHandValidation = true;
                     break;
                 case "hSD01-019":
@@ -123,7 +132,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     }
                     shouldUseToCompareWithTempHand = "number";
 
-                    if (TempHand.Count > 1)
+                    if (playerTempHand.Count > 1)
                         canProguess = false;
                     else
                         canProguess = true;
@@ -139,7 +148,7 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                     }
                     shouldUseToCompareWithTempHand = "number";
 
-                    if (TempHand.Count > 1)
+                    if (playerTempHand.Count > 1)
                         canProguess = false;
                     else
                         canProguess = true;
@@ -158,29 +167,28 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
                 var comparer = StringComparer.Create(new CultureInfo("ja-JP"), true);
 
-                for (int i = 0; i < TempHand.Count(); i++)
+                for (int i = 0; i < playerTempHand.Count(); i++)
                 {
                     string name = "";
-                    TempHand[i].GetCardInfo();
+                    playerTempHand[i].GetCardInfo();
 
 
                     if (shouldUseToCompareWithTempHand.Equals("name"))
-                        name = TempHand[i].name;
+                        name = playerTempHand[i].name;
                     else if (shouldUseToCompareWithTempHand.Equals("number"))
-                        name = TempHand[i].cardNumber;
+                        name = playerTempHand[i].cardNumber;
 
 
                     foreach (string s in possibleDraw)
                     {
-                        if (comparer.Equals(name, s)) //TempHand[i].name.Normalize().Equals(s.Normalize()))
+                        if (comparer.Equals(name, s))
                         {
-                            AddToHand.Add(TempHand[i]);
+                            AddToHand.Add(playerTempHand[i]);
                             continue;
                         }
                     }
-                    ReturnToDeck.Add(TempHand[i]);
+                    ReturnToDeck.Add(playerTempHand[i]);
                 }
-                Lib.SortOrderToAddDeck(TempHand, _ConditionedDraw.Order);
             }
 
             DuelAction DrawReturn = new DuelAction()
@@ -190,30 +198,14 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 zone = "Deck",
                 cardList = AddToHand
             };
-            _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "SuporteEffectDrawXAddIfDone", requestObject = JsonSerializer.Serialize(DrawReturn, Lib.jsonOptions) };
 
-            if (playerRequest.playerID.Equals(cMatchRoom.firstPlayer))
-            {
-                cMatchRoom.playerAHand.AddRange(AddToHand);
-                cMatchRoom.playerADeck.InsertRange(0, ReturnToDeck);
-                cMatchRoom.playerATempHand.Clear();
+            playerHand.AddRange(AddToHand);
+            playerDeck.InsertRange(0, ReturnToDeck);
+            playerTempHand.Clear();
 
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayersStartWith(playerId), hidden: true, type : "DuelUpdate", description : "SuporteEffectDrawXAddIfDone", duelAction: DrawReturn));
+            cMatchRoom.PushPlayerAnswer();
 
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-                DrawReturn.cardList = cMatchRoom.FillCardListWithEmptyCards(DrawReturn.cardList);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
-
-            }
-            else
-            {
-                cMatchRoom.playerBHand.AddRange(AddToHand);
-                cMatchRoom.playerBDeck.InsertRange(0, ReturnToDeck);
-                cMatchRoom.playerBTempHand.Clear();
-
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
-                DrawReturn.cardList = cMatchRoom.FillCardListWithEmptyCards(DrawReturn.cardList);
-                Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            }
             cMatchRoom.currentCardResolving = "";
             cMatchRoom.currentGameHigh++;
             cMatchRoom.currentGamePhase = GAMEPHASE.MainStep;

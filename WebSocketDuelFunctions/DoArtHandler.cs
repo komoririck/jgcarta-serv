@@ -85,7 +85,8 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
                 cMatchRoom.collabStageArtUsed = true;
 
             PlayerRequest pReturnData = new PlayerRequest { type = "DuelUpdate", description = "ActiveArtEffect", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.currentPlayerTurn], pReturnData);
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), pReturnData));
+            cMatchRoom.PushPlayerAnswer();
 
             cMatchRoom.currentGameHigh++;
             return;

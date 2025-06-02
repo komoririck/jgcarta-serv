@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-
 namespace hololive_oficial_cardgame_server.SerializableObjects;
 
 public class PlayerRequest
@@ -12,4 +10,5 @@ public class PlayerRequest
     public string? description { get; set; }
     public string? requestObject { get; set; }
     public object? jsonObject { get; set; }
+
 }

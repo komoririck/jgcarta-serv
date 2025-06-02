@@ -119,7 +119,7 @@ async Task HandleWebSocketAsync(HttpContext context)
                     {
                         var playerRequest = JsonSerializer.Deserialize<PlayerRequest>(receivedMessage);
 
-                        if (playerRequest != null && Lib.ValidatePlayerRequest(playerRequest))
+                        if (playerRequest != null && (!string.IsNullOrEmpty(playerRequest.playerID) && !string.IsNullOrEmpty(playerRequest.password)))
                         {
                             await MessageDispatcher.DispatchMessage(playerRequest, webSocket);
                         }

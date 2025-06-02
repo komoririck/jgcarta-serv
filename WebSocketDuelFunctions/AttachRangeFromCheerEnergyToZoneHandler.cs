@@ -43,9 +43,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 
             bool assinged;
             if (cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID)
-                assinged = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, (stage == true ? cMatchRoom.playerAStage : null), (collab == true ? cMatchRoom.playerACollaboration : null), (back == true ? cMatchRoom.playerABackPosition : null));
+                assinged = cMatchRoom.AssignEnergyToZone(_DuelAction, (stage == true ? cMatchRoom.playerAStage : null), (collab == true ? cMatchRoom.playerACollaboration : null), (back == true ? cMatchRoom.playerABackPosition : null));
             else
-                assinged = Lib.AssignEnergyToZoneAsync(_DuelAction, cMatchRoom, (stage == true ? cMatchRoom.playerBStage : null), (collab == true ? cMatchRoom.playerBCollaboration : null), (back == true ? cMatchRoom.playerBBackPosition : null));
+                assinged = cMatchRoom.AssignEnergyToZone(_DuelAction, (stage == true ? cMatchRoom.playerBStage : null), (collab == true ? cMatchRoom.playerBCollaboration : null), (back == true ? cMatchRoom.playerBBackPosition : null));
 
             if (!assinged) //(x == -1)
             {
@@ -62,8 +62,9 @@ namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
             //lest send to player AttachEnergyResponse since is generic
             PlayerRequest _ReturnData = new PlayerRequest { type = "DuelUpdate", description = "AttachEnergyResponse", requestObject = JsonSerializer.Serialize(_DuelAction, Lib.jsonOptions) };
 
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.firstPlayer.ToString()], _ReturnData);
-            Lib.SendMessage(MessageDispatcher.playerConnections[cMatchRoom.secondPlayer.ToString()], _ReturnData);
+
+            cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), _ReturnData));
+            cMatchRoom.PushPlayerAnswer();
         }
     }
 }
