@@ -390,7 +390,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                             cMatchRoom.PushPlayerAnswer();
                             break;
                         case "hBP01-0031":
-                            cMatchRoom.ShuffleCards(playerDeck);
+                            cMatchRoom.ShuffleCards(ref playerDeck);
 
                             cMatchRoom.RecordPlayerRequest(cMatchRoom.ReplicatePlayerRequestForOtherPlayers(cMatchRoom.GetPlayers(), hidden: false, duelAction: new() { playerID = playerRequest.playerID}, type: "DuelUpdate", description: "SuffleDeck"));
                             cMatchRoom.PushPlayerAnswer();

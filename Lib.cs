@@ -11,7 +11,7 @@ namespace hololive_oficial_cardgame_server
     {
         static public JsonSerializerOptions jsonOptions = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true };
 
-        static public async Task DefeatedHoloMemberAsync(List<Card> arquive, Card currentOponnentCard, MatchRoom cMatchRoom, string playerWhoDealDamage)
+        static public void DefeatedHoloMemberAsync(List<Card> arquive, Card currentOponnentCard, MatchRoom cMatchRoom, string playerWhoDealDamage)
         {
             cMatchRoom.cheersAssignedThisChainTotal = GetDownneedCheerAmount(currentOponnentCard.cardNumber);
 
@@ -72,17 +72,17 @@ namespace hololive_oficial_cardgame_server
 
             if (attackedPlayerLife.Count == 1)
             {
-                _ = EndDuelAsync(cMatchRoom);
+                EndDuelAsync(cMatchRoom);
                 return;
             }
 
             if (attackedPlayerBackStage.Count == 0 && ((otherPlayer.Equals(cMatchRoom.firstPlayer)) ? cMatchRoom.playerACollaboration : cMatchRoom.playerBCollaboration) == null)
             {
-                _ = EndDuelAsync(cMatchRoom);
+                EndDuelAsync(cMatchRoom);
                 return;
             }
         }
-        static public async Task EndDuelAsync(MatchRoom cMatchRoom, string pickWinner = "")
+        static public void EndDuelAsync(MatchRoom cMatchRoom, string pickWinner = "")
         {
             string PlayerWinner = (string.IsNullOrEmpty(pickWinner)) ? cMatchRoom.currentPlayerTurn : pickWinner;
             string oponnent = GetOtherPlayer(cMatchRoom, PlayerWinner);

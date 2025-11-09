@@ -148,8 +148,10 @@ namespace hololive_oficial_cardgame_server
                             var dataTable = new DataTable();
                             dataTable.Load(result);
 
-
                             PrintDataTable(dataTable);
+
+                            if (dataTable.Rows.Count == 0)
+                                Lib.WriteConsoleMessage("\n\nUser not found\n\n");
 
                             foreach (DataRow row in dataTable.Rows)
                             {

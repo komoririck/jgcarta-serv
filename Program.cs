@@ -11,13 +11,21 @@ var builder = WebApplication.CreateBuilder(args);
 FileReader.ReadFile("CardList.xlsx");
 
 // Add services to the container
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
 });
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 var app = builder.Build();
 
 // Configure the base URL for the application
@@ -126,10 +134,12 @@ async Task HandleWebSocketAsync(HttpContext context)
                     }
                     catch (JsonException jsonEx)
                     {
+                        MessageDispatcher.playerConnections.Clear();
                         Lib.WriteConsoleMessage($"JSON Exception: {jsonEx}");
                     }
                     catch (Exception ex)
                     {
+                        MessageDispatcher.playerConnections.Clear();
                         Lib.WriteConsoleMessage($"Exception during message processing: {ex}");
                     }
                 }
@@ -161,5 +171,10 @@ async Task HandleWebSocketAsync(HttpContext context)
         }
     }
 }
+
+app.UseCors("AllowAllOrigins");
+app.UseRouting();
+app.UseAuthorization();
+app.MapControllers();
 
 app.Run();

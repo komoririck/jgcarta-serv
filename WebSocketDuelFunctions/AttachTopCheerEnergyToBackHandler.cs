@@ -1,8 +1,5 @@
-﻿using System.Collections.Concurrent;
-using System.Net.WebSockets;
-using System.Text.Json;
+﻿using System.Text.Json;
 using hololive_oficial_cardgame_server.SerializableObjects;
-using Newtonsoft.Json.Linq;
 
 namespace hololive_oficial_cardgame_server.WebSocketDuelFunctions
 {

@@ -166,8 +166,18 @@ public class MatchRoom
         Arquive,
         BackStage,
     }
-    public List<string> GetPlayers()
+    public List<string> GetPlayers(List<string> SKIP = null)
     {
+        if (SKIP != null) {
+            if (SKIP.Contains(firstPlayer))
+            {
+                return new List<string>() { secondPlayer };
+            }
+            else if (SKIP.Contains(secondPlayer))
+            {
+                return new List<string>() { firstPlayer };
+            }
+        }
         return new List<string>() { firstPlayer, secondPlayer };
     }
     public List<string> GetPlayersStartWith(string playerID)
@@ -192,6 +202,13 @@ public class MatchRoom
             Lib.WriteConsoleMessage("If playerRequest is null, we need a type and description, else the client will ignore");
             return null;
         }
+
+        //some request descriptions, exemple "matchFound" is arriving with no player id here, i need to fix the reason, but for now i'm fixing the cause
+        /*if (playerRequest.playerID != null && playerRequest.playerID.Equals(0) && !string.IsNullOrEmpty(playerRequest.description))
+        {
+            Lib.WriteConsoleMessage($"A request description {playerRequest.description} arrived here with id {playerRequest.id}");
+            return null;
+        }*/
 
         List<PlayerRequest> returnList = new List<PlayerRequest>();
 
@@ -224,7 +241,7 @@ public class MatchRoom
 
         foreach (string id in playersID)
         {
-            if (id.Equals(playerWithVisibleData))
+            if (id.Equals(playerWithVisibleData.playerID))
                 continue;
 
             returnList.Add(new PlayerRequest()
@@ -245,7 +262,16 @@ public class MatchRoom
     }
     public void RecordPlayerRequest(List<PlayerRequest> playerRequest)
     {
-        int id = RecordedPlayerRequest.Last().id + 1;
+
+        foreach (PlayerRequest request in playerRequest) {
+            if (string.IsNullOrEmpty(request.playerID) || request.playerID.Equals(0))
+                throw new ArgumentException($"request {request.description} without player id");
+        }
+
+            int id = 0;
+        if (RecordedPlayerRequest.Count > 0)
+            id = RecordedPlayerRequest.Last().id + 1;
+
         foreach (PlayerRequest request in playerRequest)
         {
             request.id = id;
@@ -271,6 +297,12 @@ public class MatchRoom
                 break;
 
             var webSocket = MessageDispatcher.playerConnections[RecordedPlayerRequest[i].playerID];
+
+            if (webSocket == null) { 
+                Lib.WriteConsoleMessage($"We tried to get a websocket that wasnt avaliable player id {RecordedPlayerRequest[i].playerID}");
+                return;
+            }
+
             webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(RecordedPlayerRequest[i], new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true }))), WebSocketMessageType.Text, true, CancellationToken.None);
 
         }
@@ -390,16 +422,16 @@ public class MatchRoom
             switch (playerZone)
             {
                 case PlayerZone.Deck:
-                    ShuffleCards(playerADeck);
+                    ShuffleCards(ref playerADeck);
                     break;
                 case PlayerZone.Cheer:
-                    ShuffleCards(playerACardCheer);
+                    ShuffleCards(ref playerACardCheer);
                     break;
                 case PlayerZone.Hand:
-                    ShuffleCards(playerAHand);
+                    ShuffleCards(ref playerAHand);
                     break;
                 case PlayerZone.Arquive:
-                    ShuffleCards(playerAArquive);
+                    ShuffleCards(ref playerAArquive);
                     break;
             }
         }
@@ -408,21 +440,21 @@ public class MatchRoom
             switch (playerZone)
             {
                 case PlayerZone.Deck:
-                    ShuffleCards(playerBDeck);
+                    ShuffleCards(ref playerBDeck);
                     break;
                 case PlayerZone.Cheer:
-                    ShuffleCards(playerBCardCheer);
+                    ShuffleCards(ref playerBCardCheer);
                     break;
                 case PlayerZone.Hand:
-                    ShuffleCards(playerBHand);
+                    ShuffleCards(ref playerBHand);
                     break;
                 case PlayerZone.Arquive:
-                    ShuffleCards(playerBArquive);
+                    ShuffleCards(ref playerBArquive);
                     break;
             }
         }
     }
-    public List<Card> ShuffleCards(List<Card> list)
+    public List<Card> ShuffleCards(ref List<Card> list)
     {
         Random random = new Random();
         int n = list.Count;

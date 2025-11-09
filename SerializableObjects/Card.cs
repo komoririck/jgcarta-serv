@@ -71,6 +71,7 @@ public class Card
     public Card(string cardNumber = "", string cardPosition = "")
     {
         this.cardNumber = cardNumber;
+        this.playedFrom = "ID";
         if (!string.IsNullOrEmpty(cardPosition))
             this.cardPosition = cardPosition;
         if (!string.IsNullOrEmpty(this.cardNumber))

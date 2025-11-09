@@ -134,7 +134,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         }
                         playerDeck.RemoveAt(tempIndex);
 
-                        cMatchRoom.ShuffleCards(playerDeck);
+                        cMatchRoom.ShuffleCards(ref playerDeck);
 
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
                         _DuelAction.suffle = true;
@@ -216,7 +216,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         }
 
                         cMatchRoom.SuffleHandToTheDeck(playerDeck, playerHand);
-                        cMatchRoom.ShuffleCards(playerDeck);
+                        cMatchRoom.ShuffleCards(ref playerDeck);
                         Lib.MoveTopCardFromXToY(playerDeck, playerHand, 5);
 
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
@@ -342,7 +342,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         }
                         playerDeck.RemoveAt(tempIndex);
 
-                        cMatchRoom.ShuffleCards(playerDeck);
+                        cMatchRoom.ShuffleCards(ref playerDeck);
 
                         _DuelAction.playerID = cMatchRoom.currentPlayerTurn == cMatchRoom.playerA.PlayerID ? cMatchRoom.firstPlayer : cMatchRoom.secondPlayer;
                         _DuelAction.suffle = true;
@@ -470,7 +470,7 @@ namespace hololive_oficial_cardgame_server.EffectControllers
                         }
 
                         playerDeck.RemoveAt(n);
-                        cMatchRoom.playerBDeck = cMatchRoom.ShuffleCards(cMatchRoom.playerBDeck);
+                        cMatchRoom.playerBDeck = cMatchRoom.ShuffleCards(ref cMatchRoom.playerBDeck);
                         DuelAction recordedAction = cMatchRoom.PlayHolomemToBackStage(playerRequest.playerID, _DuelAction.actionObject);
 
                         pReturnData = new PlayerRequest { type = "DuelUpdate", description = "PlayHolomem", requestObject = JsonSerializer.Serialize(recordedAction, Lib.jsonOptions) };
